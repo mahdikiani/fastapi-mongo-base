@@ -26,6 +26,12 @@ except ImportError:
 
 
 class CachedMixin(BaseEntity):
+    def is_done(self):
+        return (
+            getattr(self, "task_status", "done") in TaskStatusEnum.Finishes()
+            or self.is_deleted
+        )
+
     async def is_cached(self):
         return await redis.hexists(
             f"{Settings.project_name}:{self.__class__.__name__}_updates_hash",
@@ -33,14 +39,7 @@ class CachedMixin(BaseEntity):
         )
 
     async def save(self, *args, **kwargs):
-        # return await super().save(*args, **kwargs)
-
-        await redis.set(
-            f"{Settings.project_name}:{self.__class__.__name__}:{self.uid}",
-            self.model_dump_json(),
-            ex=Settings.redis_expire,
-        )
-        if getattr(self, "task_status", None) in TaskStatusEnum.Finishes():
+        if self.is_done():
             result = await super().save(*args, **kwargs)
             await redis.hdel(
                 f"{Settings.project_name}:{self.__class__.__name__}_updates_hash",
@@ -98,7 +97,9 @@ class CachedMixin(BaseEntity):
     ) -> BaseEntity:
         if user_id == None and kwargs.get("ignore_user_id") != True:
             raise ValueError("user_id is required")
-        item_data = await redis.get(f"{Settings.project_name}:{cls.__name__}:{uid}")
+        item_data = await redis.hget(
+            f"{Settings.project_name}:{cls.__name__}_updates_hash", str(uid)
+        )
         if item_data:
             item_dict = json.loads(item_data)
             item = cls(**item_dict)

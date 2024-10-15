@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastapi-mongo-base"
-version = "0.6.4"
+version = "0.6.5"
 description = "A simple boilerplate application, including models and schemas and abstract router, for FastAPI with MongoDB"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -34,7 +34,7 @@ dependencies = [
   "pyjwt[crypto]",
   "singleton_package"
 ]
-optional-dependencies = {"fastapi" = ["fastapi>=0.65.0", "uvicorn[standard]>=0.13.0"],"django" = ["Django>=3.2"],"dev" = ["check-manifest"],"test" = ["coverage"]}
+optional-dependencies = {"fastapi" = ["fastapi>=0.65.0", "uvicorn[standard]>=0.13.0", "usso[fastapi]"],"django" = ["Django>=3.2"],"dev" = ["check-manifest"],"test" = ["coverage"]}
 
 [project.urls]
 "Homepage" = "https://github.com/mahdikiani/fastapi-mongo-base-app"

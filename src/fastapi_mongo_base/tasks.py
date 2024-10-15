@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import uuid
 from datetime import datetime
 from enum import Enum
@@ -226,7 +225,7 @@ class TaskMixin(BaseModel):
     @basic.try_except_wrapper
     async def save_and_emit(self):
         await asyncio.gather(self.save(), self.emit_signals(self))
-        
+
     async def update_and_emit(self, **kwargs):
         if kwargs.get("task_status") in [
             TaskStatusEnum.done,

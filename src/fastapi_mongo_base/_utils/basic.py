@@ -18,8 +18,8 @@ def try_except_wrapper(func):
                 return await func(*args, **kwargs)
             return await asyncio.to_thread(func, *args, **kwargs)
         except Exception as e:
-            import traceback
             import inspect
+            import traceback
 
             func_name = func.__name__
             if len(args) > 0:
@@ -31,7 +31,7 @@ def try_except_wrapper(func):
             traceback_str = "".join(traceback.format_tb(e.__traceback__))
             logging.error(f"An error occurred in {func_name}:\n{traceback_str}\n{e}")
             return None
-    
+
     return wrapped_func
 
 
@@ -61,10 +61,10 @@ def retry_execution(attempts, delay=0):
                     return await asyncio.to_thread(func, *args, **kwargs)
                 except Exception as e:
                     last_exception = e
-                    logging.error(
+                    logging.warning(
                         f"Attempt {attempt + 1} failed for {func.__name__}: {e}"
                     )
-                    if delay > 0:
+                    if delay > 0 and attempt < attempts - 1:
                         await asyncio.sleep(delay)
             # If the loop finishes and the function didn't return successfully
             logging.error(f"All {attempts} attempts failed for {func.__name__}")
