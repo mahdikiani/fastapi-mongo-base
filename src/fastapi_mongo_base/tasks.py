@@ -45,6 +45,7 @@ class TaskLogRecord(BaseModel):
     message: str
     task_status: TaskStatusEnum
     duration: int = 0
+    log_type: str | None = None
     # data: dict | None = None
 
     def __eq__(self, other):
@@ -154,7 +155,7 @@ class TaskMixin(BaseModel):
                 await aionetwork.aio_request(*args, **kwargs)
             except Exception as e:
                 await task_instance.save_report(
-                    f"An error occurred in webhook_call: {e}", emit=False
+                    f"An error occurred in webhook_call: {e}", emit=False, log_type="webhook_error"
                 )
                 await task_instance.save()
                 logging.error(f"An error occurred in webhook_call: {e}")
@@ -199,6 +200,7 @@ class TaskMixin(BaseModel):
             TaskLogRecord(
                 task_status=self.task_status,
                 message=f"Status changed to {status}",
+                log_type=kwargs.get("log_type", "status_update"),
             ),
             **kwargs,
         )
@@ -209,6 +211,7 @@ class TaskMixin(BaseModel):
             TaskLogRecord(
                 task_status=self.task_status,
                 message=f"Added reference to task {task_id}",
+                log_type=kwargs.get("log_type", "add_reference"),
             ),
             **kwargs,
         )
@@ -219,6 +222,7 @@ class TaskMixin(BaseModel):
             TaskLogRecord(
                 task_status=self.task_status,
                 message=report,
+                log_type=kwargs.get("log_type", "report"),
             ),
             **kwargs,
         )
@@ -248,12 +252,14 @@ class TaskMixin(BaseModel):
             kwargs["task_progress"] = kwargs.get("task_progress", 100)
             # kwargs["task_report"] = kwargs.get("task_report")
         for key, value in kwargs.items():
-            setattr(self, key, value)
+            if hasattr(self, key):
+                setattr(self, key, value)
         if kwargs.get("task_report"):
             await self.add_log(
                 TaskLogRecord(
                     task_status=self.task_status,
                     message=kwargs["task_report"],
+                    log_type=kwargs.get("log_type", "status_update"),
                 ),
                 emit=False,
             )
