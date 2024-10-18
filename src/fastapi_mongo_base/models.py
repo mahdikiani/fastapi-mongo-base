@@ -86,6 +86,13 @@ class BaseEntity(BaseEntitySchema, Document):
 
     @classmethod
     def adjust_pagination(cls, offset: int, limit: int):
+        from fastapi import params
+
+        if isinstance(offset, params.Query):
+            offset = offset.default
+        if isinstance(limit, params.Query):
+            limit = limit.default
+            
         offset = max(offset or 0, 0)
         limit = max(1, min(limit or 10, Settings.page_max_limit))
         return offset, limit
