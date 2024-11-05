@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from beanie import Document, Insert, Replace, Save, SaveChanges, Update, before_event
+from beanie.odm.queries.find import FindMany
 from pydantic import ConfigDict
 from pymongo import ASCENDING, IndexModel
 
@@ -50,7 +51,7 @@ class BaseEntity(BaseEntitySchema, Document):
         is_deleted: bool = False,
         *args,
         **kwargs,
-    ):
+    ) -> FindMany:
         base_query = [cls.is_deleted == is_deleted]
         if hasattr(cls, "user_id") and user_id:
             base_query.append(cls.user_id == user_id)
@@ -92,7 +93,7 @@ class BaseEntity(BaseEntitySchema, Document):
             offset = offset.default
         if isinstance(limit, params.Query):
             limit = limit.default
-            
+
         offset = max(offset or 0, 0)
         limit = max(1, min(limit or 10, Settings.page_max_limit))
         return offset, limit

@@ -1,6 +1,7 @@
 import random
 import re
 import string
+import unicodedata
 import uuid
 from urllib.parse import urlparse
 
@@ -104,6 +105,16 @@ def split_text(text: str, max_chunk_size=4096):
     return chunks
 
 
+def replace_unicode_digits(match: re.Match) -> str:
+    char = match.group()
+    return unicodedata.digit(char)
+
+
+def convert_to_english_digits(input_str: str):
+    non_ascii_digit_pattern = re.compile(r"\d", re.UNICODE)
+    return non_ascii_digit_pattern.sub(replace_unicode_digits, input_str)
+
+
 regex = re.compile(
     r"^(https?|ftp):\/\/"  # http:// or https:// or ftp://
     r"(?"
@@ -154,3 +165,14 @@ def is_phone(phone):
 def generate_random_chars(length=6, characters=string.ascii_letters + string.digits):
     # Generate the random characters
     return "".join(random.choices(characters, k=length))
+
+
+def replace_whitespace(match: re.Match) -> str:
+    if "\n" in match.group():
+        return "\n"
+    else:
+        return " "
+
+
+def remove_whitespace(text: str) -> str:
+    return re.sub(r"\s+", replace_whitespace, text)

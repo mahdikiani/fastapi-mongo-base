@@ -155,7 +155,9 @@ class TaskMixin(BaseModel):
                 await aionetwork.aio_request(*args, **kwargs)
             except Exception as e:
                 await task_instance.save_report(
-                    f"An error occurred in webhook_call: {e}", emit=False, log_type="webhook_error"
+                    f"An error occurred in webhook_call: {e}",
+                    emit=False,
+                    log_type="webhook_error",
                 )
                 await task_instance.save()
                 logging.error(f"An error occurred in webhook_call: {e}")
