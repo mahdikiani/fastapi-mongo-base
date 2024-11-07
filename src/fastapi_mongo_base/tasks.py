@@ -116,6 +116,7 @@ class TaskMixin(BaseModel):
     task_progress: int = -1
     task_logs: list[TaskLogRecord] = []
     task_references: TaskReferenceList | None = None
+    webhook: str | None = None
 
     @property
     def webhook_url(self):
@@ -154,32 +155,41 @@ class TaskMixin(BaseModel):
             try:
                 await aionetwork.aio_request(*args, **kwargs)
             except Exception as e:
+                import traceback
+
+                traceback_str = "".join(traceback.format_tb(e.__traceback__))
                 await task_instance.save_report(
                     f"An error occurred in webhook_call: {e}",
                     emit=False,
                     log_type="webhook_error",
                 )
                 await task_instance.save()
-                logging.error(f"An error occurred in webhook_call: {e}")
-                return None
-
-        webhook_signals = []
-        if task_instance.meta_data:
-            webhook = task_instance.meta_data.get(
-                "webhook"
-            ) or task_instance.meta_data.get("webhook_url")
-            if webhook:
-                task_dict = task_instance.model_dump()
-                task_dict.update({"task_type": task_instance.__class__.__name__})
-                task_dict.update(kwargs)
-                webhook_signals.append(
-                    webhook_call(
-                        method="post",
-                        url=webhook,
-                        headers={"Content-Type": "application/json"},
-                        data=json.dumps(task_dict),
+                logging.error(
+                    "\n".join(
+                        [f"An error occurred in webhook_call:", traceback_str, str(e)]
                     )
                 )
+
+        def webhook_task(task_instance, webhook):
+            task_dict = task_instance.model_dump()
+            task_dict.update({"task_type": task_instance.__class__.__name__})
+            task_dict.update(kwargs)
+            return webhook_call(
+                method="post",
+                url=webhook,
+                headers={"Content-Type": "application/json"},
+                data=json.dumps(task_dict),
+            )
+
+        webhook_signals = []
+        meta_data = task_instance.meta_data or {}
+        for webhook in [
+            task_instance.webhook,
+            meta_data.get("webhook"),
+            meta_data.get("webhook_url"),
+        ]:
+            if webhook:
+                webhook_signals.append(webhook_task(task_instance, webhook))
 
         signals = webhook_signals + [
             (
@@ -190,7 +200,12 @@ class TaskMixin(BaseModel):
             for signal in cls.signals()
         ]
 
-        await asyncio.gather(*signals)
+        if not kwargs.get("sync"):
+            await asyncio.gather(*signals)
+
+        for signal in signals:
+            if asyncio.iscoroutinefunction(signal):
+                await signal
 
     async def save_status(
         self,
