@@ -171,25 +171,29 @@ class TaskMixin(BaseModel):
                 )
 
         def webhook_task(webhook_url: str):
-            task_dict = task_instance.model_dump()
-            task_dict.update({"task_type": task_instance.__class__.__name__})
-            task_dict.update(kwargs)
-            return webhook_call(
-                method="post",
-                url=webhook_url,
-                headers={"Content-Type": "application/json"},
-                data=json.dumps(task_dict),
-            )
+            return
 
         signals = []
         meta_data = getattr(task_instance, "meta_data") or {}
-        for webhook in [
+        task_dict = task_instance.model_dump()
+        task_dict.update({"task_type": task_instance.__class__.__name__})
+        task_dict.update(kwargs)
+
+        for webhook_url in [
             task_instance.webhook_url,
             meta_data.get("webhook"),
             meta_data.get("webhook_url"),
         ]:
-            if webhook:
-                signals.append(webhook_task(task_instance, webhook))
+            if not webhook_url:
+                continue
+            signals.append(
+                webhook_call(
+                    method="post",
+                    url=webhook_url,
+                    headers={"Content-Type": "application/json"},
+                    data=json.dumps(task_dict),
+                )
+            )
 
         signals += [
             (
