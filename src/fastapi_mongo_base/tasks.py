@@ -202,6 +202,7 @@ class TaskMixin(BaseModel):
 
         if not sync:
             await asyncio.gather(*signals)
+            return
 
         for signal in signals:
             await signal
