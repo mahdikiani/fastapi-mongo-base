@@ -149,7 +149,7 @@ class TaskMixin(BaseModel):
         cls.signals().append(signal)
 
     @classmethod
-    async def emit_signals(cls, task_instance: "TaskMixin", **kwargs):
+    async def emit_signals(cls, task_instance: "TaskMixin", *, sync=False, **kwargs):
 
         async def webhook_call(*args, **kwargs):
             try:
@@ -200,7 +200,7 @@ class TaskMixin(BaseModel):
             for signal in cls.signals()
         ]
 
-        if not kwargs.get("sync"):
+        if not sync:
             await asyncio.gather(*signals)
 
         for signal in signals:
