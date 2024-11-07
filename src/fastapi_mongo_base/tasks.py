@@ -116,10 +116,10 @@ class TaskMixin(BaseModel):
     task_progress: int = -1
     task_logs: list[TaskLogRecord] = []
     task_references: TaskReferenceList | None = None
-    webhook: str | None = None
+    webhook_url: str | None = None
 
     @property
-    def webhook_url(self):
+    def item_webhook_url(self):
         return f"{self.item_url}/webhook"
 
     @field_validator("task_status", mode="before")
@@ -170,28 +170,28 @@ class TaskMixin(BaseModel):
                     )
                 )
 
-        def webhook_task(task_instance, webhook):
+        def webhook_task(webhook_url: str):
             task_dict = task_instance.model_dump()
             task_dict.update({"task_type": task_instance.__class__.__name__})
             task_dict.update(kwargs)
             return webhook_call(
                 method="post",
-                url=webhook,
+                url=webhook_url,
                 headers={"Content-Type": "application/json"},
                 data=json.dumps(task_dict),
             )
 
-        webhook_signals = []
-        meta_data = task_instance.meta_data or {}
+        signals = []
+        meta_data = getattr(task_instance, "meta_data") or {}
         for webhook in [
-            task_instance.webhook,
+            task_instance.webhook_url,
             meta_data.get("webhook"),
             meta_data.get("webhook_url"),
         ]:
             if webhook:
-                webhook_signals.append(webhook_task(task_instance, webhook))
+                signals.append(webhook_task(task_instance, webhook))
 
-        signals = webhook_signals + [
+        signals += [
             (
                 signal(task_instance)
                 if asyncio.iscoroutinefunction(signal)
@@ -204,8 +204,7 @@ class TaskMixin(BaseModel):
             await asyncio.gather(*signals)
 
         for signal in signals:
-            if asyncio.iscoroutinefunction(signal):
-                await signal
+            await signal
 
     async def save_status(
         self,
@@ -257,8 +256,8 @@ class TaskMixin(BaseModel):
         await self.task_references.list_processing()
 
     @basic.try_except_wrapper
-    async def save_and_emit(self):
-        await asyncio.gather(self.save(), self.emit_signals(self))
+    async def save_and_emit(self, **kwargs):
+        await asyncio.gather(self.save(), self.emit_signals(self, **kwargs))
 
     async def update_and_emit(self, **kwargs):
         if kwargs.get("task_status") in [
