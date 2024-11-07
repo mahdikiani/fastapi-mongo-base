@@ -166,7 +166,7 @@ class TaskMixin(BaseModel):
                 await task_instance.save()
                 logging.error(
                     "\n".join(
-                        [f"An error occurred in webhook_call:", traceback_str, str(e)]
+                        ["An error occurred in webhook_call:", traceback_str, str(e)]
                     )
                 )
 
@@ -257,7 +257,11 @@ class TaskMixin(BaseModel):
 
     @basic.try_except_wrapper
     async def save_and_emit(self, **kwargs):
-        await asyncio.gather(self.save(), self.emit_signals(self, **kwargs))
+        if kwargs.get("sync"):
+            await self.save()
+            await self.emit_signals(self, **kwargs)
+        else:
+            await asyncio.gather(self.save(), self.emit_signals(self, **kwargs))
 
     async def update_and_emit(self, **kwargs):
         if kwargs.get("task_status") in [
