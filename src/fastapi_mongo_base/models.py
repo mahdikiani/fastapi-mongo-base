@@ -187,7 +187,8 @@ class BaseEntity(BaseEntitySchema, Document):
             if cls.update_exclude_set() and key in cls.update_exclude_set():
                 continue
 
-            setattr(item, key, value)
+            if hasattr(item, key):
+                setattr(item, key, value)
 
         await item.save()
         return item
