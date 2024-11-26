@@ -49,6 +49,7 @@ class BaseEntity(BaseEntitySchema, Document):
         user_id: uuid.UUID = None,
         business_name: str = None,
         is_deleted: bool = False,
+        uid: uuid.UUID = None,
         *args,
         **kwargs,
     ) -> FindMany:
@@ -57,6 +58,8 @@ class BaseEntity(BaseEntitySchema, Document):
             base_query.append({"user_id": user_id})
         if hasattr(cls, "business_name"):
             base_query.append({"business_name": business_name})
+        if uid:
+            base_query.append({"uid": uid})
 
         for key, value in kwargs.items():
             if value is None:
@@ -75,7 +78,7 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     async def get_item(
         cls,
-        uid,
+        uid: uuid.UUID,
         user_id: uuid.UUID = None,
         business_name: str = None,
         is_deleted: bool = False,
@@ -86,9 +89,10 @@ class BaseEntity(BaseEntitySchema, Document):
             user_id=user_id,
             business_name=business_name,
             is_deleted=is_deleted,
+            uid=uid,
             *args,
             **kwargs,
-        ).find(cls.uid == uid)
+        )
         items = await query.to_list()
         if not items:
             return None
