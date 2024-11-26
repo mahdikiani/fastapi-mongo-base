@@ -59,8 +59,6 @@ class BaseEntity(BaseEntitySchema, Document):
             base_query.append({"business_name": business_name})
 
         for key, value in kwargs.items():
-            if value is None:
-                continue
             if cls.search_field_set() and key not in cls.search_field_set():
                 continue
             if cls.search_exclude_set() and key in cls.search_exclude_set():
