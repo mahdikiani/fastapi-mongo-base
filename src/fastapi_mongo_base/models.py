@@ -52,12 +52,12 @@ class BaseEntity(BaseEntitySchema, Document):
         *args,
         **kwargs,
     ) -> FindMany:
-        base_query = [cls.is_deleted == is_deleted]
+        base_query = [{"is_deleted": is_deleted}]
         if hasattr(cls, "user_id") and user_id:
-            base_query.append(cls.user_id == user_id)
+            base_query.append({"user_id": user_id})
         if hasattr(cls, "business_name"):
-            base_query.append(cls.business_name == business_name)
-        
+            base_query.append({"business_name": business_name})
+
         for key, value in kwargs.items():
             if value is None:
                 continue
@@ -67,7 +67,7 @@ class BaseEntity(BaseEntitySchema, Document):
                 continue
             if not hasattr(cls, key):
                 continue
-            base_query.append(getattr(cls, key) == value)
+            base_query.append({key: value})
 
         query = cls.find(*base_query)
         return query
