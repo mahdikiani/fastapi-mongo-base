@@ -49,6 +49,14 @@ class BaseEntitySchema(CoreEntitySchema):
     def update_field_set(cls) -> list:
         return []
 
+    @classmethod
+    def search_exclude_set(cls) -> list[str]:
+        return []
+
+    @classmethod
+    def search_field_set(cls) -> list:
+        return ["uid", "is_deleted", "user_id", "business_name"]
+
     def expired(self, days: int = 3):
         return (datetime.now() - self.updated_at).days > days
 

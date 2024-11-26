@@ -57,6 +57,17 @@ class BaseEntity(BaseEntitySchema, Document):
             base_query.append(cls.user_id == user_id)
         if hasattr(cls, "business_name"):
             base_query.append(cls.business_name == business_name)
+        
+        for key, value in kwargs.items():
+            if value is None:
+                continue
+            if cls.search_field_set() and key not in cls.search_field_set():
+                continue
+            if cls.search_exclude_set() and key in cls.search_exclude_set():
+                continue
+            if not hasattr(cls, key):
+                continue
+            base_query.append(getattr(cls, key) == value)
 
         query = cls.find(*base_query)
         return query
