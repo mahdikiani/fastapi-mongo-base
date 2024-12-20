@@ -178,7 +178,9 @@ def remove_whitespace(text: str) -> str:
     return re.sub(r"\s+", replace_whitespace, text)
 
 
-def sanitize_filename(draft_name: str, max_length: int=0, space_remover: bool=True) -> str:
+def sanitize_filename(
+    draft_name: str, max_length: int = 0, space_remover: bool = True
+) -> str:
     # get filename from URL
     if draft_name.startswith("http"):
         url_parts = urlparse(draft_name)
@@ -188,7 +190,7 @@ def sanitize_filename(draft_name: str, max_length: int=0, space_remover: bool=Tr
     draft_name = draft_name.split("/")[-1].strip()
     dotted_name = draft_name.split(".")
     pure_name = ".".join(dotted_name[:-1] if len(dotted_name) > 1 else dotted_name)
-    
+
     # Remove invalid characters and replace spaces with underscores
     # Valid characters: alphanumeric, underscores, and periods and spaces
     sanitized = re.sub(r"[^a-zA-Z0-9_. ]", "", pure_name)

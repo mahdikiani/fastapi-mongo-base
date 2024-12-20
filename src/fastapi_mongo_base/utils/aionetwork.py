@@ -1,6 +1,7 @@
 import logging
 from io import BytesIO
 from typing import Literal
+
 import aiofiles
 import httpx
 
@@ -49,7 +50,6 @@ async def aio_request_client(
         await log_error(url, response.status_code, response.text, **kwargs)
         if raise_exception:
             raise e
-        
 
     if response_type == "binary":
         return await handle_binary_response(response, raise_exception)

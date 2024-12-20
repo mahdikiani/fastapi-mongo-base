@@ -4,7 +4,14 @@ error_messages = {}
 
 
 class BaseHTTPException(HTTPException):
-    def __init__(self, status_code: int, error: str, message: str = None, detail: str = None, **kwargs):
+    def __init__(
+        self,
+        status_code: int,
+        error: str,
+        message: str = None,
+        detail: str = None,
+        **kwargs,
+    ):
         self.status_code = status_code
         self.error = error
         self.message = message

@@ -3,9 +3,8 @@ import uuid
 from typing import Any, Generic, Type, TypeVar
 
 import singleton
-from fastapi import APIRouter, BackgroundTasks, Query, Request
-
 from core.exceptions import BaseHTTPException
+from fastapi import APIRouter, BackgroundTasks, Query, Request
 
 try:
     from server.config import Settings

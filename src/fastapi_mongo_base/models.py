@@ -11,7 +11,6 @@ try:
 except ImportError:
     from core.config import Settings
 
-
 from .schemas import (
     BaseEntitySchema,
     BusinessEntitySchema,
