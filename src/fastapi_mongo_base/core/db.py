@@ -1,7 +1,8 @@
+import logging
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from fastapi_mongo_base._utils import basic
+from fastapi_mongo_base.utils import basic
 from fastapi_mongo_base.models import BaseEntity
 
 try:
@@ -35,9 +36,9 @@ def init_redis():
         if getattr(Settings, "redis_uri"):
             redis_sync: RedisSync = RedisSync.from_url(Settings.redis_uri)
             redis: Redis = Redis.from_url(Settings.redis_uri)
-    except ImportError:
+    except ImportError or AttributeError or Exception as e:
+        logging.error(f"Error initializing Redis: {e}")
         redis_sync = None
         redis = None
-    ex
-
+    
     return redis_sync, redis
