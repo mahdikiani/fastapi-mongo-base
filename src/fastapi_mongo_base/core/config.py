@@ -36,35 +36,42 @@ class Settings(metaclass=Singleton):
         default='{"jwk_url": "https://sso.usso.io/website/jwks.json","type": "RS256","header": {"type": "Cookie", "name": "usso_access_token"} }',
     )
 
-    log_config = {
-        "version": 1,
-        "handlers": {
-            "console": {
-                "class": "logging.StreamHandler",
-                "level": "INFO",
-                "formatter": "standard",
+    @classmethod
+    def get_log_config(cls, console_level: str = "INFO", file_level: str = "INFO"):
+        log_config = {
+            "formatters": {
+                "standard": {
+                    "format": "[{levelname} : {filename}:{lineno} : {asctime} -> {funcName:10}] {message}",
+                    "style": "{",
+                }
             },
-            "file": {
-                "class": "logging.FileHandler",
-                "level": "INFO",
-                "filename": base_dir / "logs" / "info.log",
-                "formatter": "standard",
+            "handlers": {
+                "console": {
+                    "class": "logging.StreamHandler",
+                    "level": console_level,
+                    "formatter": "standard",
+                },
+                "file": {
+                    "class": "logging.FileHandler",
+                    "level": file_level,
+                    "filename": cls.base_dir / "logs" / "info.log",
+                    "formatter": "standard",
+                },
             },
-        },
-        "formatters": {
-            "standard": {
-                "format": "[{levelname} : {filename}:{lineno} : {asctime} -> {funcName:10}] {message}",
-                "style": "{",
-            }
-        },
-        "loggers": {
-            "": {"handlers": ["console", "file"], "level": "INFO", "propagate": True}
-        },
-    }
+            "loggers": {
+                "": {
+                    "handlers": ["console", "file"],
+                    "level": "INFO",
+                    "propagate": True,
+                }
+            },
+            "version": 1,
+        }
+        return log_config
 
     @classmethod
     def config_logger(cls):
         if not (cls.base_dir / "logs").exists():
             (cls.base_dir / "logs").mkdir()
 
-        logging.config.dictConfig(cls.log_config)
+        logging.config.dictConfig(cls.get_log_config())
