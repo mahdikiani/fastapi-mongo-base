@@ -9,9 +9,7 @@ from pymongo import ASCENDING, IndexModel
 try:
     from server.config import Settings
 except ImportError:
-
-    class Settings:
-        page_max_limit = 100
+    from core.config import Settings
 
 
 from .schemas import (

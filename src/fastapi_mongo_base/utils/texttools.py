@@ -176,3 +176,30 @@ def replace_whitespace(match: re.Match) -> str:
 
 def remove_whitespace(text: str) -> str:
     return re.sub(r"\s+", replace_whitespace, text)
+
+
+def sanitize_filename(draft_name: str, max_length: int=0, space_remover: bool=True) -> str:
+    # get filename from URL
+    if draft_name.startswith("http"):
+        url_parts = urlparse(draft_name)
+        draft_name = url_parts.path
+
+    # Remove path and extension
+    draft_name = draft_name.split("/")[-1].strip()
+    dotted_name = draft_name.split(".")
+    pure_name = ".".join(dotted_name[:-1] if len(dotted_name) > 1 else dotted_name)
+    
+    # Remove invalid characters and replace spaces with underscores
+    # Valid characters: alphanumeric, underscores, and periods and spaces
+    sanitized = re.sub(r"[^a-zA-Z0-9_. ]", "", pure_name)
+
+    if max_length > 0:
+        position = pure_name.find(" ", max_length * 4 // 5)
+        if position > max_length * 6 // 5 or position == -1:
+            position = max_length
+        sanitized[:position]  # Limit to 100 characters
+
+    if space_remover:
+        sanitized = sanitized.replace(" ", "_")  # Replace spaces with underscores
+
+    return sanitized

@@ -8,9 +8,7 @@ from pydantic import BaseModel, Field
 try:
     from server.config import Settings
 except ImportError:
-
-    class Settings:
-        root_url = "localhost:8000"
+    from core.config import Settings
 
 
 class CoreEntitySchema(BaseModel):
@@ -29,9 +27,7 @@ class BaseEntitySchema(CoreEntitySchema):
 
     @property
     def item_url(self):
-        return (
-            f"https://{Settings.root_url}/{self.__class__.__name__.lower()}s/{self.uid}"
-        )
+        return f"https://{Settings.root_url}/{Settings.base_path}/{self.__class__.__name__.lower()}s/{self.uid}"
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:

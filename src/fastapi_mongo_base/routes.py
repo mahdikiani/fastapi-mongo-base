@@ -5,18 +5,12 @@ from typing import Any, Generic, Type, TypeVar
 import singleton
 from fastapi import APIRouter, BackgroundTasks, Query, Request
 
-try:
-    from core.exceptions import BaseHTTPException
-except ImportError:
-    from fastapi import HTTPException as BaseHTTPException
+from core.exceptions import BaseHTTPException
 
 try:
     from server.config import Settings
 except ImportError:
-
-    class Settings:
-        page_max_limit = 100
-
+    from core.config import Settings
 
 from .handlers import create_dto
 from .models import BaseEntity, BaseEntityTaskMixin

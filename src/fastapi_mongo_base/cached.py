@@ -11,10 +11,7 @@ from .tasks import TaskStatusEnum
 try:
     from server.config import Settings
 except ImportError:
-
-    class Settings:
-        project_name = "fastapi-base-mongo"
-        redis_expire = 60
+    from core.config import Settings
 
 
 try:
