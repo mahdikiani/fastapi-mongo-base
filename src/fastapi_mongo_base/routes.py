@@ -13,7 +13,7 @@ except ImportError:
 try:
     from server.config import Settings
 except ImportError:
-    from core.config import Settings
+    from .core.config import Settings
 
 from .handlers import create_dto
 from .models import BaseEntity, BaseEntityTaskMixin

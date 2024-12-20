@@ -9,7 +9,7 @@ from pymongo import ASCENDING, IndexModel
 try:
     from server.config import Settings
 except ImportError:
-    from core.config import Settings
+    from .core.config import Settings
 
 from .schemas import (
     BaseEntitySchema,

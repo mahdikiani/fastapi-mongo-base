@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 try:
     from server.config import Settings
 except ImportError:
-    from core.config import Settings
+    from .core.config import Settings
 
 
 class CoreEntitySchema(BaseModel):

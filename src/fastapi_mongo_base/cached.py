@@ -11,7 +11,7 @@ from .utils import bsontools
 try:
     from server.config import Settings
 except ImportError:
-    from core.config import Settings
+    from .core.config import Settings
 
 
 try:
