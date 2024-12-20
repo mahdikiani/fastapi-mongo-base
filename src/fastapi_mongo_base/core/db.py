@@ -1,9 +1,10 @@
 import logging
+
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from fastapi_mongo_base.utils import basic
 from fastapi_mongo_base.models import BaseEntity
+from fastapi_mongo_base.utils import basic
 
 try:
     from server.config import Settings
@@ -40,5 +41,5 @@ def init_redis():
         logging.error(f"Error initializing Redis: {e}")
         redis_sync = None
         redis = None
-    
+
     return redis_sync, redis
