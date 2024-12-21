@@ -52,7 +52,7 @@ async def aio_request_client(
             raise e
 
     if response_type == "binary":
-        return await handle_binary_response(response, raise_exception)
+        return await handle_binary_response(response)
     if response_type == "bytes":
         return response.content
     if response_type == "json":
