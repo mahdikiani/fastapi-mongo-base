@@ -1,5 +1,16 @@
 from fastapi.exceptions import HTTPException
 
+import logging
+import traceback
+import json
+from fastapi.responses import JSONResponse
+from fastapi import Request
+from pydantic import ValidationError
+from fastapi.exceptions import (
+    RequestValidationError,
+    ResponseValidationError,
+)
+
 error_messages = {}
 
 
@@ -21,3 +32,54 @@ class BaseHTTPException(HTTPException):
             detail = self.message
         self.detail = detail
         super().__init__(status_code, detail=detail, **kwargs)
+
+
+async def base_http_exception_handler(request: Request, exc: BaseHTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"message": exc.message, "error": exc.error},
+    )
+
+
+async def pydantic_exception_handler(request: Request, exc: ValidationError):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "message": str(exc),
+            "error": "Exception",
+            "errors": json.loads(json.dumps(exc.errors())),
+        },
+    )
+
+
+async def request_validation_exception_handler(
+    request: Request, exc: RequestValidationError
+):
+    logging.error(
+        f"request_validation_exception: {request.url} {exc}\n{(await request.body())[:100]}"
+    )
+    from fastapi.exception_handlers import (
+        request_validation_exception_handler as default_handler,
+    )
+
+    return await default_handler(request, exc)
+
+
+async def general_exception_handler(request: Request, exc: Exception):
+    traceback_str = "".join(traceback.format_tb(exc.__traceback__))
+    logging.error(f"Exception: {traceback_str} {exc}")
+    logging.error(f"Exception on request: {request.url}")
+    return JSONResponse(
+        status_code=500,
+        content={"message": str(exc), "error": "Exception"},
+    )
+
+
+# A dictionary for dynamic registration
+EXCEPTION_HANDLERS = {
+    BaseHTTPException: base_http_exception_handler,
+    ValidationError: pydantic_exception_handler,
+    ResponseValidationError: pydantic_exception_handler,
+    RequestValidationError: request_validation_exception_handler,
+    Exception: general_exception_handler,
+}
