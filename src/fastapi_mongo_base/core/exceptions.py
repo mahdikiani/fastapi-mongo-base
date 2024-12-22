@@ -2,7 +2,7 @@ import json
 import logging
 import traceback
 
-import json_advanced 
+import json_advanced
 from fastapi import Request
 from fastapi.exceptions import (
     HTTPException,

@@ -1,5 +1,6 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 
 from beanie import Document, Insert, Replace, Save, SaveChanges, Update, before_event
 from beanie.odm.queries.find import FindMany
@@ -41,6 +42,50 @@ class BaseEntity(BaseEntitySchema, Document):
         self.updated_at = datetime.now()
 
     @classmethod
+    def get_queryset(
+        cls,
+        user_id: uuid.UUID = None,
+        business_name: str = None,
+        is_deleted: bool = False,
+        uid: uuid.UUID = None,
+        created_at_from: datetime = None,
+        created_at_to: datetime = None,
+        *args,
+        **kwargs,
+    ) -> list[dict]:
+        base_query = [{"is_deleted": is_deleted}]
+        if hasattr(cls, "user_id") and user_id:
+            base_query.append({"user_id": user_id})
+        if hasattr(cls, "business_name"):
+            base_query.append({"business_name": business_name})
+        if uid:
+            base_query.append({"uid": uid})
+
+        for key, value in kwargs.items():
+            if value is None:
+                continue
+            if cls.search_field_set() and key not in cls.search_field_set():
+                continue
+            if cls.search_exclude_set() and key in cls.search_exclude_set():
+                continue
+            if not hasattr(cls, key.rstrip("_from").rstrip("_to")):
+                continue
+
+            if key.endswith("_from") and isinstance(
+                value, (int, float, Decimal, datetime, date, str)
+            ):
+                field = key[:-5]  # Remove "_from"
+                base_query.append({field: {"$gte": value}})
+            elif key.endswith("_to") and isinstance(
+                value, (int, float, Decimal, datetime, date, str)
+            ):
+                field = key[:-3]  # Remove "_to"
+                base_query.append({field: {"$lte": value}})
+            base_query.append({key: value})
+
+        return base_query
+
+    @classmethod
     def get_query(
         cls,
         user_id: uuid.UUID = None,
@@ -52,29 +97,16 @@ class BaseEntity(BaseEntitySchema, Document):
         *args,
         **kwargs,
     ) -> FindMany:
-        base_query = [{"is_deleted": is_deleted}]
-        if hasattr(cls, "user_id") and user_id:
-            base_query.append({"user_id": user_id})
-        if hasattr(cls, "business_name"):
-            base_query.append({"business_name": business_name})
-        if uid:
-            base_query.append({"uid": uid})
-        if created_at_from:
-            base_query.append({"created_at": {"$gte": created_at_from}})
-        if created_at_to:
-            base_query.append({"created_at": {"$lte": created_at_to}})
-
-        for key, value in kwargs.items():
-            if value is None:
-                continue
-            if cls.search_field_set() and key not in cls.search_field_set():
-                continue
-            if cls.search_exclude_set() and key in cls.search_exclude_set():
-                continue
-            if not hasattr(cls, key):
-                continue
-            base_query.append({key: value})
-
+        base_query = cls.get_queryset(
+            user_id=user_id,
+            business_name=business_name,
+            is_deleted=is_deleted,
+            uid=uid,
+            created_at_from=created_at_from,
+            created_at_to=created_at_to,
+            *args,
+            **kwargs,
+        )
         query = cls.find(*base_query)
         return query
 
