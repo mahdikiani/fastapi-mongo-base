@@ -164,18 +164,20 @@ class BaseEntity(BaseEntitySchema, Document):
         *args,
         **kwargs,
     ) -> tuple[list["BaseEntity"], int]:
-        offset, limit = cls.adjust_pagination(offset, limit)
-
-        query = cls.get_query(
+        items = await cls.list_items(
+            user_id=user_id,
+            business_name=business_name,
+            offset=offset,
+            limit=limit,
+            is_deleted=is_deleted,
+            **kwargs,
+        )
+        total = await cls.total_count(
             user_id=user_id,
             business_name=business_name,
             is_deleted=is_deleted,
-            *args,
             **kwargs,
         )
-        items_query = query.sort("-created_at").skip(offset).limit(limit)
-        items = await items_query.to_list()
-        total = await query.count()
 
         return items, total
 
