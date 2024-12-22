@@ -1,5 +1,6 @@
 import asyncio
 import uuid
+from datetime import datetime
 from typing import Any, Generic, Type, TypeVar
 
 import singleton
@@ -135,12 +136,18 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
         request: Request,
         offset: int = Query(0, ge=0),
         limit: int = Query(10, ge=1, le=Settings.page_max_limit),
+        created_at_from: datetime | None = None,
+        created_at_to: datetime | None = None,
     ):
         user_id = await self.get_user_id(request)
         limit = max(1, min(limit, Settings.page_max_limit))
 
         items, total = await self.model.list_total_combined(
-            user_id=user_id, offset=offset, limit=limit
+            user_id=user_id,
+            offset=offset,
+            limit=limit,
+            created_at_from=created_at_from,
+            created_at_to=created_at_to,
         )
         items_in_schema = [self.list_item_schema(**item.model_dump()) for item in items]
 

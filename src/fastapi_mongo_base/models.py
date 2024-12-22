@@ -60,9 +60,9 @@ class BaseEntity(BaseEntitySchema, Document):
         if uid:
             base_query.append({"uid": uid})
         if created_at_from:
-            query = query.filter(cls.created_at >= created_at_from)
+            base_query.append({"created_at": {"$gte": created_at_from}})
         if created_at_to:
-            query = query.filter(cls.created_at <= created_at_to)
+            base_query.append({"created_at": {"$lte": created_at_to}})
 
         for key, value in kwargs.items():
             if value is None:
