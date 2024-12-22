@@ -1,15 +1,16 @@
-from fastapi.exceptions import HTTPException
-
+import json
 import logging
 import traceback
-import json_advanced as json
-from fastapi.responses import JSONResponse
+
+import json_advanced 
 from fastapi import Request
-from pydantic import ValidationError
 from fastapi.exceptions import (
+    HTTPException,
     RequestValidationError,
     ResponseValidationError,
 )
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
 error_messages = {}
 
@@ -47,7 +48,7 @@ async def pydantic_exception_handler(request: Request, exc: ValidationError):
         content={
             "message": str(exc),
             "error": "Exception",
-            "errors": json.loads(json.dumps(exc.errors())),
+            "errors": json.loads(json_advanced.dumps(exc.errors())),
         },
     )
 

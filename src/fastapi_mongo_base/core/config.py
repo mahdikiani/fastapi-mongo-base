@@ -4,7 +4,6 @@ import dataclasses
 import logging
 import logging.config
 import os
-from pathlib import Path
 
 import dotenv
 from singleton import Singleton
