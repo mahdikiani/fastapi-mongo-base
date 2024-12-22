@@ -47,6 +47,8 @@ class BaseEntity(BaseEntitySchema, Document):
         business_name: str = None,
         is_deleted: bool = False,
         uid: uuid.UUID = None,
+        created_at_from: datetime = None,
+        created_at_to: datetime = None,
         *args,
         **kwargs,
     ) -> FindMany:
@@ -57,6 +59,10 @@ class BaseEntity(BaseEntitySchema, Document):
             base_query.append({"business_name": business_name})
         if uid:
             base_query.append({"uid": uid})
+        if created_at_from:
+            query = query.filter(cls.created_at >= created_at_from)
+        if created_at_to:
+            query = query.filter(cls.created_at <= created_at_to)
 
         for key, value in kwargs.items():
             if value is None:
