@@ -2,7 +2,7 @@ from fastapi.exceptions import HTTPException
 
 import logging
 import traceback
-import json
+import json_advanced as json
 from fastapi.responses import JSONResponse
 from fastapi import Request
 from pydantic import ValidationError
