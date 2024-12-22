@@ -48,8 +48,6 @@ class BaseEntity(BaseEntitySchema, Document):
         business_name: str = None,
         is_deleted: bool = False,
         uid: uuid.UUID = None,
-        created_at_from: datetime = None,
-        created_at_to: datetime = None,
         *args,
         **kwargs,
     ) -> list[dict]:
