@@ -52,17 +52,17 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
         self.config_schemas(self.schema, **kwargs)
         self.config_routes(**kwargs)
 
-    @classmethod
-    def config_schemas(cls, schema, **kwargs):
-        cls.list_response_schema = PaginatedResponse[schema]
-        cls.list_item_schema = schema
-        cls.retrieve_response_schema = schema
-        cls.create_response_schema = schema
-        cls.update_response_schema = schema
-        cls.delete_response_schema = schema
+    def config_schemas(self, schema, **kwargs):
+        self.schema = schema
+        self.list_response_schema = PaginatedResponse[schema]
+        self.list_item_schema = schema
+        self.retrieve_response_schema = schema
+        self.create_response_schema = schema
+        self.update_response_schema = schema
+        self.delete_response_schema = schema
 
-        cls.create_request_schema = schema
-        cls.update_request_schema = schema
+        self.create_request_schema = schema
+        self.update_request_schema = schema
 
     def config_routes(self, **kwargs):
         self.router.add_api_route(

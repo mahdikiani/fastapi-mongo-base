@@ -47,11 +47,11 @@ class BaseEntitySchema(CoreEntitySchema):
 
     @classmethod
     def search_exclude_set(cls) -> list[str]:
-        return []
+        return ["meta_data"]
 
     @classmethod
     def search_field_set(cls) -> list:
-        return ["uid", "is_deleted", "user_id", "business_name"]
+        return []
 
     def expired(self, days: int = 3):
         return (datetime.now() - self.updated_at).days > days
