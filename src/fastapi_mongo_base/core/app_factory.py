@@ -68,6 +68,8 @@ def create_app(
         "name": "MIT License",
         "url": "https://github.com/mahdikiani/FastAPILaunchpad/blob/main/LICENSE",
     },
+    usso_handler: bool = True,
+    ufaas_handler: bool = True,
 ) -> fastapi.FastAPI:
     """Create a FastAPI app with shared configurations."""
     if origins is None:
@@ -84,7 +86,21 @@ def create_app(
         license_info=license_info,
     )
 
-    for exc_class, handler in exceptions.EXCEPTION_HANDLERS.items():
+    exception_handlers = exceptions.EXCEPTION_HANDLERS
+    if usso_handler:
+        from usso.fastapi.integration import (
+            EXCEPTION_HANDLERS as USSO_EXCEPTION_HANDLERS,
+        )
+
+        exception_handlers.update(USSO_EXCEPTION_HANDLERS)
+    if ufaas_handler:
+        from ufaas.fastapi.integration import (
+            EXCEPTION_HANDLERS as UFAAS_EXCEPTION_HANDLERS,
+        )
+
+        exception_handlers.update(UFAAS_EXCEPTION_HANDLERS)
+
+    for exc_class, handler in exception_handlers.items():
         app.exception_handler(exc_class)(handler)
 
     app.add_middleware(
