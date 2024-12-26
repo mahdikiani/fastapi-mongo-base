@@ -53,8 +53,9 @@ async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[]):  # typ
 
 
 def create_app(
-    title: str,
-    version: str,
+    title=Settings.project_name.replace("-", " ").title(),
+    description=None,
+    version="0.1.0",
     origins: list = None,
     lifespan_func=None,
     worker=None,
@@ -81,6 +82,7 @@ def create_app(
     app = fastapi.FastAPI(
         title=title,
         version=version,
+        description=description,
         lifespan=lifespan_func,
         contact=contact,
         license_info=license_info,
