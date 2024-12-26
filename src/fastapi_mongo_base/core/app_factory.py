@@ -88,6 +88,8 @@ def create_app(
         lifespan=lifespan_func,
         contact=contact,
         license_info=license_info,
+        docs_url=f"{Settings.base_path}/docs",
+        openapi_url=f"{Settings.base_path}/openapi.json",
     )
 
     exception_handlers = exceptions.EXCEPTION_HANDLERS
