@@ -5,8 +5,6 @@ from contextlib import asynccontextmanager
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
-from ufaas_fastapi_business.core import middlewares
-from usso.fastapi.integration import EXCEPTION_HANDLERS as USSO_EXCEPTION_HANDLERS
 
 from fastapi_mongo_base.core import db, exceptions
 
@@ -86,9 +84,7 @@ def create_app(
         license_info=license_info,
     )
 
-    for exc_class, handler in (
-        exceptions.EXCEPTION_HANDLERS | USSO_EXCEPTION_HANDLERS
-    ).items():
+    for exc_class, handler in exceptions.EXCEPTION_HANDLERS.items():
         app.exception_handler(exc_class)(handler)
 
     app.add_middleware(
@@ -98,8 +94,6 @@ def create_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    app.add_middleware(middlewares.OriginalHostMiddleware)
 
     app.add_route(f"{Settings.base_path}/health", health)
     app.add_route(f"{Settings.base_path}/logs", logs, include_in_schema=False)
