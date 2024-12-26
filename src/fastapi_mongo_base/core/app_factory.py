@@ -73,6 +73,8 @@ def create_app(
     ufaas_handler: bool = True,
     original_host_middleware: bool = False,
     request_log_middleware: bool = False,
+    docs_url=f"{Settings.base_path}/docs",
+    openapi_url=f"{Settings.base_path}/openapi.json",
 ) -> fastapi.FastAPI:
     """Create a FastAPI app with shared configurations."""
     if origins is None:
@@ -88,8 +90,8 @@ def create_app(
         lifespan=lifespan_func,
         contact=contact,
         license_info=license_info,
-        docs_url=f"{Settings.base_path}/docs",
-        openapi_url=f"{Settings.base_path}/openapi.json",
+        docs_url=docs_url,
+        openapi_url=openapi_url,
     )
 
     exception_handlers = exceptions.EXCEPTION_HANDLERS
