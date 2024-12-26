@@ -71,6 +71,8 @@ def create_app(
     },
     usso_handler: bool = True,
     ufaas_handler: bool = True,
+    original_host_middleware: bool = False,
+    request_log_middleware: bool = False,
 ) -> fastapi.FastAPI:
     """Create a FastAPI app with shared configurations."""
     if origins is None:
@@ -112,6 +114,15 @@ def create_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    if original_host_middleware:
+        from ufaas_fastapi_business.core.middlewares import OriginalHostMiddleware
+
+        app.add_middleware(OriginalHostMiddleware)
+    if request_log_middleware:
+        from .middlewares import RequestLoggingMiddleware
+
+        app.add_middleware(RequestLoggingMiddleware)
 
     app.add_route(f"{Settings.base_path}/health", health)
     app.add_route(f"{Settings.base_path}/logs", logs, include_in_schema=False)
