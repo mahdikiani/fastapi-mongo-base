@@ -38,7 +38,9 @@ async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[]):  # typ
     """Initialize application services."""
     Settings().config_logger()
     await db.init_mongo_db()
-    app.state.worker = asyncio.create_task(worker())
+
+    if worker:
+        app.state.worker = asyncio.create_task(worker())
 
     for function in init_functions:
         if asyncio.iscoroutine(function):
