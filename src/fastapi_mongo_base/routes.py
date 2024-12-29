@@ -65,41 +65,50 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
         self.update_request_schema = schema
 
     def config_routes(self, **kwargs):
-        self.router.add_api_route(
-            "/",
-            self.list_items,
-            methods=["GET"],
-            response_model=self.list_response_schema,
-            status_code=200,
-        )
-        self.router.add_api_route(
-            "/{uid:uuid}",
-            self.retrieve_item,
-            methods=["GET"],
-            response_model=self.retrieve_response_schema,
-            status_code=200,
-        )
-        self.router.add_api_route(
-            "/",
-            self.create_item,
-            methods=["POST"],
-            response_model=self.create_response_schema,
-            status_code=201,
-        )
-        self.router.add_api_route(
-            "/{uid:uuid}",
-            self.update_item,
-            methods=["PATCH"],
-            response_model=self.update_response_schema,
-            status_code=200,
-        )
-        self.router.add_api_route(
-            "/{uid:uuid}",
-            self.delete_item,
-            methods=["DELETE"],
-            response_model=self.delete_response_schema,
-            # status_code=204,
-        )
+        if kwargs.get("list", True):
+            self.router.add_api_route(
+                "/",
+                self.list_items,
+                methods=["GET"],
+                response_model=self.list_response_schema,
+                status_code=200,
+            )
+
+        if kwargs.get("retrieve", True):
+            self.router.add_api_route(
+                "/{uid:uuid}",
+                self.retrieve_item,
+                methods=["GET"],
+                response_model=self.retrieve_response_schema,
+                status_code=200,
+            )
+
+        if kwargs.get("create", True):
+            self.router.add_api_route(
+                "/",
+                self.create_item,
+                methods=["POST"],
+                response_model=self.create_response_schema,
+                status_code=201,
+            )
+
+        if kwargs.get("update", True):
+            self.router.add_api_route(
+                "/{uid:uuid}",
+                self.update_item,
+                methods=["PATCH"],
+                response_model=self.update_response_schema,
+                status_code=200,
+            )
+
+        if kwargs.get("delete", True):
+            self.router.add_api_route(
+                "/{uid:uuid}",
+                self.delete_item,
+                methods=["DELETE"],
+                response_model=self.delete_response_schema,
+                # status_code=204,
+            )
 
     async def get_item(
         self,
