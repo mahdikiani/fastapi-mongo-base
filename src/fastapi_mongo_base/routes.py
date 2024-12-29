@@ -65,7 +65,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
         self.update_request_schema = schema
 
     def config_routes(self, **kwargs):
-        if kwargs.get("list", True):
+        if kwargs.get("list_route", True):
             self.router.add_api_route(
                 "/",
                 self.list_items,
@@ -74,7 +74,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
                 status_code=200,
             )
 
-        if kwargs.get("retrieve", True):
+        if kwargs.get("retrieve_route", True):
             self.router.add_api_route(
                 "/{uid:uuid}",
                 self.retrieve_item,
@@ -83,7 +83,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
                 status_code=200,
             )
 
-        if kwargs.get("create", True):
+        if kwargs.get("create_route", True):
             self.router.add_api_route(
                 "/",
                 self.create_item,
@@ -92,7 +92,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
                 status_code=201,
             )
 
-        if kwargs.get("update", True):
+        if kwargs.get("update_route", True):
             self.router.add_api_route(
                 "/{uid:uuid}",
                 self.update_item,
@@ -101,7 +101,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
                 status_code=200,
             )
 
-        if kwargs.get("delete", True):
+        if kwargs.get("delete_route", True):
             self.router.add_api_route(
                 "/{uid:uuid}",
                 self.delete_item,
