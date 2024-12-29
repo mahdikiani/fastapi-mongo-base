@@ -51,37 +51,73 @@ class BaseEntity(BaseEntitySchema, Document):
         *args,
         **kwargs,
     ) -> list[dict]:
-        base_query = [{"is_deleted": is_deleted}]
+        """Build a MongoDB query filter based on provided parameters.
+
+        Args:
+            user_id: Filter by user ID if the model has user_id field
+            business_name: Filter by business name if the model has business_name field
+            is_deleted: Filter by deletion status
+            uid: Filter by unique identifier
+            **kwargs: Additional filters that can include range queries with _from/_to suffixes
+
+        Returns:
+            List of MongoDB query conditions
+        """
+        # Start with basic filters
+        base_query = []
+
+        # Add standard filters if applicable
+        base_query.append({"is_deleted": is_deleted})
+
         if hasattr(cls, "user_id") and user_id:
             base_query.append({"user_id": user_id})
+
         if hasattr(cls, "business_name"):
             base_query.append({"business_name": business_name})
+
         if uid:
             base_query.append({"uid": uid})
 
+        # Process additional filters from kwargs
         for key, value in kwargs.items():
             if value is None:
                 continue
-            if cls.search_field_set() and key not in cls.search_field_set():
+
+            # Extract base field name without _from/_to suffix
+            base_field = cls._get_base_field_name(key)
+
+            # Validate field is allowed for searching
+            if cls.search_field_set() and base_field not in cls.search_field_set():
                 continue
-            if cls.search_exclude_set() and key in cls.search_exclude_set():
+            if cls.search_exclude_set() and base_field in cls.search_exclude_set():
                 continue
-            if not hasattr(cls, key.rstrip("_from").rstrip("_to")):
+            if not hasattr(cls, base_field):
                 continue
 
-            if key.endswith("_from") and isinstance(
-                value, (int, float, Decimal, datetime, date, str)
-            ):
-                field = key[:-5]  # Remove "_from"
-                base_query.append({field: {"$gte": value}})
-            elif key.endswith("_to") and isinstance(
-                value, (int, float, Decimal, datetime, date, str)
-            ):
-                field = key[:-3]  # Remove "_to"
-                base_query.append({field: {"$lte": value}})
-            base_query.append({key: value})
+            # Handle range queries and normal filters
+            if cls._is_valid_range_value(value):
+                if key.endswith("_from"):
+                    base_query.append({base_field: {"$gte": value}})
+                elif key.endswith("_to"):
+                    base_query.append({base_field: {"$lte": value}})
+            else:
+                base_query.append({key: value})
 
         return base_query
+
+    @classmethod
+    def _get_base_field_name(cls, field: str) -> str:
+        """Extract the base field name by removing _from/_to suffixes."""
+        if field.endswith("_from"):
+            return field[:-5]
+        elif field.endswith("_to"):
+            return field[:-3]
+        return field
+
+    @classmethod
+    def _is_valid_range_value(cls, value) -> bool:
+        """Check if value is valid for range comparison."""
+        return isinstance(value, (int, float, Decimal, datetime, date, str))
 
     @classmethod
     def get_query(
