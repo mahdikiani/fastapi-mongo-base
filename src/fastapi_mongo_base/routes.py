@@ -1,3 +1,4 @@
+import re
 import asyncio
 import uuid
 from datetime import datetime
@@ -65,9 +66,13 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
         self.update_request_schema = schema
 
     def config_routes(self, **kwargs):
+        prefix: str = kwargs.get("prefix", "")
+        prefix = prefix.strip("/")
+        prefix = f"/{prefix}" if prefix else ""
+
         if kwargs.get("list_route", True):
             self.router.add_api_route(
-                "/",
+                f"{prefix}/",
                 self.list_items,
                 methods=["GET"],
                 response_model=self.list_response_schema,
@@ -76,7 +81,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
 
         if kwargs.get("retrieve_route", True):
             self.router.add_api_route(
-                "/{uid:uuid}",
+                f"{prefix}/{{uid:uuid}}",
                 self.retrieve_item,
                 methods=["GET"],
                 response_model=self.retrieve_response_schema,
@@ -85,7 +90,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
 
         if kwargs.get("create_route", True):
             self.router.add_api_route(
-                "/",
+                f"{prefix}/",
                 self.create_item,
                 methods=["POST"],
                 response_model=self.create_response_schema,
@@ -94,7 +99,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
 
         if kwargs.get("update_route", True):
             self.router.add_api_route(
-                "/{uid:uuid}",
+                f"{prefix}/{{uid:uuid}}",
                 self.update_item,
                 methods=["PATCH"],
                 response_model=self.update_response_schema,
@@ -103,7 +108,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
 
         if kwargs.get("delete_route", True):
             self.router.add_api_route(
-                "/{uid:uuid}",
+                f"{prefix}/{{uid:uuid}}",
                 self.delete_item,
                 methods=["DELETE"],
                 response_model=self.delete_response_schema,

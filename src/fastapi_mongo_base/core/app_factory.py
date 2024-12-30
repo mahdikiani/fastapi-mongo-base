@@ -43,7 +43,7 @@ async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[]):  # typ
         app.state.worker = asyncio.create_task(worker())
 
     for function in init_functions:
-        if asyncio.iscoroutine(function):
+        if asyncio.iscoroutinefunction(function):
             await function()
         else:
             function()
