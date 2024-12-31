@@ -17,7 +17,6 @@ except ImportError:
 @asynccontextmanager
 async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[], settings: Settings = Settings()):  # type: ignore
     """Initialize application services."""
-    settings.config_logger()
     await db.init_mongo_db()
 
     if worker:
@@ -59,6 +58,8 @@ def create_app(
     original_host_middleware: bool = False,
     request_log_middleware: bool = False,
 ) -> fastapi.FastAPI:
+    settings.config_logger()
+    
     """Create a FastAPI app with shared configurations."""
     if title is None:
         title = settings.project_name.replace("-", " ").title()
@@ -74,6 +75,7 @@ def create_app(
     if lifespan_func is None:
         lifespan_func = lambda app: lifespan(app, worker, init_functions, settings)
 
+    logging.info(f"base_path: {base_path}")
     docs_url = f"{base_path}/docs"
     openapi_url = f"{base_path}/openapi.json"
 

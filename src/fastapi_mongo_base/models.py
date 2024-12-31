@@ -95,7 +95,7 @@ class BaseEntity(BaseEntitySchema, Document):
                 continue
 
             # Handle range queries and normal filters
-            if cls._is_valid_range_value(value):
+            if (key.endswith("_from") or key.endswith("_to")) and cls._is_valid_range_value(value):
                 if key.endswith("_from"):
                     base_query.append({base_field: {"$gte": value}})
                 elif key.endswith("_to"):
