@@ -130,7 +130,7 @@ def create_app(
 
         app.add_middleware(RequestLoggingMiddleware)
 
-    app.add_route(f"{Settings.base_path}/health", health)
-    app.add_route(f"{Settings.base_path}/logs", logs, include_in_schema=False)
+    app.get(f"{Settings().base_path}/health")(health)
+    app.get(f"{Settings().base_path}/logs", include_in_schema=False)(logs)
 
     return app
