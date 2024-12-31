@@ -55,7 +55,7 @@ async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[]):  # typ
 
 
 def create_app(
-    title=Settings.project_name.replace("-", " ").title(),
+    title=None,
     description=None,
     version="0.1.0",
     origins: list = None,
@@ -75,9 +75,17 @@ def create_app(
     ufaas_handler: bool = True,
     original_host_middleware: bool = False,
     request_log_middleware: bool = False,
-    base_path: str = Settings.base_path,
+    settings: Settings = Settings(),
 ) -> fastapi.FastAPI:
     """Create a FastAPI app with shared configurations."""
+    if title is None:
+        title = settings.project_name.replace("-", " ").title()
+    if description is None:
+        description = getattr(settings, "project_description", None)
+    if version is None:
+        version = getattr(settings, "project_version", "0.1.0")
+    base_path: str = settings.base_path
+
     if origins is None:
         origins = ["http://localhost:8000"]
 
