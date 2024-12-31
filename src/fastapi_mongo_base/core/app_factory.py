@@ -15,7 +15,7 @@ except ImportError:
 
 
 @asynccontextmanager
-async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[], settings: Settings = Settings()):  # type: ignore
+async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[], settings: Settings = None):  # type: ignore
     """Initialize application services."""
     await db.init_mongo_db()
 
@@ -36,7 +36,7 @@ async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[], setting
 
 def create_app(
     *,
-    settings=None,
+    settings:Settings=None,
     title=None,
     description=None,
     version="0.1.0",
