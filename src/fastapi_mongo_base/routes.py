@@ -1,4 +1,3 @@
-import re
 import asyncio
 import uuid
 from datetime import datetime

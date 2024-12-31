@@ -37,7 +37,7 @@ async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[], setting
 
 def create_app(
     *,
-    settings: Settings = Settings(),
+    settings=Settings(),
     title=None,
     description=None,
     version="0.1.0",
@@ -122,7 +122,6 @@ def create_app(
 
         app.add_middleware(RequestLoggingMiddleware)
 
-
     async def health(request: fastapi.Request):
         return {
             "status": "up",
@@ -133,6 +132,7 @@ def create_app(
             # "forwarded_proto": request.headers.get("X-Forwarded-Proto", "forwarded_proto"),
             # "forwarded_for": request.headers.get("X-Forwarded-For", "forwarded_for"),
         }
+
     async def logs():
         with open(settings.base_dir / "logs" / "info.log", "rb") as f:
             last_100_lines = deque(f, maxlen=100)
