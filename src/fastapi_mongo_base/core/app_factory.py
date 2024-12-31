@@ -14,25 +14,6 @@ except ImportError:
     from .config import Settings
 
 
-async def health(request: fastapi.Request):
-    return {
-        "status": "up",
-        "host": request.url.hostname,
-        # "host2": request.base_url.hostname,
-        # "original_host":request.headers.get("x-original-host", "!not found!"),
-        # "forwarded_host": request.headers.get("X-Forwarded-Host", "forwarded_host"),
-        # "forwarded_proto": request.headers.get("X-Forwarded-Proto", "forwarded_proto"),
-        # "forwarded_for": request.headers.get("X-Forwarded-For", "forwarded_for"),
-    }
-
-
-async def logs():
-    with open(Settings().base_dir / "logs" / "info.log", "rb") as f:
-        last_100_lines = deque(f, maxlen=100)
-
-    return [line.decode("utf-8") for line in last_100_lines]
-
-
 @asynccontextmanager
 async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[], settings: Settings = Settings()):  # type: ignore
     """Initialize application services."""
@@ -140,6 +121,23 @@ def create_app(
         from .middlewares import RequestLoggingMiddleware
 
         app.add_middleware(RequestLoggingMiddleware)
+
+
+    async def health(request: fastapi.Request):
+        return {
+            "status": "up",
+            "host": request.url.hostname,
+            # "host2": request.base_url.hostname,
+            # "original_host":request.headers.get("x-original-host", "!not found!"),
+            # "forwarded_host": request.headers.get("X-Forwarded-Host", "forwarded_host"),
+            # "forwarded_proto": request.headers.get("X-Forwarded-Proto", "forwarded_proto"),
+            # "forwarded_for": request.headers.get("X-Forwarded-For", "forwarded_for"),
+        }
+    async def logs():
+        with open(settings.base_dir / "logs" / "info.log", "rb") as f:
+            last_100_lines = deque(f, maxlen=100)
+
+        return [line.decode("utf-8") for line in last_100_lines]
 
     app.get(f"{base_path}/health")(health)
     app.get(f"{base_path}/logs", include_in_schema=False)(logs)
