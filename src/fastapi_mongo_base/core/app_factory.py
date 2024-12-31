@@ -75,8 +75,7 @@ def create_app(
     ufaas_handler: bool = True,
     original_host_middleware: bool = False,
     request_log_middleware: bool = False,
-    docs_url=f"{Settings.base_path}/docs",
-    openapi_url=f"{Settings.base_path}/openapi.json",
+    base_path: str = Settings.base_path,
 ) -> fastapi.FastAPI:
     """Create a FastAPI app with shared configurations."""
     if origins is None:
@@ -84,6 +83,9 @@ def create_app(
 
     if lifespan_func is None:
         lifespan_func = lambda app: lifespan(app, worker, init_functions)
+
+    docs_url = f"{base_path}/docs"
+    openapi_url = f"{base_path}/openapi.json"
 
     app = fastapi.FastAPI(
         title=title,
@@ -130,7 +132,7 @@ def create_app(
 
         app.add_middleware(RequestLoggingMiddleware)
 
-    app.get(f"{Settings().base_path}/health")(health)
-    app.get(f"{Settings().base_path}/logs", include_in_schema=False)(logs)
+    app.get(f"{base_path}/health")(health)
+    app.get(f"{base_path}/logs", include_in_schema=False)(logs)
 
     return app
