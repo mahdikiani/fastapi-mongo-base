@@ -27,16 +27,16 @@ async def health(request: fastapi.Request):
 
 
 async def logs():
-    with open(Settings.base_dir / "logs" / "info.log", "rb") as f:
+    with open(Settings().base_dir / "logs" / "info.log", "rb") as f:
         last_100_lines = deque(f, maxlen=100)
 
     return [line.decode("utf-8") for line in last_100_lines]
 
 
 @asynccontextmanager
-async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[]):  # type: ignore
+async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[], settings: Settings = Settings()):  # type: ignore
     """Initialize application services."""
-    Settings().config_logger()
+    settings.config_logger()
     await db.init_mongo_db()
 
     if worker:
@@ -55,6 +55,8 @@ async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[]):  # typ
 
 
 def create_app(
+    *,
+    settings: Settings = Settings(),
     title=None,
     description=None,
     version="0.1.0",
@@ -75,7 +77,6 @@ def create_app(
     ufaas_handler: bool = True,
     original_host_middleware: bool = False,
     request_log_middleware: bool = False,
-    settings: Settings = Settings(),
 ) -> fastapi.FastAPI:
     """Create a FastAPI app with shared configurations."""
     if title is None:
@@ -90,7 +91,7 @@ def create_app(
         origins = ["http://localhost:8000"]
 
     if lifespan_func is None:
-        lifespan_func = lambda app: lifespan(app, worker, init_functions)
+        lifespan_func = lambda app: lifespan(app, worker, init_functions, settings)
 
     docs_url = f"{base_path}/docs"
     openapi_url = f"{base_path}/openapi.json"
