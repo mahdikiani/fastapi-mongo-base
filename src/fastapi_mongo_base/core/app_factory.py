@@ -36,7 +36,7 @@ async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[], setting
 
 def create_app(
     *,
-    settings=Settings(),
+    settings=None,
     title=None,
     description=None,
     version="0.1.0",
@@ -61,6 +61,8 @@ def create_app(
     settings.config_logger()
     
     """Create a FastAPI app with shared configurations."""
+    if settings is None:
+        settings = Settings()
     if title is None:
         title = settings.project_name.replace("-", " ").title()
     if description is None:
