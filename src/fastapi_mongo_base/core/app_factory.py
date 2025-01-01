@@ -77,7 +77,6 @@ def create_app(
     if lifespan_func is None:
         lifespan_func = lambda app: lifespan(app, worker, init_functions, settings)
 
-    logging.info(f"base_path: {base_path}")
     docs_url = f"{base_path}/docs"
     openapi_url = f"{base_path}/openapi.json"
 
