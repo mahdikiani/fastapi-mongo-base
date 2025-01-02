@@ -60,10 +60,15 @@ class Settings(metaclass=Singleton):
                     "filename": cls.base_dir / "logs" / "info.log",
                     "formatter": "standard",
                 },
+                "httpx": {
+                    "class": "logging.StreamHandler",
+                    "level": "WARNING",
+                    "formatter": "standard",
+                },
             },
             "loggers": {
                 "": {
-                    "handlers": ["console", "file"],
+                    "handlers": ["console", "file", "httpx"],
                     "level": "INFO",
                     "propagate": True,
                 }
