@@ -152,7 +152,7 @@ def create_app(
         openapi_url=openapi_url,
     )
 
-    setup_exception_handlers(app, usso_handler, ufaas_handler, origins)
+    setup_exception_handlers(app, usso_handler, ufaas_handler)
     setup_middlewares(app, origins, original_host_middleware, request_log_middleware)
 
     async def logs():
