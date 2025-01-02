@@ -117,6 +117,7 @@ def create_app(
     ufaas_handler: bool = True,
     original_host_middleware: bool = False,
     request_log_middleware: bool = False,
+    **kwargs,
 ) -> fastapi.FastAPI:
     settings.config_logger()
 
