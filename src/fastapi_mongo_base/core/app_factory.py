@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from fastapi_mongo_base.core import db, exceptions
 
@@ -98,6 +99,7 @@ def create_app(
     title=None,
     description=None,
     version="0.1.0",
+    serve_coverage: bool = False,
     origins: list = None,
     lifespan_func=None,
     worker=None,
@@ -160,5 +162,13 @@ def create_app(
 
     app.get(f"{base_path}/health")(health)
     app.get(f"{base_path}/logs", include_in_schema=False)(logs)
+
+    if serve_coverage:
+        app.mount(
+            f"{settings.base_path}/coverage",
+            StaticFiles(directory=settings.get_coverage_dir()),
+            name="coverage",
+        )
+
 
     return app
