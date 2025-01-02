@@ -170,5 +170,4 @@ def create_app(
             name="coverage",
         )
 
-
     return app
