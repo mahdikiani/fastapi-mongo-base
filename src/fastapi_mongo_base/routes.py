@@ -220,9 +220,16 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
 
 class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
     def __init__(
-        self, model: Type[TE], user_dependency: Any, schema: TS, *args, **kwargs
+        self,
+        model: Type[TE],
+        user_dependency: Any,
+        schema: TS,
+        draftable: bool = True,
+        *args,
+        **kwargs,
     ):
         super().__init__(model, user_dependency, schema=schema, *args, **kwargs)
+        self.draftable = draftable
 
     def config_routes(self, **kwargs):
         super().config_routes(**kwargs)
@@ -237,9 +244,12 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
     async def create_item(
         self, request: Request, data: dict, background_tasks: BackgroundTasks
     ):
+        if not self.draftable:
+            data["task_status"] = "init"
+
         item: TE = await super().create_item(request, data)
 
-        if item.task_status == "init":
+        if item.task_status == "init" or not self.draftable:
             background_tasks.add_task(item.start_processing)
         return item
 
