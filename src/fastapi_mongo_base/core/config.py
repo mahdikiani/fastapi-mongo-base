@@ -4,7 +4,7 @@ import dataclasses
 import logging
 import logging.config
 import os
-
+from pathlib import Path
 import dotenv
 from singleton import Singleton
 
@@ -34,6 +34,10 @@ class Settings(metaclass=Singleton):
         "USSO_JWT_CONFIG",
         default='{"jwk_url": "https://sso.usso.io/website/jwks.json","type": "RS256","header": {"type": "Cookie", "name": "usso_access_token"} }',
     )
+
+    @classmethod
+    def get_coverage_dir(cls):
+        return cls.base_dir / "htmlcov"
 
     @classmethod
     def get_log_config(cls, console_level: str = "INFO", file_level: str = "INFO"):
