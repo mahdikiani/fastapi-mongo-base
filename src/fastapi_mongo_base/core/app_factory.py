@@ -48,7 +48,10 @@ async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[], setting
 
 
 def setup_exception_handlers(
-    app: fastapi.FastAPI, usso_handler: bool = True, ufaas_handler: bool = True
+    app: fastapi.FastAPI,
+    usso_handler: bool = True,
+    ufaas_handler: bool = True,
+    **kwargs,
 ):
     exception_handlers = exceptions.EXCEPTION_HANDLERS
     if usso_handler:
@@ -73,6 +76,7 @@ def setup_middlewares(
     origins: list = None,
     original_host_middleware: bool = False,
     request_log_middleware: bool = False,
+    **kwargs,
 ):
     if origins:
         app.add_middleware(
@@ -152,8 +156,14 @@ def create_app(
         openapi_url=openapi_url,
     )
 
-    setup_exception_handlers(app, usso_handler, ufaas_handler)
-    setup_middlewares(app, origins, original_host_middleware, request_log_middleware)
+    setup_exception_handlers(app, usso_handler, ufaas_handler, **kwargs)
+    setup_middlewares(
+        app,
+        origins,
+        original_host_middleware,
+        request_log_middleware,
+        **kwargs,
+    )
 
     async def logs():
         with open(settings.get_log_config()["info_log_path"], "rb") as f:
