@@ -245,7 +245,8 @@ async def download_image(
         return image
 
     # Resize if needed
-    image = resize_image(image, max_width)
+    if max_width is not None:
+        image = resize_image(image, max_width)
 
     # Compress if needed
     if max_size_kb is not None:
