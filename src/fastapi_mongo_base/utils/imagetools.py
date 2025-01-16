@@ -150,14 +150,20 @@ def split_image(image: Image.Image, sections=(2, 2), **kwargs) -> list[Image.Ima
     return parts
 
 
+def convert_image(
+    image: Image.Image, format: Literal["JPEG", "PNG", "WEBP", "BMP", "GIF"] = "JPEG"
+) -> Image.Image:
+    color_mode = "RGB" if format not in ("PNG", "WEBP") else "RGBA"
+    return image.convert(color_mode)
+
+
 def convert_image_bytes(
     image: Image.Image,
     format: Literal["JPEG", "PNG", "WEBP", "BMP", "GIF"] = "JPEG",
     quality=None,
 ) -> BytesIO:
     image_bytes = BytesIO()
-    color_mode = "RGB" if format != "PNG" else "RGBA"
-    image.convert(color_mode).save(
+    convert_image(image, format).save(
         image_bytes,
         format=format,
         **{"quality": quality} if quality else {},
@@ -166,22 +172,27 @@ def convert_image_bytes(
     return image_bytes
 
 
-def strip_metadata(image: Image.Image) -> Image.Image:
+def strip_metadata(
+    image: Image.Image,
+    format: Literal["JPEG", "PNG", "WEBP", "BMP", "GIF"] = "JPEG",
+) -> Image.Image:
     """Strip metadata from the image by re-creating it in memory."""
-    stripped_buffer = BytesIO()
-    image.convert("RGB").save(stripped_buffer, format="JPEG")
-    stripped_buffer.seek(0)
-    return Image.open(stripped_buffer)
+    return convert_image(image, format)
 
 
 def image_to_base64(
     image: Image.Image,
     format: Literal["JPEG", "PNG", "WEBP", "BMP", "GIF"] = "JPEG",
     quality: int = 90,
+    *,
+    include_base64_header: bool = True,
+    **kwargs,
 ) -> str:
     buffered = convert_image_bytes(image, format, quality)
     base64_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    return f"data:image/{format};base64,{base64_str}"
+    if include_base64_header:
+        return f"data:image/{format};base64,{base64_str}"
+    return base64_str
 
 
 def load_from_base64(encoded: str) -> Image.Image:
@@ -217,7 +228,7 @@ def compress_image(image: Image.Image, max_size_kb: int) -> Image.Image:
 
 @cached(ttl=60 * 60 * 24)
 async def download_image(
-    url: str, max_width: int | None = None, max_size_kb: int | None = None
+    url: str, max_width: int | None = None, max_size_kb: int | None = None, **kwargs
 ) -> Image.Image:
     """Fetch, resize, remove metadata, and compress an image to fit the specified constraints."""
     # Load image from either base64 or URL
@@ -244,37 +255,7 @@ async def download_image(
 
 
 async def download_image_base64(
-    url: str, max_width: int | None = None, max_size_kb: int | None = None
+    url: str, max_width: int | None = None, max_size_kb: int | None = None, **kwargs
 ) -> str:
-    image = await download_image(url, max_width, max_size_kb)
-    return image_to_base64(image)
-
-
-def duplicate_score(image1: Image.Image, image2: Image.Image) -> float:
-    import numpy as np
-    from imagededup.methods import CNN
-
-    def similarity_metric(array1: np.ndarray, array2: np.ndarray):
-        # use this function to quantify the similarity of a pair of encodings
-
-        def euclidean_distance(array1: np.ndarray, array2: np.ndarray):
-            # this function calculates teh Euclidean Distance between a pair of encodings
-            return np.sqrt(np.sum(np.square(array1 - array2)))
-
-        return euclidean_distance(array1, array2) / max(
-            np.linalg.norm(array1), np.linalg.norm(array2)
-        )
-
-    def similarity_calculator(img1: Image.Image, img2: Image.Image, encoder=CNN()):
-        # to calculate the similarity of a pair of images, use this function.
-        # it takes img1 and img2 as the PIL objects.
-        # the encoder is supposed to be an instance of imagededup.methods; the default value for that is the CNN encoder.
-
-        encodings = [
-            encoder.encode_image(image_array=img)
-            for img in [np.array(img1.convert("RGB")), np.array(img2.convert("RGB"))]
-        ]
-
-        return similarity_metric(encodings[0], encodings[1])
-
-    return similarity_calculator(image1, image2)
+    image = await download_image(url, max_width, max_size_kb, **kwargs)
+    return image_to_base64(image, **kwargs)
