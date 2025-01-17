@@ -19,6 +19,9 @@ class CoreEntitySchema(BaseModel):
     is_deleted: bool = False
     meta_data: dict | None = None
 
+    def __hash__(self):
+        return hash(self.model_dump_json())
+
 
 class BaseEntitySchema(CoreEntitySchema):
     uid: uuid.UUID = Field(
