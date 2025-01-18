@@ -32,6 +32,7 @@ class BaseHTTPException(HTTPException):
         if detail is None:
             detail = self.message
         self.detail = detail
+        self.data = kwargs
         super().__init__(status_code, detail=detail)
 
 
