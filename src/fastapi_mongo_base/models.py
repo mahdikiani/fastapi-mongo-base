@@ -256,6 +256,11 @@ class BaseEntity(BaseEntitySchema, Document):
         return items, total
 
     @classmethod
+    async def get_by_uid(cls, uid: uuid.UUID):
+        item = await cls.find_one({"uid": uid})
+        return item
+
+    @classmethod
     async def create_item(cls, data: dict):
         # for key in data.keys():
         #     if cls.create_exclude_set() and key not in cls.create_field_set():
