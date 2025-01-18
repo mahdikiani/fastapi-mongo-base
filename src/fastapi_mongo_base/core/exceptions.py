@@ -32,7 +32,7 @@ class BaseHTTPException(HTTPException):
         if detail is None:
             detail = self.message
         self.detail = detail
-        super().__init__(status_code, detail=detail, **kwargs)
+        super().__init__(status_code, detail=detail)
 
 
 async def base_http_exception_handler(request: Request, exc: BaseHTTPException):
