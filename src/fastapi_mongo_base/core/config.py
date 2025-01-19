@@ -40,7 +40,9 @@ class Settings(metaclass=Singleton):
         return cls.base_dir / "htmlcov"
 
     @classmethod
-    def get_log_config(cls, console_level: str = "INFO", file_level: str = "INFO", **kwargs):
+    def get_log_config(
+        cls, console_level: str = "INFO", file_level: str = "INFO", **kwargs
+    ):
         log_config = {
             "formatters": {
                 "standard": {
@@ -67,8 +69,8 @@ class Settings(metaclass=Singleton):
                     "level": "INFO",
                     "propagate": True,
                 },
-                "httpx": {  
-                    "handlers": ["console", "file"], 
+                "httpx": {
+                    "handlers": ["console", "file"],
                     "level": "WARNING",
                     "propagate": False,
                 },
@@ -80,5 +82,5 @@ class Settings(metaclass=Singleton):
     @classmethod
     def config_logger(cls):
         (cls.base_dir / "logs").mkdir(parents=True, exist_ok=True)
-        
+
         logging.config.dictConfig(cls.get_log_config())

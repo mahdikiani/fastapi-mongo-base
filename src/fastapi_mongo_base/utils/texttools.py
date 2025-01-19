@@ -13,10 +13,10 @@ def backtick_formatter(text: str):
 
 def json_extractor(text: str):
     import json
-    
+
     json_string = text[text.find("{") : text.rfind("}") + 1]
     return json.loads(json_string)
-    
+
 
 def format_string_keys(text: str) -> set[str]:
     return {t[1] for t in string.Formatter().parse(text) if t[1]}

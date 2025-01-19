@@ -267,4 +267,10 @@ async def download_image_base64(
     **kwargs,
 ) -> str:
     image = await download_image(url, max_width, max_size_kb, **kwargs)
-    return image_to_base64(image, format, quality, include_base64_header, **kwargs)
+    return image_to_base64(
+        image,
+        format=format,
+        quality=quality,
+        include_base64_header=include_base64_header,
+        **kwargs,
+    )
