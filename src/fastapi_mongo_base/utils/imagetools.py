@@ -236,7 +236,7 @@ async def download_image(
     image = (
         load_from_base64(url)
         if url.startswith("data:image")
-        else await load_from_url(url)
+        else await load_from_url(url, **kwargs)
     )
 
     # Prepare image (convert to RGB and strip metadata)
