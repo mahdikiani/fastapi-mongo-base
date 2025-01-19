@@ -203,10 +203,11 @@ def load_from_base64(encoded: str) -> Image.Image:
     return Image.open(buffered)
 
 
-async def load_from_url(url: str) -> Image.Image:
+async def load_from_url(url: str, **kwargs) -> Image.Image:
+    follow_redirects = kwargs.pop("follow_redirects", True)
     """Load an image from a URL."""
     async with httpx.AsyncClient() as client:
-        r = await client.get(url)
+        r = await client.get(url, follow_redirects=follow_redirects, **kwargs)
         r.raise_for_status()
     buffered = BytesIO(r.content)
     return Image.open(buffered)
