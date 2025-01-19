@@ -257,7 +257,14 @@ async def download_image(
 
 
 async def download_image_base64(
-    url: str, max_width: int | None = None, max_size_kb: int | None = None, format: Literal["JPEG", "PNG", "WEBP", "BMP", "GIF"] = "JPEG", **kwargs
+    url: str,
+    max_width: int | None = None,
+    max_size_kb: int | None = None,
+    *,
+    format: Literal["JPEG", "PNG", "WEBP", "BMP", "GIF"] = "JPEG",
+    quality: int = None,
+    include_base64_header: bool = True,
+    **kwargs,
 ) -> str:
     image = await download_image(url, max_width, max_size_kb, **kwargs)
-    return image_to_base64(image, format, **kwargs)
+    return image_to_base64(image, format, quality, include_base64_header, **kwargs)
