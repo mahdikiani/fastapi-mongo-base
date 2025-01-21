@@ -15,18 +15,6 @@ except ImportError:
     from .config import Settings
 
 
-async def health(request: fastapi.Request):
-    return {
-        "status": "up",
-        "host": request.url.hostname,
-        # "host2": request.base_url.hostname,
-        # "original_host":request.headers.get("x-original-host", "!not found!"),
-        # "forwarded_host": request.headers.get("X-Forwarded-Host", "forwarded_host"),
-        # "forwarded_proto": request.headers.get("X-Forwarded-Proto", "forwarded_proto"),
-        # "forwarded_for": request.headers.get("X-Forwarded-For", "forwarded_for"),
-    }
-
-
 @asynccontextmanager
 async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[], settings: Settings = None):  # type: ignore
     """Initialize application services."""
@@ -55,17 +43,23 @@ def setup_exception_handlers(
 ):
     exception_handlers = exceptions.EXCEPTION_HANDLERS
     if usso_handler:
-        from usso.fastapi.integration import (
-            EXCEPTION_HANDLERS as USSO_EXCEPTION_HANDLERS,
-        )
+        try:
+            from usso.fastapi.integration import (
+                EXCEPTION_HANDLERS as USSO_EXCEPTION_HANDLERS,
+            )
 
-        exception_handlers.update(USSO_EXCEPTION_HANDLERS)
+            exception_handlers.update(USSO_EXCEPTION_HANDLERS)
+        except ImportError:
+            pass
     if ufaas_handler:
-        from ufaas.fastapi.integration import (
-            EXCEPTION_HANDLERS as UFAAS_EXCEPTION_HANDLERS,
-        )
+        try:
+            from ufaas.fastapi.integration import (
+                EXCEPTION_HANDLERS as UFAAS_EXCEPTION_HANDLERS,
+            )
 
-        exception_handlers.update(UFAAS_EXCEPTION_HANDLERS)
+            exception_handlers.update(UFAAS_EXCEPTION_HANDLERS)
+        except ImportError:
+            pass
 
     for exc_class, handler in exception_handlers.items():
         app.exception_handler(exc_class)(handler)
@@ -98,8 +92,8 @@ def setup_middlewares(
 
 
 def create_app(
-    *,
     settings: Settings = None,
+    *,
     title=None,
     description=None,
     version="0.1.0",
@@ -121,6 +115,7 @@ def create_app(
     ufaas_handler: bool = True,
     original_host_middleware: bool = False,
     request_log_middleware: bool = False,
+    log_route: bool = False,
     **kwargs,
 ) -> fastapi.FastAPI:
     settings.config_logger()
@@ -165,6 +160,18 @@ def create_app(
         **kwargs,
     )
 
+    async def health(request: fastapi.Request):
+        return {
+            "status": "up",
+            "host": request.url.hostname,
+            "project_name": settings.project_name,
+            # "host2": request.base_url.hostname,
+            # "original_host":request.headers.get("x-original-host", "!not found!"),
+            # "forwarded_host": request.headers.get("X-Forwarded-Host", "forwarded_host"),
+            # "forwarded_proto": request.headers.get("X-Forwarded-Proto", "forwarded_proto"),
+            # "forwarded_for": request.headers.get("X-Forwarded-For", "forwarded_for"),
+        }
+
     async def logs():
         with open(settings.get_log_config()["info_log_path"], "rb") as f:
             last_100_lines = deque(f, maxlen=100)
@@ -172,7 +179,8 @@ def create_app(
         return [line.decode("utf-8") for line in last_100_lines]
 
     app.get(f"{base_path}/health")(health)
-    app.get(f"{base_path}/logs", include_in_schema=False)(logs)
+    if log_route:   
+        app.get(f"{base_path}/logs", include_in_schema=False)(logs)
 
     if serve_coverage:
         app.mount(
