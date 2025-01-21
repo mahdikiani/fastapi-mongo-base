@@ -144,13 +144,14 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
         user_id = user.uid if user else None
         return user_id
 
-    async def list_items(
+    async def _list_items(
         self,
         request: Request,
         offset: int = Query(0, ge=0),
         limit: int = Query(10, ge=1, le=Settings.page_max_limit),
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
+        **kwargs,
     ):
         user_id = await self.get_user_id(request)
         limit = max(1, min(limit, Settings.page_max_limit))
@@ -171,6 +172,16 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
             limit=limit,
         )
 
+    async def list_items(
+        self,
+        request: Request,
+        offset: int = Query(0, ge=0),
+        limit: int = Query(10, ge=1, le=Settings.page_max_limit),
+        created_at_from: datetime | None = None,
+        created_at_to: datetime | None = None,
+    ):
+        return await self._list_items(request, offset, limit, created_at_from, created_at_to)
+    
     async def retrieve_item(
         self,
         request: Request,
