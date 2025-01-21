@@ -256,6 +256,7 @@ async def download_image(
     return image
 
 
+@cached(ttl=60 * 60 * 24)
 async def download_image_base64(
     url: str,
     max_width: int | None = None,
