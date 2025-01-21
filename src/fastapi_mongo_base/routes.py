@@ -151,7 +151,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
         limit: int = 10,
         **kwargs,
     ):
-        user_id = await self.get_user_id(request)
+        user_id = kwargs.pop("user_id", await self.get_user_id(request))
         limit = max(1, min(limit, Settings.page_max_limit))
 
         items, total = await self.model.list_total_combined(
