@@ -128,7 +128,7 @@ def create_app(
     ufaas_handler: bool = True,
     original_host_middleware: bool = False,
     request_log_middleware: bool = False,
-    log_route: bool = True,
+    log_route: bool = False,
     health_route: bool = True,
     **kwargs,
 ) -> fastapi.FastAPI:
