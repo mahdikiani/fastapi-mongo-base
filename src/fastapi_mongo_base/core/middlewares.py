@@ -1,10 +1,8 @@
-import fastapi
-from fastapi.responses import PlainTextResponse
-from starlette.middleware.base import BaseHTTPMiddleware
-
 import logging
 
+import fastapi
 from fastapi import Request
+from fastapi.responses import PlainTextResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 
@@ -27,7 +25,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 class DynamicCORSMiddleware(BaseHTTPMiddleware):
-    
+
     async def get_allowed_origins(self, origin, **kwargs):
         from ufaas_fastapi_business.models import Business
 
