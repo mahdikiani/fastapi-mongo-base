@@ -128,7 +128,8 @@ def create_app(
     ufaas_handler: bool = True,
     original_host_middleware: bool = False,
     request_log_middleware: bool = False,
-    log_route: bool = False,
+    log_route: bool = True,
+    health_route: bool = True,
     **kwargs,
 ) -> fastapi.FastAPI:
     settings.config_logger()
@@ -179,7 +180,8 @@ def create_app(
 
         return [line.decode("utf-8") for line in last_100_lines]
 
-    app.get(f"{base_path}/health")(health)
+    if health_route:
+        app.get(f"{base_path}/health")(health)
     if log_route:
         app.get(f"{base_path}/logs", include_in_schema=False)(logs)
 
