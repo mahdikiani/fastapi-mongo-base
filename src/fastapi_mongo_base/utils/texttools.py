@@ -206,7 +206,7 @@ def sanitize_filename(
         position = pure_name.find(" ", max_length * 4 // 5)
         if position > max_length * 6 // 5 or position == -1:
             position = max_length
-        sanitized[:position]  # Limit to 100 characters
+        sanitized = sanitized[:position]  # Limit to 100 characters
 
     if space_remover:
         sanitized = sanitized.replace(" ", "_")  # Replace spaces with underscores
