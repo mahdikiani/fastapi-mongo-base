@@ -6,7 +6,7 @@ from typing import Literal
 
 import httpx
 from aiocache import cached
-from PIL import Image, ImageFile
+from PIL import Image, ImageFile, ExifTags
 
 
 def rgb_to_hex(rgb):
@@ -275,12 +275,34 @@ async def get_image_metadata(
         file_type = getattr(image, "format", None)
         content_type = response.headers.get("Content-Type")
 
-        return {
+        metadata = {
             "width": width,
             "height": height,
             "file_type": file_type,
             "content_type": content_type,
         }
+
+        # Optionally add image mode
+        metadata["mode"] = image.mode
+
+        # File size from header if available (content-length)
+        if "Content-Length" in response.headers:
+            metadata["content_length"] = int(response.headers["Content-Length"])
+
+        # Extract EXIF data if available (common in JPEG images)
+        exif = image._getexif() if hasattr(image, "_getexif") else None
+        if exif:
+            # Convert EXIF tag IDs to names for readability
+            exif_data = {
+                ExifTags.TAGS.get(tag, tag): value for tag, value in exif.items()
+            }
+            metadata["exif"] = exif_data
+
+        # Optionally include any additional info from Pillow's info dictionary
+        if image.info:
+            metadata["info"] = image.info
+
+        return metadata
 
 
 def compress_image(image: Image.Image, max_size_kb: int) -> Image.Image:
