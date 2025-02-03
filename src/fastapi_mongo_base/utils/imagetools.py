@@ -6,7 +6,7 @@ from typing import Literal
 
 import httpx
 from aiocache import cached
-from PIL import Image
+from PIL import Image, ImageFile
 
 
 def rgb_to_hex(rgb):
@@ -211,6 +211,76 @@ async def load_from_url(url: str, **kwargs) -> Image.Image:
         r.raise_for_status()
     buffered = BytesIO(r.content)
     return Image.open(buffered)
+
+
+async def get_image_metadata(
+    url: str,
+    *,
+    use_range: bool = True,
+    fallback: bool = True,  # if range request fails, try downloading the full file
+    max_bytes: int = 65536,  # how many bytes to try with range request
+) -> dict:
+    """
+    Fetches an image URL and returns its metadata.
+
+    Parameters:
+        url (str): URL of the image.
+        use_range (bool): Whether to try a range request to download only a header part.
+        max_bytes (int): Maximum number of bytes to request in a range request.
+        fallback (bool): If range request does not provide enough data, download the full file.
+
+    Returns:
+        dict: Dictionary with image metadata (e.g., width, height, file_type, and content_type).
+
+    Raises:
+        ValueError: If the image metadata could not be determined.
+        httpx.HTTPError: If there is an error fetching the image.
+    """
+    async with httpx.AsyncClient() as client:
+        headers = {}
+        if use_range:
+            headers["Range"] = f"bytes=0-{max_bytes - 1}"
+
+        try:
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+        except httpx.HTTPError as e:
+            raise ValueError(f"Error fetching image: {e}") from e
+
+        # Try to parse the partial content using Pillow's incremental parser.
+        content = response.content
+        parser = ImageFile.Parser()
+        parser.feed(content)
+        if parser.image:
+            image = parser.image
+        elif use_range and fallback:
+            # If we didn't get enough data from the range request, try a full download.
+            response = await client.get(url)
+            response.raise_for_status()
+            content = response.content
+            parser = ImageFile.Parser()
+            parser.feed(content)
+            if parser.image:
+                image = parser.image
+            else:
+                raise ValueError(
+                    "Could not determine image dimensions after full download"
+                )
+        else:
+            raise ValueError(
+                "Could not determine image dimensions with range request data"
+            )
+
+        width, height = image.size
+        file_type = getattr(image, "format", None)
+        content_type = response.headers.get("Content-Type")
+
+        return {
+            "width": width,
+            "height": height,
+            "file_type": file_type,
+            "content_type": content_type,
+        }
 
 
 def compress_image(image: Image.Image, max_size_kb: int) -> Image.Image:
