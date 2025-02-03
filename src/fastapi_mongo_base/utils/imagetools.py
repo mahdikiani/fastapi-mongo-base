@@ -219,6 +219,7 @@ async def get_image_metadata(
     use_range: bool = True,
     fallback: bool = True,  # if range request fails, try downloading the full file
     max_bytes: int = 65536,  # how many bytes to try with range request
+    **kwargs,
 ) -> dict:
     """
     Fetches an image URL and returns its metadata.
@@ -242,7 +243,7 @@ async def get_image_metadata(
             headers["Range"] = f"bytes=0-{max_bytes - 1}"
 
         try:
-            response = await client.get(url, headers=headers)
+            response = await client.get(url, headers=headers, **kwargs)
             response.raise_for_status()
         except httpx.HTTPError as e:
             raise ValueError(f"Error fetching image: {e}") from e
@@ -255,7 +256,7 @@ async def get_image_metadata(
             image = parser.image
         elif use_range and fallback:
             # If we didn't get enough data from the range request, try a full download.
-            response = await client.get(url)
+            response = await client.get(url, **kwargs)
             response.raise_for_status()
             content = response.content
             parser = ImageFile.Parser()
