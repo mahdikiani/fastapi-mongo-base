@@ -116,6 +116,13 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
                 # status_code=204,
             )
 
+        if kwargs.get("statistics_route", True):
+            self.router.add_api_route(
+                f"{prefix}/statistics",
+                self.statistics,
+                methods=["GET"],
+            )
+
     async def get_item(
         self,
         uid: uuid.UUID,
@@ -145,6 +152,17 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
         user = await self.get_user(request)
         user_id = user.uid if user else None
         return user_id
+
+    async def statistics(
+        self,
+        request: Request,
+        created_at_from: datetime | None = None,
+        created_at_to: datetime | None = None,
+    ):
+        return {
+            "total": await self.model.total_count(**request.query_params),
+            **request.query_params,
+        }
 
     async def _list_items(
         self,
