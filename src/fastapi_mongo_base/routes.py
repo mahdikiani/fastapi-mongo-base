@@ -276,6 +276,14 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
                 response_model=self.retrieve_response_schema,
             )
 
+        if kwargs.get("webhook_route", True):
+            self.router.add_api_route(
+                "/{uid:uuid}/webhook",
+                self.webhook,
+                methods=["POST"],
+                status_code=200,
+            )
+
     async def create_item(
         self, request: Request, data: dict, background_tasks: BackgroundTasks
     ):
@@ -295,6 +303,14 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
         item: TE = await self.get_item(uid, user_id=user_id)
         background_tasks.add_task(item.start_processing)
         return item.model_dump()
+
+    async def webhook(
+        self,
+        request: Request,
+        uid: uuid.UUID,
+        data: dict,
+    ):
+        pass
 
 
 def copy_router(router: APIRouter, new_prefix: str):
