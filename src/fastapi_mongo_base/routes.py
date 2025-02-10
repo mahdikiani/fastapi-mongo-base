@@ -290,7 +290,7 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
         request: Request,
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
-        status: TaskStatusEnum | None = None,
+        task_status: TaskStatusEnum | None = None,
     ):
         return await super().statistics(request)
 
