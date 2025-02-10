@@ -313,7 +313,7 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
         import logging
 
         logging.info(f"Webhook received for {uid} with data {data}")
-        return {"message": "Webhook received"}
+        return {"message": f"Webhook received for {uid} with data", **data}
 
 
 def copy_router(router: APIRouter, new_prefix: str):
