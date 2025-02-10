@@ -9,6 +9,11 @@ from pydantic import ConfigDict
 from pymongo import ASCENDING, IndexModel
 
 try:
+    from json_advanced import loads
+except ImportError:
+    from json import loads
+
+try:
     from server.config import Settings
 except ImportError:
     from .core.config import Settings
@@ -63,7 +68,7 @@ class BaseEntity(BaseEntitySchema, Document):
         value = value.strip()
         try:
             if value.startswith("[") and value.endswith("]"):
-                parsed = json.loads(value)
+                parsed = loads(value)
                 if isinstance(parsed, list):
                     return parsed
                 return [parsed]
