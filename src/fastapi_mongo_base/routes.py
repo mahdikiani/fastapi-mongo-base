@@ -19,6 +19,7 @@ except ImportError:
 from .handlers import create_dto
 from .models import BaseEntity, BaseEntityTaskMixin
 from .schemas import BaseEntitySchema, PaginatedResponse
+from .tasks import TaskStatusEnum
 
 # Define a type variable
 T = TypeVar("T", bound=BaseEntity)
@@ -283,6 +284,15 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
                 methods=["POST"],
                 status_code=200,
             )
+
+    async def statistics(
+        self,
+        request: Request,
+        created_at_from: datetime | None = None,
+        created_at_to: datetime | None = None,
+        status: TaskStatusEnum | None = None,
+    ):
+        return await super().statistics(request)
 
     async def create_item(
         self, request: Request, data: dict, background_tasks: BackgroundTasks

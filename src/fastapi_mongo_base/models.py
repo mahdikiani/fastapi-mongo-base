@@ -1,3 +1,4 @@
+import json
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
@@ -42,6 +43,37 @@ class BaseEntity(BaseEntitySchema, Document):
         self.updated_at = datetime.now()
 
     @classmethod
+    def _parse_array_parameter(cls, value) -> list:
+        """Parse input value into a list, handling various input formats.
+
+        Args:
+            value: Input value that could be a JSON string, comma-separated string,
+                  list, tuple, or single value
+
+        Returns:
+            list: Parsed list of values
+        """
+        if isinstance(value, (list, tuple)):
+            return list(value)
+
+        if not isinstance(value, str):
+            return [value]
+
+        # Try parsing as JSON first
+        value = value.strip()
+        try:
+            if value.startswith("[") and value.endswith("]"):
+                parsed = json.loads(value)
+                if isinstance(parsed, list):
+                    return parsed
+                return [parsed]
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+        # Fallback to comma-separated values
+        return [v.strip() for v in value.split(",") if v.strip()]
+
+    @classmethod
     def get_queryset(
         cls,
         user_id: uuid.UUID = None,
@@ -83,7 +115,7 @@ class BaseEntity(BaseEntitySchema, Document):
             if value is None:
                 continue
 
-            # Extract base field name without _from/_to suffix
+            # Extract base field name without suffixes
             base_field = cls._get_base_field_name(key)
 
             # Validate field is allowed for searching
@@ -94,14 +126,17 @@ class BaseEntity(BaseEntitySchema, Document):
             if not hasattr(cls, base_field):
                 continue
 
-            # Handle range queries and normal filters
-            if (
-                key.endswith("_from") or key.endswith("_to")
-            ) and cls._is_valid_range_value(value):
-                if key.endswith("_from"):
-                    base_query.append({base_field: {"$gte": value}})
-                elif key.endswith("_to"):
-                    base_query.append({base_field: {"$lte": value}})
+            # Handle range queries and array operators
+            if key.endswith("_from") or key.endswith("_to"):
+                if cls._is_valid_range_value(value):
+                    if key.endswith("_from"):
+                        base_query.append({base_field: {"$gte": value}})
+                    elif key.endswith("_to"):
+                        base_query.append({base_field: {"$lte": value}})
+            elif key.endswith("_in") or key.endswith("_nin"):
+                value_list = cls._parse_array_parameter(value)
+                operator = "$in" if key.endswith("_in") else "$nin"
+                base_query.append({base_field: {operator: value_list}})
             else:
                 base_query.append({key: value})
 
@@ -109,11 +144,15 @@ class BaseEntity(BaseEntitySchema, Document):
 
     @classmethod
     def _get_base_field_name(cls, field: str) -> str:
-        """Extract the base field name by removing _from/_to suffixes."""
+        """Extract the base field name by removing suffixes."""
         if field.endswith("_from"):
             return field[:-5]
         elif field.endswith("_to"):
             return field[:-3]
+        elif field.endswith("_in"):
+            return field[:-3]
+        elif field.endswith("_nin"):
+            return field[:-4]
         return field
 
     @classmethod
