@@ -249,18 +249,18 @@ async def get_image_metadata(
             raise ValueError(f"Error fetching image: {e}") from e
 
         # Try to parse the partial content using Pillow's incremental parser.
-        content = response.content
+        content = BytesIO(response.content)
         parser = ImageFile.Parser()
-        parser.feed(content)
+        parser.feed(content.getvalue())
         if parser.image:
             image = parser.image
         elif use_range and fallback:
             # If we didn't get enough data from the range request, try a full download.
             response = await client.get(url, **kwargs)
             response.raise_for_status()
-            content = response.content
+            content = BytesIO(response.content)
             parser = ImageFile.Parser()
-            parser.feed(content)
+            parser.feed(content.getvalue())
             if parser.image:
                 image = parser.image
             else:

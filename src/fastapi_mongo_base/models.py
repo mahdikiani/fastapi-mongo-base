@@ -59,7 +59,7 @@ class BaseEntity(BaseEntitySchema, Document):
             list: Parsed list of values
         """
         if isinstance(value, (list, tuple)):
-            return list(value)
+            return list(set(value))
 
         if not isinstance(value, str):
             return [value]
@@ -70,13 +70,13 @@ class BaseEntity(BaseEntitySchema, Document):
             if value.startswith("[") and value.endswith("]"):
                 parsed = loads(value)
                 if isinstance(parsed, list):
-                    return parsed
+                    return list(set(parsed))
                 return [parsed]
         except (json.JSONDecodeError, ValueError):
             pass
 
         # Fallback to comma-separated values
-        return [v.strip() for v in value.split(",") if v.strip()]
+        return list(set([v.strip() for v in value.split(",") if v.strip()]))
 
     @classmethod
     def get_queryset(
