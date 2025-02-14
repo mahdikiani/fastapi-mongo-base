@@ -219,6 +219,7 @@ async def get_image_metadata(
     use_range: bool = True,
     fallback: bool = True,  # if range request fails, try downloading the full file
     max_bytes: int = 65536,  # how many bytes to try with range request
+    with_exif: bool = True,
     **kwargs,
 ) -> dict:
     """
@@ -291,13 +292,14 @@ async def get_image_metadata(
             metadata["content_length"] = int(response.headers["Content-Length"])
 
         # Extract EXIF data if available (common in JPEG images)
-        exif = image._getexif() if hasattr(image, "_getexif") else None
-        if exif:
-            # Convert EXIF tag IDs to names for readability
-            exif_data = {
-                ExifTags.TAGS.get(tag, tag): value for tag, value in exif.items()
-            }
-            metadata["exif"] = exif_data
+        if with_exif:
+            exif = image._getexif() if hasattr(image, "_getexif") else None
+            if exif:
+                # Convert EXIF tag IDs to names for readability
+                exif_data = {
+                    ExifTags.TAGS.get(tag, tag): value for tag, value in exif.items()
+                }
+                metadata["exif"] = exif_data
 
         # Optionally include any additional info from Pillow's info dictionary
         if image.info:
