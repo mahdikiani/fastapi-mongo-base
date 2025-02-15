@@ -168,4 +168,3 @@ class Language(str, Enum):
     @classmethod
     def get_choices(cls):
         return [item.get_dict() for item in cls]
-

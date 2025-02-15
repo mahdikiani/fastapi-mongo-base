@@ -6,7 +6,7 @@ from typing import Literal
 
 import httpx
 from aiocache import cached
-from PIL import Image, ImageFile, ExifTags
+from PIL import ExifTags, Image, ImageFile
 
 
 def rgb_to_hex(rgb):

@@ -56,8 +56,8 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
     def config_schemas(self, schema, **kwargs):
         self.schema = schema
         self.list_item_schema = kwargs.get("list_item_schema", schema)
-        self.list_response_schema = (
-            kwargs.get("list_response_schema", PaginatedResponse[self.list_item_schema])
+        self.list_response_schema = kwargs.get(
+            "list_response_schema", PaginatedResponse[self.list_item_schema]
         )
         self.retrieve_response_schema = kwargs.get("retrieve_response_schema", schema)
         self.create_response_schema = kwargs.get("create_response_schema", schema)
