@@ -83,6 +83,7 @@ def setup_middlewares(
     origins: list = None,
     original_host_middleware: bool = False,
     request_log_middleware: bool = False,
+    timer_middleware: bool = True,
     **kwargs,
 ):
     if origins:
@@ -102,6 +103,10 @@ def setup_middlewares(
         from .middlewares import RequestLoggingMiddleware
 
         app.add_middleware(RequestLoggingMiddleware)
+    if timer_middleware:
+        from .middlewares import TimerMiddleware
+
+        app.add_middleware(TimerMiddleware)
 
 
 def create_app(
@@ -128,6 +133,7 @@ def create_app(
     ufaas_handler: bool = True,
     original_host_middleware: bool = False,
     request_log_middleware: bool = False,
+    timer_middleware: bool = True,
     log_route: bool = False,
     health_route: bool = True,
     **kwargs,
@@ -171,6 +177,7 @@ def create_app(
         origins,
         original_host_middleware,
         request_log_middleware,
+        timer_middleware,
         **kwargs,
     )
 

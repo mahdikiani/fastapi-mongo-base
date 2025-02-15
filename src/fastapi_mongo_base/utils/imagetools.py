@@ -150,6 +150,46 @@ def split_image(image: Image.Image, sections=(2, 2), **kwargs) -> list[Image.Ima
     return parts
 
 
+def is_aspect_ratio_valid(
+    image: Image.Image, *, target_ratio: float = 1, tolerance: float = 0.05
+) -> bool:
+    width, height = image.size
+    aspect_ratio = width / height
+    if aspect_ratio > (target_ratio + tolerance) or aspect_ratio < (
+        target_ratio - tolerance
+    ):
+        return False
+    return True
+
+
+def has_white_border(image: Image.Image, *, ratio: float = 0.9) -> bool:
+    # check if 90% of pixels of side pixels are white (lighter than 250, 250, 250)
+    width, height = image.size
+
+    pixels = []
+    for i in range(width):
+        pixels.append(image.getpixel((i, 0)))
+        pixels.append(image.getpixel((i, height - 1)))
+    for j in range(height):
+        pixels.append(image.getpixel((0, j)))
+        pixels.append(image.getpixel((width - 1, j)))
+
+    white_pixels = [p for p in pixels if all(x > 240 for x in p)]
+    if len(white_pixels) / len(pixels) > ratio:
+        return True
+    return False
+
+
+def square_pad_white_pixels(image: Image.Image) -> Image.Image:
+    width, height = image.size
+    max_side = max(width, height)
+    pos_x, pos_y = (max_side - width) // 2, (max_side - height) // 2
+
+    new_image = Image.new("RGB", (max_side, max_side), "white")
+    new_image.paste(image, (pos_x, pos_y))
+    return new_image
+
+
 def convert_image(
     image: Image.Image, format: Literal["JPEG", "PNG", "WEBP", "BMP", "GIF"] = "JPEG"
 ) -> Image.Image:
