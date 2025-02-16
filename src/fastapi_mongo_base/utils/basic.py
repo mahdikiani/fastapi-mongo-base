@@ -30,7 +30,7 @@ def try_except_wrapper(func):
 
             traceback_str = "".join(traceback.format_tb(e.__traceback__))
             logging.error(
-                f"An error occurred in {func_name}:\n{traceback_str}\n{type(e)}: {e}"
+                f"An error occurred in {func_name} ({args=}, {kwargs=}):\n{traceback_str}\n{type(e)}: {e}"
             )
             return None
 
