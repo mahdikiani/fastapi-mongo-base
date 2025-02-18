@@ -5,7 +5,6 @@ from io import BytesIO
 from typing import Literal
 
 import httpx
-from aiocache import cached
 from PIL import ExifTags, Image, ImageFile
 
 
@@ -362,7 +361,6 @@ def compress_image(image: Image.Image, max_size_kb: int) -> Image.Image:
     return image
 
 
-@cached(ttl=60 * 60 * 24)
 async def download_image(
     url: str, max_width: int | None = None, max_size_kb: int | None = None, **kwargs
 ) -> Image.Image:
@@ -391,7 +389,6 @@ async def download_image(
     return image
 
 
-@cached(ttl=60 * 60 * 24)
 async def download_image_base64(
     url: str,
     max_width: int | None = None,
