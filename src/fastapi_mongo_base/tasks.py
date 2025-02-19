@@ -116,8 +116,8 @@ class TaskMixin(BaseModel):
     task_progress: int = -1
     task_logs: list[TaskLogRecord] = []
     task_references: TaskReferenceList | None = None
-    task_start_time: datetime | None = None
-    task_end_time: datetime | None = None
+    task_start_at: datetime | None = None
+    task_end_at: datetime | None = None
     webhook_url: str | None = None
 
     @property
@@ -126,10 +126,10 @@ class TaskMixin(BaseModel):
 
     @property
     def task_duration(self):
-        if self.task_start_time:
-            if self.task_end_time:
-                return self.task_end_time - self.task_start_time
-            return datetime.now() - self.task_start_time
+        if self.task_start_at:
+            if self.task_end_at:
+                return self.task_end_at - self.task_start_at
+            return datetime.now() - self.task_start_at
         return 0
 
     @field_validator("task_status", mode="before")
