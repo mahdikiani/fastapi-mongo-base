@@ -277,6 +277,16 @@ async def get_image_metadata(
         ValueError: If the image metadata could not be determined.
         httpx.HTTPError: If there is an error fetching the image.
     """
+    if url.startswith("data:image"):
+        image = load_from_base64(url)
+        return {
+            "width": image.width,
+            "height": image.height,
+            "file_type": image.format,
+            "content_type": url.split(":")[1].split(";")[0],
+            "mode": image.mode,
+        }
+
     async with httpx.AsyncClient() as client:
         headers = {}
         if use_range:

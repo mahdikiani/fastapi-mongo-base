@@ -264,11 +264,20 @@ class TaskMixin(BaseModel):
             # await self.emit_signals(self)
             await self.save_and_emit()
 
-    async def start_processing(self):
+    async def start_processing(self, **kwargs):
         if self.task_references is None:
             raise NotImplementedError("Subclasses should implement this method")
 
         await self.task_references.list_processing()
+
+    async def push_to_queue(self, redis_client, **kwargs):
+        """Add the task to Redis queue"""
+        import json
+
+        queue_name = f"{self.__class__.__name__.lower()}_queue"
+        await redis_client.lpush(
+            queue_name, json.dumps(self.model_dump(include={"uid"}, mode="json"))
+        )
 
     @basic.try_except_wrapper
     async def save_and_emit(self, **kwargs):
