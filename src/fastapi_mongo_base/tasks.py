@@ -277,7 +277,7 @@ class TaskMixin(BaseModel):
         queue_name = f"{self.__class__.__name__.lower()}_queue"
         await redis_client.lpush(
             queue_name,
-            json.dumps(self.model_dump(include={"uid"}, mode="json") | kwargs),
+            json.dumps(kwargs | self.model_dump(include={"uid"}, mode="json")),
         )
 
     @basic.try_except_wrapper

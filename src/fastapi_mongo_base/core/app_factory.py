@@ -44,7 +44,8 @@ async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[], setting
 
     logging.info("Startup complete")
     yield
-    app.state.worker.cancel()
+    if worker:
+        app.state.worker.cancel()
     logging.info("Shutdown complete")
 
 
