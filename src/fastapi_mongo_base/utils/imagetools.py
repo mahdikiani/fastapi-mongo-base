@@ -296,7 +296,7 @@ async def get_image_metadata(
             response = await client.get(url, headers=headers, **kwargs)
             response.raise_for_status()
         except httpx.HTTPError as e:
-            raise ValueError(f"Error fetching image: {e}") from e
+            raise ValueError(f"Error fetching image {url}: {type(e)} {e}") from e
 
         # Try to parse the partial content using Pillow's incremental parser.
         content = BytesIO(response.content)
