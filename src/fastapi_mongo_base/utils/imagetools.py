@@ -190,10 +190,38 @@ def square_pad_white_pixels(image: Image.Image) -> Image.Image:
 
 
 def convert_image(
-    image: Image.Image, format: Literal["JPEG", "PNG", "WEBP", "BMP", "GIF"] = "JPEG"
+    image: Image.Image,
+    format: Literal["JPEG", "PNG", "WEBP", "BMP", "GIF"] = "JPEG",
+    *,
+    bg_color: tuple[int, int, int] = (255, 255, 255),
+    **kwargs,
 ) -> Image.Image:
-    color_mode = "RGB" if format not in ("PNG", "WEBP") else "RGBA"
-    return image.convert(color_mode)
+    """
+    Converts an image to the specified format while handling transparency correctly.
+
+    - If the format supports transparency (PNG, WEBP), it preserves the alpha channel.
+    - If the format does NOT support transparency (JPEG, BMP, GIF), it removes transparency
+      by compositing the image on a background color.
+
+    Parameters:
+    - image: PIL.Image.Image - The input image.
+    - format: str - Target format (JPEG, PNG, WEBP, BMP, GIF).
+    - bg_color: tuple (R, G, B) - Background color for formats that do not support transparency.
+
+    Returns:
+    - Converted Image.Image
+    """
+
+    supports_transparency = format in ("PNG", "WEBP")
+    has_transparency = image.mode in ("RGBA", "LA")
+    if supports_transparency:
+        return image.convert("RGBA") if has_transparency else image.convert("RGB")
+
+    if has_transparency:
+        background = Image.new("RGB", image.size, bg_color)
+        return Image.alpha_composite(background.convert("RGBA"), image).convert("RGB")
+
+    return image.convert("RGB")
 
 
 def convert_image_bytes(
@@ -357,11 +385,17 @@ async def get_image_metadata(
         return metadata
 
 
-def compress_image(image: Image.Image, max_size_kb: int) -> Image.Image:
+def compress_image(
+    image: Image.Image,
+    max_size_kb: int,
+    *,
+    format: Literal["JPEG", "PNG", "WEBP"] = "JPEG",
+    quality: int = 90,
+    **kwargs,
+) -> Image.Image:
     """Compress image to fit within max_size_kb."""
     while True:
-        buffered = BytesIO()
-        image.save(buffered, format="JPEG", optimize=True, quality=85)
+        buffered = convert_image_bytes(image, format, quality)
         encoded = base64.b64encode(buffered.getvalue()).decode()
         if len(encoded) <= max_size_kb * 1024:
             break
