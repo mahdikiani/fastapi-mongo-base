@@ -20,7 +20,7 @@ class BaseHTTPException(HTTPException):
         self,
         status_code: int,
         error: str,
-        message: str = None,
+        message: dict = None,
         detail: str = None,
         **kwargs,
     ):

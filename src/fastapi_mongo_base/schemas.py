@@ -95,11 +95,6 @@ class BusinessOwnedEntitySchema(OwnedEntitySchema, BusinessEntitySchema):
         return list(set(super().update_exclude_set() + ["business_name", "user_id"]))
 
 
-class Language(str, Enum):
-    English = "English"
-    Persian = "Persian"
-
-
 T = TypeVar("T", bound=BaseEntitySchema)
 
 
@@ -108,3 +103,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
     total: int
     offset: int
     limit: int
+
+class MultiLanguageString(BaseModel):
+    en: str
+    fa: str
