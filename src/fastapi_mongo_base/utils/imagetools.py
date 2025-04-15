@@ -263,7 +263,14 @@ def image_to_base64(
 
 
 def load_from_base64(encoded: str) -> Image.Image:
-    """Load an image from a base64 encoded string."""
+    """
+    Load an image from a base64 encoded string.
+    The string should be like data:image/png;base64,...
+    """
+    if not encoded.startswith("data:image"):
+        raise ValueError("Invalid base64 encoded string")
+    if "," not in encoded:
+        raise ValueError("Invalid base64 encoded string")
     encoded = encoded.split(",")[1]
     encoded += "=" * (4 - len(encoded) % 4)
     buffered = BytesIO(base64.b64decode(encoded))

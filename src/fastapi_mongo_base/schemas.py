@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from enum import Enum
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
@@ -21,16 +20,6 @@ class CoreEntitySchema(BaseModel):
 
     def __hash__(self):
         return hash(self.model_dump_json())
-
-
-class BaseEntitySchema(CoreEntitySchema):
-    uid: uuid.UUID = Field(
-        default_factory=uuid.uuid4, json_schema_extra={"index": True, "unique": True}
-    )
-
-    @property
-    def item_url(self):
-        return f"https://{Settings.root_url}{Settings.base_path}/{self.__class__.__name__.lower()}s/{self.uid}"
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:
@@ -58,6 +47,16 @@ class BaseEntitySchema(CoreEntitySchema):
 
     def expired(self, days: int = 3):
         return (datetime.now() - self.updated_at).days > days
+
+
+class BaseEntitySchema(CoreEntitySchema):
+    uid: uuid.UUID = Field(
+        default_factory=uuid.uuid4, json_schema_extra={"index": True, "unique": True}
+    )
+
+    @property
+    def item_url(self):
+        return f"https://{Settings.root_url}{Settings.base_path}/{self.__class__.__name__.lower()}s/{self.uid}"
 
 
 class OwnedEntitySchema(BaseEntitySchema):
@@ -103,6 +102,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
     total: int
     offset: int
     limit: int
+
 
 class MultiLanguageString(BaseModel):
     en: str

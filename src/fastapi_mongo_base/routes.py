@@ -269,7 +269,7 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
     def config_routes(self, **kwargs):
         super().config_routes(**kwargs)
 
-        if kwargs.get("start_route", True):
+        if self.draftable and kwargs.get("start_route", True):
             self.router.add_api_route(
                 "/{uid:uuid}/start",
                 self.start_item,

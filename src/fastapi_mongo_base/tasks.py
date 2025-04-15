@@ -118,7 +118,12 @@ class TaskMixin(BaseModel):
     task_references: TaskReferenceList | None = None
     task_start_at: datetime | None = None
     task_end_at: datetime | None = None
+    task_order_score: float = 0.0
     webhook_url: str | None = None
+
+    @classmethod
+    def get_queue_name(cls):
+        return f"{cls.__name__.lower()}_queue"
 
     @property
     def item_webhook_url(self):
