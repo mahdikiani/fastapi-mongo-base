@@ -263,8 +263,8 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
         *args,
         **kwargs,
     ):
-        super().__init__(model, user_dependency, schema=schema, *args, **kwargs)
         self.draftable = draftable
+        super().__init__(model, user_dependency, schema=schema, *args, **kwargs)
 
     def config_routes(self, **kwargs):
         super().config_routes(**kwargs)
