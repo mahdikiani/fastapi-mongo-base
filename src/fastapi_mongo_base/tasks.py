@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Coroutine, Literal, Union
@@ -64,7 +63,7 @@ class TaskLogRecord(BaseModel):
 
 
 class TaskReference(BaseModel):
-    task_id: uuid.UUID
+    task_id: str
     task_type: str
 
     def __eq__(self, other):
@@ -241,7 +240,7 @@ class TaskMixin(BaseModel):
             **kwargs,
         )
 
-    async def add_reference(self, task_id: uuid.UUID, **kwargs):
+    async def add_reference(self, task_id: str, **kwargs):
         self.task_references.append(task_id)
         await self.add_log(
             TaskLogRecord(

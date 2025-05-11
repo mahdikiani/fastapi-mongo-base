@@ -50,8 +50,9 @@ class CoreEntitySchema(BaseModel):
 
 
 class BaseEntitySchema(CoreEntitySchema):
-    uid: uuid.UUID = Field(
-        default_factory=uuid.uuid4, json_schema_extra={"index": True, "unique": True}
+    uid: str = Field(
+        default_factory=str(uuid.uuid4),
+        json_schema_extra={"index": True, "unique": True},
     )
 
     @property
@@ -60,7 +61,7 @@ class BaseEntitySchema(CoreEntitySchema):
 
 
 class OwnedEntitySchema(BaseEntitySchema):
-    user_id: uuid.UUID
+    user_id: str
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:

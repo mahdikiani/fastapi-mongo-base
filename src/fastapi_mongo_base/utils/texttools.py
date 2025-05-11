@@ -67,7 +67,7 @@ def escape_markdown(text: str):
     return text
 
 
-def split_text(text: str, max_chunk_size=4096):
+def split_text(text: str, max_chunk_size: int = 4096):
     # Split text into paragraphs
     paragraphs = text.split("\n")
     chunks = []
@@ -139,7 +139,7 @@ email_regex = re.compile(r"^[a-zA-Z\._]+@[a-zA-Z0-9\.-_]+\.[a-zA-Z]{2,}$")
 username_regex = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]{2,16}$")
 
 
-def is_valid_uuid(val):
+def is_valid_uuid(val: str):
     try:
         uuid.UUID(str(val))
         return True
@@ -147,7 +147,7 @@ def is_valid_uuid(val):
         return False
 
 
-def is_valid_url(url):
+def is_valid_url(url: str):
     # Check if the URL matches the regex
     if re.match(regex, url) is None:
         return False
@@ -157,19 +157,21 @@ def is_valid_url(url):
     return all([parsed_url.scheme, parsed_url.netloc])
 
 
-def is_username(username):
+def is_username(username: str):
     return username_regex.search(username)
 
 
-def is_email(email):
+def is_email(email: str):
     return email_regex.search(email)
 
 
-def is_phone(phone):
+def is_phone(phone: str):
     return phone_regex.search(phone)
 
 
-def generate_random_chars(length=6, characters=string.ascii_letters + string.digits):
+def generate_random_chars(
+    length: int = 6, characters: str = string.ascii_letters + string.digits
+):
     # Generate the random characters
     return "".join(random.choices(characters, k=length))
 

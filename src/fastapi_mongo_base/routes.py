@@ -1,5 +1,4 @@
 import asyncio
-import uuid
 from datetime import datetime
 from typing import Any, Generic, Type, TypeVar
 
@@ -16,7 +15,6 @@ try:
 except ImportError:
     from .core.config import Settings
 
-from .handlers import create_dto
 from .models import BaseEntity, BaseEntityTaskMixin
 from .schemas import BaseEntitySchema, PaginatedResponse
 from .tasks import TaskStatusEnum
@@ -83,7 +81,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
 
         if kwargs.get("retrieve_route", True):
             self.router.add_api_route(
-                f"{prefix}/{{uid:uuid}}",
+                f"{prefix}/{{uid:str}}",
                 self.retrieve_item,
                 methods=["GET"],
                 response_model=self.retrieve_response_schema,
@@ -101,7 +99,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
 
         if kwargs.get("update_route", True):
             self.router.add_api_route(
-                f"{prefix}/{{uid:uuid}}",
+                f"{prefix}/{{uid:str}}",
                 self.update_item,
                 methods=["PATCH"],
                 response_model=self.update_response_schema,
@@ -110,7 +108,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
 
         if kwargs.get("delete_route", True):
             self.router.add_api_route(
-                f"{prefix}/{{uid:uuid}}",
+                f"{prefix}/{{uid:str}}",
                 self.delete_item,
                 methods=["DELETE"],
                 response_model=self.delete_response_schema,
@@ -126,9 +124,9 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
 
     async def get_item(
         self,
-        uid: uuid.UUID,
-        user_id: uuid.UUID = None,
-        business_name: str = None,
+        uid: str,
+        user_id: str | None = None,
+        business_name: str | None = None,
         **kwargs,
     ):
         item = await self.model.get_item(
@@ -209,7 +207,7 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
     async def retrieve_item(
         self,
         request: Request,
-        uid: uuid.UUID,
+        uid: str,
     ):
         user_id = await self.get_user_id(request)
         item = await self.get_item(uid, user_id=user_id)
@@ -221,30 +219,25 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
         data: dict,
     ):
         user_id = await self.get_user_id(request)
-        item_data: TS = await create_dto(self.create_response_schema)(
-            request, user_id=user_id
-        )
-        item = await self.model.create_item(item_data.model_dump())
-        # item: T = await create_dto(self.create_request_schema)(request, user)
+        item = await self.model.create_item({**data, "user_id": user_id})
         await item.save()
         return item
 
     async def update_item(
         self,
         request: Request,
-        uid: uuid.UUID,
+        uid: str,
         data: dict,
     ):
         user_id = await self.get_user_id(request)
         item = await self.get_item(uid, user_id=user_id)
-        # item = await update_dto(self.model)(request, user)
         item = await self.model.update_item(item, data)
         return item
 
     async def delete_item(
         self,
         request: Request,
-        uid: uuid.UUID,
+        uid: str,
     ):
         user_id = await self.get_user_id(request)
         item = await self.get_item(uid, user_id=user_id)
@@ -271,7 +264,7 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
 
         if self.draftable and kwargs.get("start_route", True):
             self.router.add_api_route(
-                "/{uid:uuid}/start",
+                "/{uid:str}/start",
                 self.start_item,
                 methods=["POST"],
                 response_model=self.retrieve_response_schema,
@@ -279,7 +272,7 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
 
         if kwargs.get("webhook_route", True):
             self.router.add_api_route(
-                "/{uid:uuid}/webhook",
+                "/{uid:str}/webhook",
                 self.webhook,
                 methods=["POST"],
                 status_code=200,
@@ -307,7 +300,7 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
         return item
 
     async def start_item(
-        self, request: Request, uid: uuid.UUID, background_tasks: BackgroundTasks
+        self, request: Request, uid: str, background_tasks: BackgroundTasks
     ):
         user_id = await self.get_user_id(request)
         item: TE = await self.get_item(uid, user_id=user_id)
@@ -317,7 +310,7 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
     async def webhook(
         self,
         request: Request,
-        uid: uuid.UUID,
+        uid: str,
         data: dict,
     ):
         import logging

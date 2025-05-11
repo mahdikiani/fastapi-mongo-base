@@ -66,7 +66,7 @@ class CachedMixin(BaseEntity):
             for uid_bytes, item_data in items_data.items():
                 item_dict = json.loads(item_data)
                 item = cls(**item_dict)
-                uid = uuid.UUID(uid_bytes.decode("utf-8"))
+                uid = str(uuid.UUID(uid_bytes.decode("utf-8")))
                 filter_query = {"uid": bsontools.get_bson_value(uid)}
                 # Assuming the unique identifier is stored in _id
                 logging.info(
@@ -86,8 +86,8 @@ class CachedMixin(BaseEntity):
     async def get_item(
         cls,
         uid,
-        user_id: uuid.UUID = None,
-        business_name: str = None,
+        user_id: str | None = None,
+        business_name: str | None = None,
         is_deleted: bool = False,
         *args,
         **kwargs,

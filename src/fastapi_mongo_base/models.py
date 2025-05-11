@@ -81,10 +81,10 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     def get_queryset(
         cls,
-        user_id: uuid.UUID = None,
-        business_name: str = None,
+        user_id: str | None = None,
+        business_name: str | None = None,
         is_deleted: bool = False,
-        uid: uuid.UUID = None,
+        uid: str | None = None,
         *args,
         **kwargs,
     ) -> list[dict]:
@@ -168,10 +168,10 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     def get_query(
         cls,
-        user_id: uuid.UUID = None,
-        business_name: str = None,
+        user_id: str | None = None,
+        business_name: str | None = None,
         is_deleted: bool = False,
-        uid: uuid.UUID = None,
+        uid: str | None = None,
         created_at_from: datetime = None,
         created_at_to: datetime = None,
         *args,
@@ -193,9 +193,9 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     async def get_item(
         cls,
-        uid: uuid.UUID,
-        user_id: uuid.UUID = None,
-        business_name: str = None,
+        uid: str,
+        user_id: str | None = None,
+        business_name: str | None = None,
         is_deleted: bool = False,
         *args,
         **kwargs,
@@ -231,8 +231,8 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     async def list_items(
         cls,
-        user_id: uuid.UUID = None,
-        business_name: str = None,
+        user_id: str | None = None,
+        business_name: str | None = None,
         offset: int = 0,
         limit: int = 10,
         is_deleted: bool = False,
@@ -256,8 +256,8 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     async def total_count(
         cls,
-        user_id: uuid.UUID = None,
-        business_name: str = None,
+        user_id: str | None = None,
+        business_name: str | None = None,
         is_deleted: bool = False,
         *args,
         **kwargs,
@@ -274,8 +274,8 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     async def list_total_combined(
         cls,
-        user_id: uuid.UUID = None,
-        business_name: str = None,
+        user_id: str | None = None,
+        business_name: str | None = None,
         offset: int = 0,
         limit: int = 10,
         is_deleted: bool = False,
@@ -300,17 +300,21 @@ class BaseEntity(BaseEntitySchema, Document):
         return items, total
 
     @classmethod
-    async def get_by_uid(cls, uid: uuid.UUID):
+    async def get_by_uid(cls, uid: str):
         item = await cls.find_one({"uid": uid})
         return item
 
     @classmethod
     async def create_item(cls, data: dict):
-        # for key in data.keys():
-        #     if cls.create_exclude_set() and key not in cls.create_field_set():
-        #         data.pop(key, None)
-        #     elif cls.create_exclude_set() and key in cls.create_exclude_set():
-        #         data.pop(key, None)
+        for key in data.keys():
+            if cls.create_exclude_set() and key not in cls.create_field_set():
+                data.pop(key, None)
+            elif cls.create_exclude_set() and key in cls.create_exclude_set():
+                data.pop(key, None)
+
+        data["uid"] = str(uuid.uuid4())
+        data["created_at"] = datetime.now()
+        data["updated_at"] = datetime.now()
 
         item = cls(**data)
         await item.save()
