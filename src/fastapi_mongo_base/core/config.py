@@ -56,21 +56,15 @@ class Settings(metaclass=Singleton):
                     "level": console_level,
                     "formatter": "standard",
                 },
-                "file": {
-                    "class": "logging.FileHandler",
-                    "level": file_level,
-                    "filename": cls.base_dir / "logs" / "info.log",
-                    "formatter": "standard",
-                },
             },
             "loggers": {
                 "": {
-                    "handlers": ["console", "file"],
+                    "handlers": ["console"],
                     "level": "INFO",
                     "propagate": True,
                 },
                 "httpx": {
-                    "handlers": ["console", "file"],
+                    "handlers": ["console"],
                     "level": "WARNING",
                     "propagate": False,
                 },
@@ -81,6 +75,8 @@ class Settings(metaclass=Singleton):
 
     @classmethod
     def config_logger(cls):
-        (cls.base_dir / "logs").mkdir(parents=True, exist_ok=True)
+        log_config = cls.get_log_config()
+        if log_config["handlers"].get("file"):
+            (cls.base_dir / "logs").mkdir(parents=True, exist_ok=True)
 
         logging.config.dictConfig(cls.get_log_config())
