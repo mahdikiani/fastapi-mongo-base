@@ -20,20 +20,10 @@ class Settings(metaclass=Singleton):
     project_name: str = os.getenv("PROJECT_NAME", default="PROJECT")
     base_path: str = "/api/v1"
     worker_update_time: int = int(os.getenv("WORKER_UPDATE_TIME", default=180))
-    testing: bool = os.getenv("DEBUG", default=False)
+    debug: bool = os.getenv("DEBUG", default=False)
 
     page_max_limit: int = 100
-
-    mongo_uri: str = os.getenv("MONGO_URI", default="mongodb://localhost:27017/")
-    redis_uri: str = os.getenv("REDIS_URI", default="redis://localhost:6379/0")
-
-    app_id: str = os.getenv("APP_ID")
-    app_secret: str = os.getenv("APP_SECRET")
-
-    JWT_CONFIG: str = os.getenv(
-        "USSO_JWT_CONFIG",
-        default='{"jwk_url": "https://sso.usso.io/website/jwks.json","type": "RS256","header": {"type": "Cookie", "name": "usso_access_token"} }',
-    )
+    mongo_uri: str = os.getenv("MONGO_URI", default="mongodb://mongo:27017/")
 
     @classmethod
     def get_coverage_dir(cls):

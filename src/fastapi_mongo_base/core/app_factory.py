@@ -118,7 +118,6 @@ def create_app(
         license_info=license_info,
         docs_url=docs_url,
         openapi_url=openapi_url,
-        redoc_url=redoc_url,
     )
 
     setup_exception_handlers(app=app, handlers=exception_handlers, **kwargs)
