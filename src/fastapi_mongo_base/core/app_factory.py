@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 import fastapi
 from fastapi.staticfiles import StaticFiles
-
+from fastapi.responses import RedirectResponse
 from fastapi_mongo_base.core import db, exceptions
 
 try:
@@ -82,6 +82,7 @@ def create_app(
     exception_handlers: dict = None,
     log_route: bool = False,
     health_route: bool = True,
+    index_route: bool = True,
     **kwargs,
 ) -> fastapi.FastAPI:
     settings.config_logger()
@@ -118,6 +119,7 @@ def create_app(
         license_info=license_info,
         docs_url=docs_url,
         openapi_url=openapi_url,
+        redoc_url=redoc_url,
     )
 
     setup_exception_handlers(app=app, handlers=exception_handlers, **kwargs)
@@ -129,10 +131,15 @@ def create_app(
 
         return [line.decode("utf-8") for line in last_100_lines]
 
+    async def index(request: fastapi.Request):
+        return RedirectResponse(url=f"{base_path}/docs")
+
     if health_route:
         app.get(f"{base_path}/health")(health)
     if log_route:
         app.get(f"{base_path}/logs", include_in_schema=False)(logs)
+    if index_route:
+        app.get(f"/")(health)
 
     if serve_coverage:
         app.mount(
