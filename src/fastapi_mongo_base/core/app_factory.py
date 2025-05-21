@@ -96,6 +96,7 @@ def create_app(
         description = getattr(settings, "project_description", None)
     if version is None:
         version = getattr(settings, "project_version", "0.1.0")
+    
     base_path: str = settings.base_path
 
     if origins is None:
@@ -122,6 +123,24 @@ def create_app(
         redoc_url=redoc_url,
     )
 
+    app = configure_app(app=app, settings=settings, **kwargs)
+
+    return app
+
+
+def configure_app(
+    app: fastapi.FastAPI,
+    settings: Settings = None,
+    *,
+    serve_coverage: bool = False,
+    origins: list = None,
+    exception_handlers: dict = None,
+    log_route: bool = False,
+    health_route: bool = True,
+    index_route: bool = True,
+    **kwargs,
+) -> fastapi.FastAPI:
+    base_path: str = settings.base_path
     setup_exception_handlers(app=app, handlers=exception_handlers, **kwargs)
     setup_middlewares(app=app, origins=origins, **kwargs)
 
