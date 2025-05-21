@@ -12,7 +12,7 @@ except ImportError:
 
 class BaseEntitySchema(BaseModel):
     uid: str = Field(
-        default_factory=str(uuid.uuid4),
+        default_factory=lambda: str(uuid.uuid4()),
         json_schema_extra={"index": True, "unique": True},
         description="Unique identifier for the entity",
     )
