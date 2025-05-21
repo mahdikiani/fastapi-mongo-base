@@ -56,15 +56,21 @@ class Settings(metaclass=Singleton):
                     "level": console_level,
                     "formatter": "standard",
                 },
+                "file": {
+                    "class": "logging.FileHandler",
+                    "level": file_level,
+                    "filename": cls.base_dir / "logs" / "app.log",
+                    "formatter": "standard",
+                },
             },
             "loggers": {
                 "": {
-                    "handlers": ["console"],
+                    "handlers": ["console", "file"],
                     "level": "INFO",
                     "propagate": True,
                 },
                 "httpx": {
-                    "handlers": ["console"],
+                    "handlers": ["console", "file"],
                     "level": "WARNING",
                     "propagate": False,
                 },
