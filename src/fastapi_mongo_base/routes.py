@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime
-from typing import Any, Generic, Type, TypeVar
+from typing import Any, Type, TypeVar
 
 import singleton
 from fastapi import APIRouter, BackgroundTasks, Query, Request
@@ -15,17 +15,16 @@ try:
 except ImportError:
     from .core.config import Settings
 
-from .models import BaseEntity, BaseEntityTaskMixin
+from .models import BaseEntity
 from .schemas import BaseEntitySchema, PaginatedResponse
 from .tasks import TaskStatusEnum
 
 # Define a type variable
 T = TypeVar("T", bound=BaseEntity)
-TE = TypeVar("TE", bound=BaseEntityTaskMixin)
 TS = TypeVar("TS", bound=BaseEntitySchema)
 
 
-class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
+class AbstractBaseRouter(metaclass=singleton.Singleton):
 
     def __init__(
         self,
@@ -246,10 +245,10 @@ class AbstractBaseRouter(Generic[T, TS], metaclass=singleton.Singleton):
         return item
 
 
-class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
+class AbstractTaskRouter(AbstractBaseRouter):
     def __init__(
         self,
-        model: Type[TE],
+        model: Type[T],
         user_dependency: Any,
         schema: TS,
         draftable: bool = True,
@@ -293,7 +292,7 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
         if not self.draftable:
             data["task_status"] = "init"
 
-        item: TE = await super().create_item(request, data)
+        item: T = await super().create_item(request, data)
 
         if item.task_status == "init" or not self.draftable:
             background_tasks.add_task(item.start_processing)
@@ -303,7 +302,7 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
         self, request: Request, uid: str, background_tasks: BackgroundTasks
     ):
         user_id = await self.get_user_id(request)
-        item: TE = await self.get_item(uid, user_id=user_id)
+        item: T = await self.get_item(uid, user_id=user_id)
         background_tasks.add_task(item.start_processing)
         return item.model_dump()
 
@@ -322,29 +321,8 @@ class AbstractTaskRouter(AbstractBaseRouter[TE, TS]):
 def copy_router(router: APIRouter, new_prefix: str):
     new_router = APIRouter(prefix=new_prefix)
     for route in router.routes:
-        new_router.add_api_route(
-            route.path.replace(router.prefix, ""),
-            route.endpoint,
-            methods=[
-                method
-                for method in route.methods
-                if method in ["GET", "POST", "PUT", "DELETE", "PATCH"]
-            ],
-            name=route.name,
-            response_class=route.response_class,
-            status_code=route.status_code,
-            tags=route.tags,
-            dependencies=route.dependencies,
-            summary=route.summary,
-            description=route.description,
-            response_description=route.response_description,
-            responses=route.responses,
-            deprecated=route.deprecated,
-            include_in_schema=route.include_in_schema,
-            response_model=route.response_model,
-            response_model_include=route.response_model_include,
-            response_model_exclude=route.response_model_exclude,
-            response_model_by_alias=route.response_model_by_alias,
-        )
+        route_data = route.__dict__
+        route_data["path"] = route_data["path"].replace(router.prefix, "")
+        new_router.add_api_route(**route_data)
 
     return new_router
