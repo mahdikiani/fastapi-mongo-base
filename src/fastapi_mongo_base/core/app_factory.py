@@ -62,6 +62,7 @@ def setup_middlewares(*, app: fastapi.FastAPI, origins: list = None, **kwargs):
             allow_headers=["*"],
         )
 
+
 def create_app(
     settings: Settings = None,
     *,
@@ -100,7 +101,9 @@ def create_app(
         origins = ["http://localhost:8000"]
 
     if lifespan_func is None:
-        lifespan_func = lambda app: lifespan(app, worker, init_functions, settings)
+        lifespan_func = lambda app: lifespan(
+            app=app, worker=worker, init_functions=init_functions, settings=settings
+        )
 
     docs_url = f"{base_path}/docs"
     openapi_url = f"{base_path}/openapi.json"
