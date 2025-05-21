@@ -17,7 +17,7 @@ class Settings(metaclass=Singleton):
 
     # base_dir: Path = Path(__file__).resolve().parent.parent
     root_url: str = os.getenv("DOMAIN", default="http://localhost:8000")
-    project_name: str = os.getenv("PROJECT_NAME", default="PROJECT")
+    project_name: str = os.getenv("PROJECT_NAME") or "PROJECT"
     base_path: str = "/api/v1"
     worker_update_time: int = int(os.getenv("WORKER_UPDATE_TIME", default=180))
     debug: bool = os.getenv("DEBUG", default=False)

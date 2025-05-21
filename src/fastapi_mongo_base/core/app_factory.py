@@ -91,7 +91,7 @@ def create_app(
     if settings is None:
         settings = Settings()
     if title is None:
-        title = settings.project_name.replace("-", " ").title() or "FastAPI"
+        title = settings.project_name.replace("-", " ").title()
     if description is None:
         description = getattr(settings, "project_description", None)
     if version is None:
