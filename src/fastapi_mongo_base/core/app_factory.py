@@ -139,7 +139,7 @@ def create_app(
     if log_route:
         app.get(f"{base_path}/logs", include_in_schema=False)(logs)
     if index_route:
-        app.get(f"/")(health)
+        app.get(f"/")(index)
 
     if serve_coverage:
         app.mount(
