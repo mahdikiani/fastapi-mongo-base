@@ -69,11 +69,6 @@ class Settings(metaclass=Singleton):
                     "level": "INFO",
                     "propagate": True,
                 },
-                "httpx": {
-                    "handlers": ["console", "file"],
-                    "level": "WARNING",
-                    "propagate": False,
-                },
             },
             "version": 1,
         }
