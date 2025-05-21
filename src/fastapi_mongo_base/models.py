@@ -301,13 +301,16 @@ class BaseEntity(BaseEntitySchema, Document):
 
     @classmethod
     async def create_item(cls, data: dict):
+        pop_keys = []
         for key in data.keys():
             if cls.create_exclude_set() and key not in cls.create_field_set():
-                data.pop(key, None)
+                pop_keys.append(key)
             elif cls.create_exclude_set() and key in cls.create_exclude_set():
-                data.pop(key, None)
+                pop_keys.append(key)
 
-        data["uid"] = str(uuid.uuid4())
+        for key in pop_keys:
+            data.pop(key, None)
+
         data["created_at"] = datetime.now()
         data["updated_at"] = datetime.now()
 
