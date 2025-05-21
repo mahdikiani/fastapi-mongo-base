@@ -10,13 +10,30 @@ except ImportError:
     from .core.config import Settings
 
 
-class CoreEntitySchema(BaseModel):
-    created_at: datetime = Field(
-        default_factory=datetime.now, json_schema_extra={"index": True}
+class BaseEntitySchema(BaseModel):
+    uid: str = Field(
+        default_factory=str(uuid.uuid4),
+        json_schema_extra={"index": True, "unique": True},
+        description="Unique identifier for the entity",
     )
-    updated_at: datetime = Field(default_factory=datetime.now)
-    is_deleted: bool = False
-    meta_data: dict | None = None
+    created_at: datetime = Field(
+        default_factory=datetime.now,
+        json_schema_extra={"index": True},
+        description="Date and time the entity was created",
+    )
+    updated_at: datetime = Field(
+        default_factory=datetime.now,
+        json_schema_extra={"index": True},
+        description="Date and time the entity was last updated",
+    )
+    is_deleted: bool = Field(
+        default=False,
+        description="Whether the entity has been deleted",
+    )
+    meta_data: dict | None = Field(
+        default=None,
+        description="Additional metadata for the entity",
+    )
 
     def __hash__(self):
         return hash(self.model_dump_json())
@@ -48,19 +65,12 @@ class CoreEntitySchema(BaseModel):
     def expired(self, days: int = 3):
         return (datetime.now() - self.updated_at).days > days
 
-
-class BaseEntitySchema(CoreEntitySchema):
-    uid: str = Field(
-        default_factory=str(uuid.uuid4),
-        json_schema_extra={"index": True, "unique": True},
-    )
-
     @property
     def item_url(self):
         return f"https://{Settings.root_url}{Settings.base_path}/{self.__class__.__name__.lower()}s/{self.uid}"
 
 
-class OwnedEntitySchema(BaseEntitySchema):
+class UserOwnedEntitySchema(BaseEntitySchema):
     user_id: str
 
     @classmethod
@@ -72,27 +82,27 @@ class OwnedEntitySchema(BaseEntitySchema):
         return super().update_exclude_set() + ["user_id"]
 
 
-class BusinessEntitySchema(BaseEntitySchema):
-    business_name: str
+class TenantScopedEntitySchema(BaseEntitySchema):
+    tenant_id: str
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:
-        return super().create_exclude_set() + ["business_name"]
+        return super().create_exclude_set() + ["tenant_id"]
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
-        return super().update_exclude_set() + ["business_name"]
+        return super().update_exclude_set() + ["tenant_id"]
 
 
-class BusinessOwnedEntitySchema(OwnedEntitySchema, BusinessEntitySchema):
+class TenantUserEntitySchema(TenantScopedEntitySchema, UserOwnedEntitySchema):
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:
-        return list(set(super().create_exclude_set() + ["business_name", "user_id"]))
+        return list(set(super().create_exclude_set() + ["tenant_id", "user_id"]))
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
-        return list(set(super().update_exclude_set() + ["business_name", "user_id"]))
+        return list(set(super().update_exclude_set() + ["tenant_id", "user_id"]))
 
 
 T = TypeVar("T", bound=BaseEntitySchema)

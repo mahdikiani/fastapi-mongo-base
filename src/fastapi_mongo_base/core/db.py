@@ -21,7 +21,7 @@ async def init_mongo_db():
             cls
             for cls in basic.get_all_subclasses(BaseEntity)
             if not (
-                hasattr(cls, "Settings")
+                "Settings" in cls.__dict__
                 and getattr(cls.Settings, "__abstract__", False)
             )
         ],

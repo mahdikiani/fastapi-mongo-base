@@ -4,7 +4,6 @@ from collections import deque
 from contextlib import asynccontextmanager
 
 import fastapi
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from fastapi_mongo_base.core import db, exceptions
@@ -16,20 +15,13 @@ except ImportError:
 
 
 async def health(request: fastapi.Request):
-    return {
-        "status": "up",
-        "host": request.url.hostname,
-        # "project_name": settings.project_name,
-        # "host2": request.base_url.hostname,
-        # "original_host":request.headers.get("x-original-host", "!not found!"),
-        # "forwarded_host": request.headers.get("X-Forwarded-Host", "forwarded_host"),
-        # "forwarded_proto": request.headers.get("X-Forwarded-Proto", "forwarded_proto"),
-        # "forwarded_for": request.headers.get("X-Forwarded-For", "forwarded_for"),
-    }
+    return {"status": "up"}
 
 
 @asynccontextmanager
-async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[], settings: Settings = None):  # type: ignore
+async def lifespan(
+    *, app: fastapi.FastAPI, worker=None, init_functions=[], settings: Settings = None
+):
     """Initialize application services."""
     await db.init_mongo_db()
 
@@ -49,44 +41,18 @@ async def lifespan(app: fastapi.FastAPI, worker=None, init_functions=[], setting
     logging.info("Shutdown complete")
 
 
-def setup_exception_handlers(
-    app: fastapi.FastAPI,
-    usso_handler: bool = True,
-    ufaas_handler: bool = True,
-    **kwargs,
-):
+def setup_exception_handlers(*, app: fastapi.FastAPI, handlers: dict = None, **kwargs):
     exception_handlers = exceptions.EXCEPTION_HANDLERS
-    if usso_handler:
-        try:
-            from usso.fastapi.integration import (
-                EXCEPTION_HANDLERS as USSO_EXCEPTION_HANDLERS,
-            )
-
-            exception_handlers.update(USSO_EXCEPTION_HANDLERS)
-        except ImportError:
-            pass
-    if ufaas_handler:
-        try:
-            from ufaas.fastapi.integration import (
-                EXCEPTION_HANDLERS as UFAAS_EXCEPTION_HANDLERS,
-            )
-
-            exception_handlers.update(UFAAS_EXCEPTION_HANDLERS)
-        except ImportError:
-            pass
+    if handlers:
+        exception_handlers.update(handlers)
 
     for exc_class, handler in exception_handlers.items():
         app.exception_handler(exc_class)(handler)
 
 
-def setup_middlewares(
-    app: fastapi.FastAPI,
-    origins: list = None,
-    original_host_middleware: bool = False,
-    request_log_middleware: bool = False,
-    timer_middleware: bool = True,
-    **kwargs,
-):
+def setup_middlewares(*, app: fastapi.FastAPI, origins: list = None, **kwargs):
+    from fastapi.middleware.cors import CORSMiddleware
+
     if origins:
         app.add_middleware(
             CORSMiddleware,
@@ -95,20 +61,6 @@ def setup_middlewares(
             allow_methods=["*"],
             allow_headers=["*"],
         )
-
-    if original_host_middleware:
-        from ufaas_fastapi_business.core.middlewares import OriginalHostMiddleware
-
-        app.add_middleware(OriginalHostMiddleware)
-    if request_log_middleware:
-        from .middlewares import RequestLoggingMiddleware
-
-        app.add_middleware(RequestLoggingMiddleware)
-    if timer_middleware:
-        from .middlewares import TimerMiddleware
-
-        app.add_middleware(TimerMiddleware)
-
 
 def create_app(
     settings: Settings = None,
@@ -121,20 +73,12 @@ def create_app(
     lifespan_func=None,
     worker=None,
     init_functions: list = [],
-    contact={
-        "name": "Mahdi Kiani",
-        "url": "https://github.com/mahdikiani/FastAPILaunchpad",
-        "email": "mahdikiany@gmail.com",
-    },
+    contact=None,
     license_info={
         "name": "MIT License",
         "url": "https://github.com/mahdikiani/FastAPILaunchpad/blob/main/LICENSE",
     },
-    usso_handler: bool = True,
-    ufaas_handler: bool = True,
-    original_host_middleware: bool = False,
-    request_log_middleware: bool = False,
-    timer_middleware: bool = True,
+    exception_handlers: dict = None,
     log_route: bool = False,
     health_route: bool = True,
     **kwargs,
@@ -172,15 +116,8 @@ def create_app(
         openapi_url=openapi_url,
     )
 
-    setup_exception_handlers(app, usso_handler, ufaas_handler, **kwargs)
-    setup_middlewares(
-        app,
-        origins,
-        original_host_middleware,
-        request_log_middleware,
-        timer_middleware,
-        **kwargs,
-    )
+    setup_exception_handlers(app=app, handlers=exception_handlers, **kwargs)
+    setup_middlewares(app=app, origins=origins, **kwargs)
 
     async def logs():
         with open(settings.get_log_config()["info_log_path"], "rb") as f:

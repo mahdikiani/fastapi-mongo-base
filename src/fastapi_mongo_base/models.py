@@ -3,15 +3,11 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
+import json_advanced
 from beanie import Document, Insert, Replace, Save, SaveChanges, Update, before_event
 from beanie.odm.queries.find import FindMany
 from pydantic import ConfigDict
 from pymongo import ASCENDING, IndexModel
-
-try:
-    from json_advanced import loads
-except ImportError:
-    from json import loads
 
 try:
     from server.config import Settings
@@ -20,11 +16,10 @@ except ImportError:
 
 from .schemas import (
     BaseEntitySchema,
-    BusinessEntitySchema,
-    BusinessOwnedEntitySchema,
-    OwnedEntitySchema,
+    TenantScopedEntitySchema,
+    TenantUserEntitySchema,
+    UserOwnedEntitySchema,
 )
-from .tasks import TaskMixin
 
 
 class BaseEntity(BaseEntitySchema, Document):
@@ -68,7 +63,7 @@ class BaseEntity(BaseEntitySchema, Document):
         value = value.strip()
         try:
             if value.startswith("[") and value.endswith("]"):
-                parsed = loads(value)
+                parsed = json_advanced.loads(value)
                 if isinstance(parsed, list):
                     return list(set(parsed))
                 return [parsed]
@@ -341,7 +336,7 @@ class BaseEntity(BaseEntitySchema, Document):
         return item
 
 
-class OwnedEntity(OwnedEntitySchema, BaseEntity):
+class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
 
     class Settings(BaseEntity.Settings):
         __abstract__ = True
@@ -349,62 +344,55 @@ class OwnedEntity(OwnedEntitySchema, BaseEntity):
         indexes = BaseEntity.Settings.indexes + [IndexModel([("user_id", ASCENDING)])]
 
     @classmethod
-    async def get_item(cls, uid, user_id, *args, **kwargs) -> "OwnedEntity":
+    async def get_item(cls, uid, user_id, *args, **kwargs) -> "UserOwnedEntity":
         if user_id == None and kwargs.get("ignore_user_id") != True:
             raise ValueError("user_id is required")
         return await super().get_item(uid, user_id=user_id, *args, **kwargs)
 
 
-class BusinessEntity(BusinessEntitySchema, BaseEntity):
+class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
 
     class Settings(BaseEntity.Settings):
         __abstract__ = True
 
-        indexes = BaseEntity.Settings.indexes + [
-            IndexModel([("business_name", ASCENDING)])
-        ]
+        indexes = BaseEntity.Settings.indexes + [IndexModel([("tenant_id", ASCENDING)])]
 
     @classmethod
-    async def get_item(cls, uid, business_name, *args, **kwargs) -> "BusinessEntity":
-        if business_name == None:
-            raise ValueError("business_name is required")
-        return await super().get_item(uid, business_name=business_name, *args, **kwargs)
+    async def get_item(cls, uid, tenant_id, *args, **kwargs) -> "TenantScopedEntity":
+        if tenant_id == None:
+            raise ValueError("tenant_id is required")
+        return await super().get_item(uid, tenant_id=tenant_id, *args, **kwargs)
 
-    async def get_business(self):
+    async def get_tenant(self):
         raise NotImplementedError
-        from apps.business_mongo.models import Business
+        from apps.tenant_mongo.models import Tenant
 
-        return await Business.get_by_name(self.business_name)
+        return await Tenant.get_by_name(self.tenant_id)
 
 
-class BusinessOwnedEntity(BusinessOwnedEntitySchema, BaseEntity):
+class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
 
-    class Settings(BusinessEntity.Settings):
+    class Settings(TenantScopedEntity.Settings):
         __abstract__ = True
 
-        indexes = BusinessEntity.Settings.indexes + [
+        indexes = TenantScopedEntity.Settings.indexes + [
             IndexModel([("user_id", ASCENDING)])
         ]
 
     @classmethod
     async def get_item(
-        cls, uid, business_name, user_id, *args, **kwargs
-    ) -> "BusinessOwnedEntity":
-        if business_name == None:
-            raise ValueError("business_name is required")
+        cls, uid, tenant_id, user_id, *args, **kwargs
+    ) -> "TenantUserEntity":
+        if tenant_id == None:
+            raise ValueError("tenant_id is required")
         # if user_id == None:
         #     raise ValueError("user_id is required")
         return await super().get_item(
-            uid, business_name=business_name, user_id=user_id, *args, **kwargs
+            uid, tenant_id=tenant_id, user_id=user_id, *args, **kwargs
         )
 
 
-class BaseEntityTaskMixin(BaseEntity, TaskMixin):
-    class Settings(BaseEntity.Settings):
-        __abstract__ = True
-
-
-class ImmutableBase(BaseEntity):
+class ImmutableMixin(BaseEntity):
     model_config = ConfigDict(frozen=True)
 
     class Settings(BaseEntity.Settings):
@@ -417,21 +405,3 @@ class ImmutableBase(BaseEntity):
     @classmethod
     async def delete_item(cls, item: "BaseEntity"):
         raise ValueError("Immutable items cannot be deleted")
-
-
-class ImmutableOwnedEntity(ImmutableBase, OwnedEntity):
-
-    class Settings(OwnedEntity.Settings):
-        __abstract__ = True
-
-
-class ImmutableBusinessEntity(ImmutableBase, BusinessEntity):
-
-    class Settings(BusinessEntity.Settings):
-        __abstract__ = True
-
-
-class ImmutableBusinessOwnedEntity(ImmutableBase, BusinessOwnedEntity):
-
-    class Settings(BusinessOwnedEntity.Settings):
-        __abstract__ = True

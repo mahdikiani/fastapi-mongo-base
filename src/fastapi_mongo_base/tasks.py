@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, field_serializer, field_validator
 from singleton import Singleton
 
 from .schemas import BaseEntitySchema
-from .utils import aionetwork, basic
+from .utils import basic
 
 
 class TaskStatusEnum(str, Enum):
@@ -117,7 +117,8 @@ class TaskMixin(BaseModel):
     task_references: TaskReferenceList | None = None
     task_start_at: datetime | None = None
     task_end_at: datetime | None = None
-    task_order_score: float = 0.0
+    task_order_score: int = 0
+    webhook_custom_headers: dict | None = None
     webhook_url: str | None = None
 
     @classmethod
@@ -166,8 +167,10 @@ class TaskMixin(BaseModel):
     async def emit_signals(cls, task_instance: "TaskMixin", *, sync=False, **kwargs):
 
         async def webhook_call(*args, **kwargs):
+            import httpx
+
             try:
-                await aionetwork.aio_request(*args, **kwargs)
+                await httpx.AsyncClient().post(*args, **kwargs)
             except Exception as e:
                 import traceback
 
@@ -204,7 +207,10 @@ class TaskMixin(BaseModel):
                 webhook_call(
                     method="post",
                     url=webhook_url,
-                    headers={"Content-Type": "application/json"},
+                    headers={
+                        "Content-Type": "application/json",
+                        **(task_instance.webhook_custom_headers or {}),
+                    },
                     data=json.dumps(task_dict),
                 )
             )
