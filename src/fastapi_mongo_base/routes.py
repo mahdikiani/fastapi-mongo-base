@@ -29,8 +29,8 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
     def __init__(
         self,
         model: Type[T],
-        user_dependency: Any,
         *args,
+        user_dependency = None,
         prefix: str = None,
         tags: list[str] = None,
         schema: Type[TS] = None,
