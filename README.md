@@ -1,80 +1,227 @@
 # FastAPI MongoDB Base
 
-A powerful boilerplate application for building FastAPI applications with MongoDB integration. This package provides a solid foundation with pre-configured models, schemas, and abstract routers to help you start your development project quickly.
+A powerful package that provides base classes and utilities for building FastAPI applications with MongoDB. Built on top of FastAPI and Beanie ODM, it offers pre-built CRUD operations, authentication, caching, and more.
 
-## Features
+## ✨ Features
 
-- 🚀 **FastAPI Integration**: Built on top of FastAPI for high performance and easy-to-use API development
-- 📦 **MongoDB Support**: Seamless integration with MongoDB using Beanie ODM
-- 🔒 **Authentication Ready**: Built-in JWT authentication support
-- 📝 **Pydantic Models**: Type-safe data validation and serialization
-- 🎯 **Abstract Routers**: Pre-built abstract CRUD operations
-- 🔄 **Caching Support**: Built-in caching mechanism for improved performance
-- 🛠 **Task Management**: Background task handling capabilities
+- 🚀 **Ready-to-use CRUD Operations**: Pre-built abstract routers with full CRUD functionality
+- 📦 **MongoDB Integration**: Seamless integration using Beanie ODM
+- 🔒 **Authentication**: Built-in JWT authentication support
+- 📝 **Type Safety**: Pydantic models for request/response validation
+- 🔄 **Caching**: Built-in caching mechanism for improved performance
+- 🛠 **Background Tasks**: Easy background task handling
 - 📸 **Image Processing**: Optional image processing support (requires Pillow)
 
-## Installation
+## 📦 Installation
 
 ```bash
 pip install fastapi-mongo-base
 ```
 
-For image processing support:
-```bash
-pip install "fastapi-mongo-base[image]"
+## 🚀 Quick Start
+
+1. Create your schema:
+```python
+from fastapi_mongo_base.schemas import BaseEntitySchema
+
+class UserSchema(BaseEntitySchema):
+    email: str
+    name: str
+    age: int | None = None
 ```
 
-For development/testing:
-```bash
-pip install "fastapi-mongo-base[test]"
+2. Create your model:
+```python
+from fastapi_mongo_base.models import BaseEntity
+from .schemas import UserSchema
+
+class User(UserSchema, BaseEntity):
+    """User model that inherits from both UserSchema and BaseEntity"""
+    pass
 ```
 
-## Quick Start
+3. Set up your router:
+```python
+from fastapi_mongo_base.routes import AbstractBaseRouter
+from . import models, schemas
 
-1. Create a new FastAPI application:
+class UserRouter(AbstractBaseRouter):
+    def __init__(self):
+        super().__init__(model=models.User, schema=schemas.UserSchema)
 
+router = UserRouter().router
+```
+
+4. Include in your FastAPI app:
 ```python
 from fastapi import FastAPI
-from fastapi_mongo_base import MongoBase
+from fastapi_mongo_base.core import app_factory
 
-app = FastAPI()
-mongo_base = MongoBase(app)
-
-# Configure MongoDB connection
-mongo_base.setup_mongodb(
-    mongodb_url="mongodb://localhost:27017",
-    database_name="your_database"
-)
+app = app_factory.create_app()
+app.include_router(router, prefix="/api/v1/users")
 ```
 
-2. Create a model:
+## 📚 Available Endpoints
+
+Each router automatically provides these endpoints:
+
+- `GET /api/v1/users` - List all users
+- `POST /api/v1/users` - Create a new user
+- `GET /api/v1/users/{id}` - Get a specific user
+- `PATCH /api/v1/users/{id}` - Update a user
+- `DELETE /api/v1/users/{id}` - Delete a user
+
+## 🔧 Configuration
+
+Configure your application using environment variables or a settings class:
 
 ```python
-from fastapi_mongo_base.models import BaseModel
+import dataclasses
+import logging
+import logging.config
+import os
 
-class User(BaseModel):
-    name: str
-    email: str
+import dotenv
+from singleton import Singleton
+
+dotenv.load_dotenv()
+
+
+@dataclasses.dataclass
+class Settings(metaclass=Singleton):
+    root_url: str = os.getenv("DOMAIN", default="http://localhost:8000")
+    project_name: str = os.getenv("PROJECT_NAME", default="PROJECT")
+    base_path: str = "/api/v1"
+    worker_update_time: int = int(os.getenv("WORKER_UPDATE_TIME", default=180))
+    testing: bool = os.getenv("DEBUG", default=False)
+
+    page_max_limit: int = 100
+
+    mongo_uri: str = os.getenv("MONGO_URI", default="mongodb://localhost:27017/")
+    redis_uri: str = os.getenv("REDIS_URI", default="redis://localhost:6379/0")
+
+    app_id: str = os.getenv("APP_ID")
+    app_secret: str = os.getenv("APP_SECRET")
+
+    JWT_CONFIG: str = os.getenv(
+        "USSO_JWT_CONFIG",
+        default='{"jwk_url": "https://sso.usso.io/website/jwks.json","type": "RS256","header": {"type": "Cookie", "name": "usso_access_token"} }',
+    )
+
+    @classmethod
+    def get_coverage_dir(cls):
+        return cls.base_dir / "htmlcov"
+
+    @classmethod
+    def get_log_config(
+        cls, console_level: str = "INFO", file_level: str = "INFO", **kwargs
+    ):
+        log_config = {
+            "formatters": {
+                "standard": {
+                    "format": "[{levelname} : {filename}:{lineno} : {asctime} -> {funcName:10}] {message}",
+                    "style": "{",
+                }
+            },
+            "handlers": {
+                "console": {
+                    "class": "logging.StreamHandler",
+                    "level": console_level,
+                    "formatter": "standard",
+                },
+                "file": {
+                    "class": "logging.FileHandler",
+                    "level": file_level,
+                    "filename": cls.base_dir / "logs" / "app.log",
+                    "formatter": "standard",
+                },
+            },
+            "loggers": {
+                "": {
+                    "handlers": ["console", "file"],
+                    "level": "INFO",
+                    "propagate": True,
+                },
+                "httpx": {
+                    "handlers": ["console", "file"],
+                    "level": "WARNING",
+                    "propagate": False,
+                },
+            },
+            "version": 1,
+        }
+        return log_config
+
+    @classmethod
+    def config_logger(cls):
+        log_config = cls.get_log_config()
+        if log_config["handlers"].get("file"):
+            (cls.base_dir / "logs").mkdir(parents=True, exist_ok=True)
+
+        logging.config.dictConfig(cls.get_log_config())
+
 ```
 
-3. Create a router:
+## 🛠️ Advanced Usage
+
+### Custom Business Logic
+
+Extend the base router to add custom endpoints:
 
 ```python
-from fastapi_mongo_base.routes import BaseRouter
+from fastapi_mongo_base.routes import AbstractBaseRouter
 
-user_router = BaseRouter(User)
-app.include_router(user_router, prefix="/users", tags=["users"])
+class UserRouter(AbstractBaseRouter):
+    def __init__(self):
+        super().__init__(model=models.User, schema=schemas.UserSchema)
+    
+    @router.get("/me")
+    async def get_current_user(self):
+        # Your custom logic here
+        pass
 ```
 
-## Requirements
+### Background Tasks
+
+Handle background tasks easily:
+
+```python
+import asyncio
+import logging
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from server.config import Settings
+
+logging.getLogger("apscheduler").setLevel(logging.WARNING)
+
+async def log_something():
+    logging.info('something')
+
+async def worker():
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(
+        log_something, "interval", seconds=Settings.worker_update_time
+    )
+
+    scheduler.start()
+
+    try:
+        await asyncio.Event().wait()
+    except (KeyboardInterrupt, SystemExit):
+        pass
+    finally:
+        scheduler.shutdown()
+```
+
+## 📋 Requirements
 
 - Python >= 3.9
 - FastAPI >= 0.65.0
 - Pydantic >= 2.0.0
 - MongoDB
-- Other dependencies as specified in pyproject.toml
+- Beanie ODM
 
-## Project Structure
+## 🔍 Project Structure
 
 ```
 fastapi_mongo_base/
@@ -83,24 +230,24 @@ fastapi_mongo_base/
 ├── routes.py       # Abstract routers and endpoints
 ├── schemas.py      # Pydantic models for request/response
 ├── tasks.py        # Background task handling
-├── cached.py       # Caching utilities
 └── utils/          # Utility functions and helpers
 ```
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-## License
+## 📝 License
 
 Distributed under the MIT License. See [LICENSE](LICENSE.txt) for more information.
 
-## Author
+## 👤 Author
 
 - Mahdi Kiani - [GitHub](https://github.com/mahdikiani)
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - FastAPI team for the amazing framework
 - MongoDB team for the powerful database
+- Beanie team for the excellent ODM
 - All contributors who have helped shape this project
