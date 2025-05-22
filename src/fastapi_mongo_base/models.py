@@ -1,25 +1,18 @@
-import json
-import uuid
-from datetime import date, datetime
-from decimal import Decimal
+from datetime import datetime
 
-import json_advanced
 from beanie import Document, Insert, Replace, Save, SaveChanges, Update, before_event
 from beanie.odm.queries.find import FindMany
 from pydantic import ConfigDict
 from pymongo import ASCENDING, IndexModel
 
-try:
-    from server.config import Settings
-except ImportError:
-    from .core.config import Settings
-
+from .core.config import Settings
 from .schemas import (
     BaseEntitySchema,
     TenantScopedEntitySchema,
     TenantUserEntitySchema,
     UserOwnedEntitySchema,
 )
+from .utils import basic
 
 
 class BaseEntity(BaseEntitySchema, Document):
@@ -43,41 +36,10 @@ class BaseEntity(BaseEntitySchema, Document):
         self.updated_at = datetime.now()
 
     @classmethod
-    def _parse_array_parameter(cls, value) -> list:
-        """Parse input value into a list, handling various input formats.
-
-        Args:
-            value: Input value that could be a JSON string, comma-separated string,
-                  list, tuple, or single value
-
-        Returns:
-            list: Parsed list of values
-        """
-        if isinstance(value, (list, tuple)):
-            return list(set(value))
-
-        if not isinstance(value, str):
-            return [value]
-
-        # Try parsing as JSON first
-        value = value.strip()
-        try:
-            if value.startswith("[") and value.endswith("]"):
-                parsed = json_advanced.loads(value)
-                if isinstance(parsed, list):
-                    return list(set(parsed))
-                return [parsed]
-        except (json.JSONDecodeError, ValueError):
-            pass
-
-        # Fallback to comma-separated values
-        return list(set([v.strip() for v in value.split(",") if v.strip()]))
-
-    @classmethod
     def get_queryset(
         cls,
         user_id: str | None = None,
-        business_name: str | None = None,
+        tenant_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
         *args,
@@ -87,7 +49,7 @@ class BaseEntity(BaseEntitySchema, Document):
 
         Args:
             user_id: Filter by user ID if the model has user_id field
-            business_name: Filter by business name if the model has business_name field
+            tenant_id: Filter by tenant ID if the model has tenant_id field
             is_deleted: Filter by deletion status
             uid: Filter by unique identifier
             **kwargs: Additional filters that can include range queries with _from/_to suffixes
@@ -104,8 +66,8 @@ class BaseEntity(BaseEntitySchema, Document):
         if hasattr(cls, "user_id") and user_id:
             base_query.append({"user_id": user_id})
 
-        if hasattr(cls, "business_name"):
-            base_query.append({"business_name": business_name})
+        if hasattr(cls, "tenant_id"):
+            base_query.append({"tenant_id": tenant_id})
 
         if uid:
             base_query.append({"uid": uid})
@@ -116,7 +78,7 @@ class BaseEntity(BaseEntitySchema, Document):
                 continue
 
             # Extract base field name without suffixes
-            base_field = cls._get_base_field_name(key)
+            base_field = basic.get_base_field_name(key)
 
             # Validate field is allowed for searching
             if cls.search_field_set() and base_field not in cls.search_field_set():
@@ -128,13 +90,13 @@ class BaseEntity(BaseEntitySchema, Document):
 
             # Handle range queries and array operators
             if key.endswith("_from") or key.endswith("_to"):
-                if cls._is_valid_range_value(value):
+                if basic.is_valid_range_value(value):
                     if key.endswith("_from"):
                         base_query.append({base_field: {"$gte": value}})
                     elif key.endswith("_to"):
                         base_query.append({base_field: {"$lte": value}})
             elif key.endswith("_in") or key.endswith("_nin"):
-                value_list = cls._parse_array_parameter(value)
+                value_list = basic.parse_array_parameter(value)
                 operator = "$in" if key.endswith("_in") else "$nin"
                 base_query.append({base_field: {operator: value_list}})
             else:
@@ -143,28 +105,10 @@ class BaseEntity(BaseEntitySchema, Document):
         return base_query
 
     @classmethod
-    def _get_base_field_name(cls, field: str) -> str:
-        """Extract the base field name by removing suffixes."""
-        if field.endswith("_from"):
-            return field[:-5]
-        elif field.endswith("_to"):
-            return field[:-3]
-        elif field.endswith("_in"):
-            return field[:-3]
-        elif field.endswith("_nin"):
-            return field[:-4]
-        return field
-
-    @classmethod
-    def _is_valid_range_value(cls, value) -> bool:
-        """Check if value is valid for range comparison."""
-        return isinstance(value, (int, float, Decimal, datetime, date, str))
-
-    @classmethod
     def get_query(
         cls,
         user_id: str | None = None,
-        business_name: str | None = None,
+        tenant_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
         created_at_from: datetime = None,
@@ -174,7 +118,7 @@ class BaseEntity(BaseEntitySchema, Document):
     ) -> FindMany:
         base_query = cls.get_queryset(
             user_id=user_id,
-            business_name=business_name,
+            tenant_id=tenant_id,
             is_deleted=is_deleted,
             uid=uid,
             created_at_from=created_at_from,
@@ -190,14 +134,14 @@ class BaseEntity(BaseEntitySchema, Document):
         cls,
         uid: str,
         user_id: str | None = None,
-        business_name: str | None = None,
+        tenant_id: str | None = None,
         is_deleted: bool = False,
         *args,
         **kwargs,
     ) -> "BaseEntity":
         query = cls.get_query(
             user_id=user_id,
-            business_name=business_name,
+            tenant_id=tenant_id,
             is_deleted=is_deleted,
             uid=uid,
             *args,
@@ -227,7 +171,7 @@ class BaseEntity(BaseEntitySchema, Document):
     async def list_items(
         cls,
         user_id: str | None = None,
-        business_name: str | None = None,
+        tenant_id: str | None = None,
         offset: int = 0,
         limit: int = 10,
         is_deleted: bool = False,
@@ -238,7 +182,7 @@ class BaseEntity(BaseEntitySchema, Document):
 
         query = cls.get_query(
             user_id=user_id,
-            business_name=business_name,
+            tenant_id=tenant_id,
             is_deleted=is_deleted,
             *args,
             **kwargs,
@@ -252,14 +196,14 @@ class BaseEntity(BaseEntitySchema, Document):
     async def total_count(
         cls,
         user_id: str | None = None,
-        business_name: str | None = None,
+        tenant_id: str | None = None,
         is_deleted: bool = False,
         *args,
         **kwargs,
     ):
         query = cls.get_query(
             user_id=user_id,
-            business_name=business_name,
+            tenant_id=tenant_id,
             is_deleted=is_deleted,
             *args,
             **kwargs,
@@ -270,7 +214,7 @@ class BaseEntity(BaseEntitySchema, Document):
     async def list_total_combined(
         cls,
         user_id: str | None = None,
-        business_name: str | None = None,
+        tenant_id: str | None = None,
         offset: int = 0,
         limit: int = 10,
         is_deleted: bool = False,
@@ -279,7 +223,7 @@ class BaseEntity(BaseEntitySchema, Document):
     ) -> tuple[list["BaseEntity"], int]:
         items = await cls.list_items(
             user_id=user_id,
-            business_name=business_name,
+            tenant_id=tenant_id,
             offset=offset,
             limit=limit,
             is_deleted=is_deleted,
@@ -287,7 +231,7 @@ class BaseEntity(BaseEntitySchema, Document):
         )
         total = await cls.total_count(
             user_id=user_id,
-            business_name=business_name,
+            tenant_id=tenant_id,
             is_deleted=is_deleted,
             **kwargs,
         )
@@ -368,9 +312,6 @@ class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
 
     async def get_tenant(self):
         raise NotImplementedError
-        from apps.tenant_mongo.models import Tenant
-
-        return await Tenant.get_by_name(self.tenant_id)
 
 
 class TenantUserEntity(TenantUserEntitySchema, BaseEntity):

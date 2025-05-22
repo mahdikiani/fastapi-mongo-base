@@ -10,11 +10,7 @@ try:
 except ImportError:
     from .core.exceptions import BaseHTTPException
 
-try:
-    from server.config import Settings
-except ImportError:
-    from .core.config import Settings
-
+from .core.config import Settings
 from .models import BaseEntity
 from .schemas import BaseEntitySchema, PaginatedResponse
 from .tasks import TaskStatusEnum
@@ -30,7 +26,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         self,
         model: Type[T],
         *args,
-        user_dependency = None,
+        user_dependency=None,
         prefix: str = None,
         tags: list[str] = None,
         schema: Type[TS] = None,
@@ -125,11 +121,11 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         self,
         uid: str,
         user_id: str | None = None,
-        business_name: str | None = None,
+        tenant_id: str | None = None,
         **kwargs,
     ):
         item = await self.model.get_item(
-            uid, user_id=user_id, business_name=business_name, **kwargs
+            uid, user_id=user_id, tenant_id=tenant_id, **kwargs
         )
         if item is None:
             raise BaseHTTPException(

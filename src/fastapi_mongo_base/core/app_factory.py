@@ -4,14 +4,12 @@ from collections import deque
 from contextlib import asynccontextmanager
 
 import fastapi
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
+
 from fastapi_mongo_base.core import db, exceptions
 
-try:
-    from server.config import Settings
-except ImportError:
-    from .config import Settings
+from .config import Settings
 
 
 async def health(request: fastapi.Request):
