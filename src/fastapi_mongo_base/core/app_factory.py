@@ -123,7 +123,16 @@ def create_app(
         redoc_url=redoc_url,
     )
 
-    app = configure_app(app=app, settings=settings, **kwargs)
+    app = configure_app(
+        app=app,
+        settings=settings,
+        origins=origins,
+        exception_handlers=exception_handlers,
+        log_route=log_route,
+        health_route=health_route,
+        index_route=index_route,
+        **kwargs,
+    )
 
     return app
 
