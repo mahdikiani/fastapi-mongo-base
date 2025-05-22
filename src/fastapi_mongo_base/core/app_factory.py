@@ -63,6 +63,61 @@ def setup_middlewares(*, app: fastapi.FastAPI, origins: list = None, **kwargs):
         )
 
 
+def get_app_kwargs(
+    *,
+    settings: Settings = None,
+    title=None,
+    description=None,
+    version="0.1.0",
+    origins: list = None,
+    lifespan_func=None,
+    worker=None,
+    init_functions: list = [],
+    contact=None,
+    license_info={
+        "name": "MIT License",
+        "url": "https://github.com/mahdikiani/FastAPILaunchpad/blob/main/LICENSE",
+    },
+    **kwargs,
+):
+    settings.config_logger()
+
+    """Create a FastAPI app with shared configurations."""
+    if settings is None:
+        settings = Settings()
+    if title is None:
+        title = settings.project_name.replace("-", " ").title()
+    if description is None:
+        description = getattr(settings, "project_description", None)
+    if version is None:
+        version = getattr(settings, "project_version", "0.1.0")
+
+    base_path: str = settings.base_path
+
+    if origins is None:
+        origins = ["http://localhost:8000"]
+
+    if lifespan_func is None:
+        lifespan_func = lambda app: lifespan(
+            app=app, worker=worker, init_functions=init_functions, settings=settings
+        )
+
+    docs_url = f"{base_path}/docs"
+    openapi_url = f"{base_path}/openapi.json"
+    redoc_url = f"{base_path}/redoc"
+    return dict(
+        title=title,
+        version=version,
+        description=description,
+        lifespan=lifespan_func,
+        contact=contact,
+        license_info=license_info,
+        docs_url=docs_url,
+        openapi_url=openapi_url,
+        redoc_url=redoc_url,
+    )
+
+
 def create_app(
     settings: Settings = None,
     *,
@@ -85,48 +140,26 @@ def create_app(
     index_route: bool = True,
     **kwargs,
 ) -> fastapi.FastAPI:
-    settings.config_logger()
-
-    """Create a FastAPI app with shared configurations."""
-    if settings is None:
-        settings = Settings()
-    if title is None:
-        title = settings.project_name.replace("-", " ").title()
-    if description is None:
-        description = getattr(settings, "project_description", None)
-    if version is None:
-        version = getattr(settings, "project_version", "0.1.0")
-    
-    base_path: str = settings.base_path
-
-    if origins is None:
-        origins = ["http://localhost:8000"]
-
-    if lifespan_func is None:
-        lifespan_func = lambda app: lifespan(
-            app=app, worker=worker, init_functions=init_functions, settings=settings
-        )
-
-    docs_url = f"{base_path}/docs"
-    openapi_url = f"{base_path}/openapi.json"
-    redoc_url = f"{base_path}/redoc"
-
-    app = fastapi.FastAPI(
+    data = get_app_kwargs(
+        settings=settings,
         title=title,
-        version=version,
         description=description,
-        lifespan=lifespan_func,
+        version=version,
+        origins=origins,
+        lifespan_func=lifespan_func,
+        worker=worker,
+        init_functions=init_functions,
         contact=contact,
         license_info=license_info,
-        docs_url=docs_url,
-        openapi_url=openapi_url,
-        redoc_url=redoc_url,
     )
+
+    app = fastapi.FastAPI(**data)
 
     app = configure_app(
         app=app,
         settings=settings,
         origins=origins,
+        serve_coverage=serve_coverage,
         exception_handlers=exception_handlers,
         log_route=log_route,
         health_route=health_route,
