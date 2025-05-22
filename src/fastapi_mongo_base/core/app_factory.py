@@ -69,7 +69,6 @@ def get_app_kwargs(
     title=None,
     description=None,
     version="0.1.0",
-    origins: list = None,
     lifespan_func=None,
     worker=None,
     init_functions: list = [],
@@ -93,9 +92,6 @@ def get_app_kwargs(
         version = getattr(settings, "project_version", "0.1.0")
 
     base_path: str = settings.base_path
-
-    if origins is None:
-        origins = ["http://localhost:8000"]
 
     if lifespan_func is None:
         lifespan_func = lambda app: lifespan(
@@ -186,6 +182,9 @@ def configure_app(
     setup_exception_handlers(app=app, handlers=exception_handlers, **kwargs)
     setup_middlewares(app=app, origins=origins, **kwargs)
 
+    if origins is None:
+        origins = ["http://localhost:8000"]
+
     async def logs():
         with open(settings.get_log_config()["info_log_path"], "rb") as f:
             last_100_lines = deque(f, maxlen=100)
@@ -200,7 +199,7 @@ def configure_app(
     if log_route:
         app.get(f"{base_path}/logs", include_in_schema=False)(logs)
     if index_route:
-        app.get(f"/")(index)
+        app.get(f"/", include_in_schema=False)(index)
 
     if serve_coverage:
         app.mount(
