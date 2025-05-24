@@ -1,5 +1,5 @@
 import uuid6
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
@@ -14,12 +14,12 @@ class BaseEntitySchema(BaseModel):
         description="Unique identifier for the entity",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(timezone.utc),
         json_schema_extra={"index": True},
         description="Date and time the entity was created",
     )
     updated_at: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(timezone.utc),
         json_schema_extra={"index": True},
         description="Date and time the entity was last updated",
     )
@@ -60,7 +60,7 @@ class BaseEntitySchema(BaseModel):
         return []
 
     def expired(self, days: int = 3):
-        return (datetime.now() - self.updated_at).days > days
+        return (datetime.now(timezone.utc) - self.updated_at).days > days
 
     @property
     def item_url(self):

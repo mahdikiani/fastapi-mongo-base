@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from beanie import Document, Insert, Replace, Save, SaveChanges, Update, before_event
 from beanie.odm.queries.find import FindMany
@@ -33,7 +33,7 @@ class BaseEntity(BaseEntitySchema, Document):
 
     @before_event([Insert, Replace, Save, SaveChanges, Update])
     async def pre_save(self):
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
 
     @classmethod
     def get_queryset(
@@ -255,8 +255,8 @@ class BaseEntity(BaseEntitySchema, Document):
         for key in pop_keys:
             data.pop(key, None)
 
-        data["created_at"] = datetime.now()
-        data["updated_at"] = datetime.now()
+        data["created_at"] = datetime.now(timezone.utc)
+        data["updated_at"] = datetime.now(timezone.utc)
 
         item = cls(**data)
         await item.save()

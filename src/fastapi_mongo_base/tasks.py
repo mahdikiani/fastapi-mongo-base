@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Callable, Coroutine, Literal, Union
 
@@ -40,7 +40,7 @@ class SignalRegistry(metaclass=Singleton):
 
 
 class TaskLogRecord(BaseModel):
-    reported_at: datetime = Field(default_factory=datetime.now)
+    reported_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     message: str
     task_status: TaskStatusEnum
     duration: int = 0
@@ -134,7 +134,7 @@ class TaskMixin(BaseModel):
         if self.task_start_at:
             if self.task_end_at:
                 return self.task_end_at - self.task_start_at
-            return datetime.now() - self.task_start_at
+            return datetime.now(timezone.utc) - self.task_start_at
         return 0
 
     @field_validator("task_status", mode="before")
