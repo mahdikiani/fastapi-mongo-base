@@ -1,4 +1,4 @@
-import uuid
+import uuid6
 from datetime import datetime
 from typing import Generic, TypeVar
 
@@ -9,7 +9,7 @@ from .core.config import Settings
 
 class BaseEntitySchema(BaseModel):
     uid: str = Field(
-        default_factory=lambda: str(uuid.uuid4()),
+        default_factory=lambda: str(uuid6.uuid7()),
         json_schema_extra={"index": True, "unique": True},
         description="Unique identifier for the entity",
     )
