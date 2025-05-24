@@ -1,12 +1,13 @@
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import JSON, event, select
 from sqlalchemy.orm import Mapped, as_declarative, declared_attr, mapped_column
 from sqlalchemy.sql import func
 
+from .core import timezone
 from .core.config import Settings
 from .utils import basic
 
@@ -30,11 +31,11 @@ class BaseEntity:
         index=True,
     )
     created_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(timezone.tz),
         index=True,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.utc), onupdate=func.now()
+        default=lambda: datetime.now(timezone.tz), onupdate=func.now()
     )
     is_deleted: Mapped[bool] = mapped_column(default=False)
     meta_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
@@ -64,7 +65,7 @@ class BaseEntity:
         return []
 
     def expired(self, days: int = 3):
-        return (datetime.now(timezone.utc) - self.updated_at).days > days
+        return (datetime.now(timezone.tz) - self.updated_at).days > days
 
     def dump(
         self, include_fields: list[str] = None, exclude_fields: list[str] = None

@@ -1,10 +1,11 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from beanie import Document, Insert, Replace, Save, SaveChanges, Update, before_event
 from beanie.odm.queries.find import FindMany
 from pydantic import ConfigDict
 from pymongo import ASCENDING, IndexModel
 
+from .core import timezone
 from .core.config import Settings
 from .schemas import (
     BaseEntitySchema,
@@ -33,7 +34,7 @@ class BaseEntity(BaseEntitySchema, Document):
 
     @before_event([Insert, Replace, Save, SaveChanges, Update])
     async def pre_save(self):
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(timezone.tz)
 
     @classmethod
     def get_queryset(
@@ -255,8 +256,8 @@ class BaseEntity(BaseEntitySchema, Document):
         for key in pop_keys:
             data.pop(key, None)
 
-        data["created_at"] = datetime.now(timezone.utc)
-        data["updated_at"] = datetime.now(timezone.utc)
+        data["created_at"] = datetime.now(timezone.tz)
+        data["updated_at"] = datetime.now(timezone.tz)
 
         item = cls(**data)
         await item.save()
