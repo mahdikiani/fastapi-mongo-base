@@ -1,6 +1,14 @@
 from datetime import datetime
 
-from beanie import Document, Insert, Replace, Save, SaveChanges, Update, before_event
+from beanie import (
+    Document,
+    Insert,
+    Replace,
+    Save,
+    SaveChanges,
+    Update,
+    before_event,
+)
 from beanie.odm.queries.find import FindMany
 from pydantic import ConfigDict
 from pymongo import ASCENDING, IndexModel
@@ -29,8 +37,11 @@ class BaseEntity(BaseEntitySchema, Document):
 
         @classmethod
         def is_abstract(cls):
-            # Use `__dict__` to check if `__abstract__` is defined in the class itself
-            return "__abstract__" in cls.__dict__ and cls.__dict__["__abstract__"]
+            # Use `__dict__` to check if `__abstract__` is defined
+            # in the class itself
+            return (
+                "__abstract__" in cls.__dict__ and cls.__dict__["__abstract__"]
+            )
 
     @before_event([Insert, Replace, Save, SaveChanges, Update])
     async def pre_save(self):
@@ -53,7 +64,8 @@ class BaseEntity(BaseEntitySchema, Document):
             tenant_id: Filter by tenant ID if the model has tenant_id field
             is_deleted: Filter by deletion status
             uid: Filter by unique identifier
-            **kwargs: Additional filters that can include range queries with _from/_to suffixes
+            **kwargs: Additional filters that can include range queries
+                      with _from/_to suffixes
 
         Returns:
             List of MongoDB query conditions
@@ -82,9 +94,15 @@ class BaseEntity(BaseEntitySchema, Document):
             base_field = basic.get_base_field_name(key)
 
             # Validate field is allowed for searching
-            if cls.search_field_set() and base_field not in cls.search_field_set():
+            if (
+                cls.search_field_set()
+                and base_field not in cls.search_field_set()
+            ):
                 continue
-            if cls.search_exclude_set() and base_field in cls.search_exclude_set():
+            if (
+                cls.search_exclude_set()
+                and base_field in cls.search_exclude_set()
+            ):
                 continue
             if not hasattr(cls, base_field):
                 continue
@@ -124,7 +142,7 @@ class BaseEntity(BaseEntitySchema, Document):
             uid=uid,
             created_at_from=created_at_from,
             created_at_to=created_at_to,
-            *args,
+            *args,  # noqa: B026
             **kwargs,
         )
         query = cls.find({"$and": base_query})
@@ -145,7 +163,7 @@ class BaseEntity(BaseEntitySchema, Document):
             tenant_id=tenant_id,
             is_deleted=is_deleted,
             uid=uid,
-            *args,
+            *args,  # noqa: B026
             **kwargs,
         )
         items = await query.to_list()
@@ -185,7 +203,7 @@ class BaseEntity(BaseEntitySchema, Document):
             user_id=user_id,
             tenant_id=tenant_id,
             is_deleted=is_deleted,
-            *args,
+            *args,  # noqa: B026
             **kwargs,
         )
 
@@ -206,7 +224,7 @@ class BaseEntity(BaseEntitySchema, Document):
             user_id=user_id,
             tenant_id=tenant_id,
             is_deleted=is_deleted,
-            *args,
+            *args,  # noqa: B026
             **kwargs,
         )
         return await query.count()
@@ -285,38 +303,61 @@ class BaseEntity(BaseEntitySchema, Document):
 
 
 class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
-
     class Settings(BaseEntity.Settings):
         __abstract__ = True
 
-        indexes = BaseEntity.Settings.indexes + [IndexModel([("user_id", ASCENDING)])]
+        indexes = BaseEntity.Settings.indexes + [
+            IndexModel([("user_id", ASCENDING)]),
+        ]
 
     @classmethod
-    async def get_item(cls, uid, user_id, *args, **kwargs) -> "UserOwnedEntity":
-        if user_id == None and kwargs.get("ignore_user_id") != True:
+    async def get_item(
+        cls,
+        uid,
+        user_id,
+        *args,
+        **kwargs,
+    ) -> "UserOwnedEntity":
+        if user_id is None and not kwargs.get("ignore_user_id"):
             raise ValueError("user_id is required")
-        return await super().get_item(uid, user_id=user_id, *args, **kwargs)
+        return await super().get_item(
+            uid,
+            user_id=user_id,
+            *args,  # noqa: B026
+            **kwargs,
+        )
 
 
 class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
-
     class Settings(BaseEntity.Settings):
         __abstract__ = True
 
-        indexes = BaseEntity.Settings.indexes + [IndexModel([("tenant_id", ASCENDING)])]
+        indexes = BaseEntity.Settings.indexes + [
+            IndexModel([("tenant_id", ASCENDING)]),
+        ]
 
     @classmethod
-    async def get_item(cls, uid, tenant_id, *args, **kwargs) -> "TenantScopedEntity":
-        if tenant_id == None:
+    async def get_item(
+        cls,
+        uid,
+        tenant_id,
+        *args,
+        **kwargs,
+    ) -> "TenantScopedEntity":
+        if tenant_id is None:
             raise ValueError("tenant_id is required")
-        return await super().get_item(uid, tenant_id=tenant_id, *args, **kwargs)
+        return await super().get_item(
+            uid,
+            tenant_id=tenant_id,
+            *args,  # noqa: B026
+            **kwargs,
+        )
 
     async def get_tenant(self):
         raise NotImplementedError
 
 
 class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
-
     class Settings(TenantScopedEntity.Settings):
         __abstract__ = True
 
@@ -328,12 +369,16 @@ class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
     async def get_item(
         cls, uid, tenant_id, user_id, *args, **kwargs
     ) -> "TenantUserEntity":
-        if tenant_id == None:
+        if tenant_id is None:
             raise ValueError("tenant_id is required")
         # if user_id == None:
         #     raise ValueError("user_id is required")
         return await super().get_item(
-            uid, tenant_id=tenant_id, user_id=user_id, *args, **kwargs
+            uid,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            *args,  # noqa: B026
+            **kwargs,
         )
 
 

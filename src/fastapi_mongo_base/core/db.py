@@ -34,10 +34,10 @@ def init_redis():
         from redis import Redis as RedisSync
         from redis.asyncio.client import Redis
 
-        if getattr(Settings, "redis_uri"):
+        if Settings.redis_uri:
             redis_sync: RedisSync = RedisSync.from_url(Settings.redis_uri)
             redis: Redis = Redis.from_url(Settings.redis_uri)
-    except ImportError or AttributeError or Exception as e:
+    except (ImportError, AttributeError, Exception) as e:
         logging.error(f"Error initializing Redis: {e}")
         redis_sync = None
         redis = None

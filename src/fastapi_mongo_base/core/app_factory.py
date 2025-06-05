@@ -18,9 +18,15 @@ async def health(request: fastapi.Request):
 
 @asynccontextmanager
 async def lifespan(
-    *, app: fastapi.FastAPI, worker=None, init_functions=[], settings: Settings = None
+    *,
+    app: fastapi.FastAPI,
+    worker=None,
+    init_functions=None,
+    settings: Settings = None,
 ):
     """Initialize application services."""
+    if init_functions is None:
+        init_functions = []
     await db.init_mongo_db()
 
     if worker:
@@ -39,7 +45,9 @@ async def lifespan(
     logging.info("Shutdown complete")
 
 
-def setup_exception_handlers(*, app: fastapi.FastAPI, handlers: dict = None, **kwargs):
+def setup_exception_handlers(
+    *, app: fastapi.FastAPI, handlers: dict = None, **kwargs
+):
     exception_handlers = exceptions.EXCEPTION_HANDLERS
     if handlers:
         exception_handlers.update(handlers)
@@ -69,14 +77,18 @@ def get_app_kwargs(
     version="0.1.0",
     lifespan_func=None,
     worker=None,
-    init_functions: list = [],
+    init_functions: list = None,
     contact=None,
-    license_info={
-        "name": "MIT License",
-        "url": "https://github.com/mahdikiani/FastAPILaunchpad/blob/main/LICENSE",
-    },
+    license_info=None,
     **kwargs,
 ):
+    if license_info is None:
+        license_info = {
+            "name": "MIT License",
+            "url": "https://github.com/mahdikiani/FastAPILaunchpad/blob/main/LICENSE",
+        }
+    if init_functions is None:
+        init_functions = []
     settings.config_logger()
 
     """Create a FastAPI app with shared configurations."""
@@ -92,9 +104,14 @@ def get_app_kwargs(
     base_path: str = settings.base_path
 
     if lifespan_func is None:
-        lifespan_func = lambda app: lifespan(
-            app=app, worker=worker, init_functions=init_functions, settings=settings
-        )
+
+        def lifespan_func(app):
+            return lifespan(
+                app=app,
+                worker=worker,
+                init_functions=init_functions,
+                settings=settings,
+            )
 
     docs_url = f"{base_path}/docs"
     openapi_url = f"{base_path}/openapi.json"
@@ -122,18 +139,22 @@ def create_app(
     origins: list = None,
     lifespan_func=None,
     worker=None,
-    init_functions: list = [],
+    init_functions: list = None,
     contact=None,
-    license_info={
-        "name": "MIT License",
-        "url": "https://github.com/mahdikiani/FastAPILaunchpad/blob/main/LICENSE",
-    },
+    license_info=None,
     exception_handlers: dict = None,
     log_route: bool = False,
     health_route: bool = True,
     index_route: bool = True,
     **kwargs,
 ) -> fastapi.FastAPI:
+    if license_info is None:
+        license_info = {
+            "name": "MIT License",
+            "url": "https://github.com/mahdikiani/FastAPILaunchpad/blob/main/LICENSE",
+        }
+    if init_functions is None:
+        init_functions = []
     data = get_app_kwargs(
         settings=settings,
         title=title,
@@ -197,7 +218,7 @@ def configure_app(
     if log_route:
         app.get(f"{base_path}/logs", include_in_schema=False)(logs)
     if index_route:
-        app.get(f"/", include_in_schema=False)(index)
+        app.get("/", include_in_schema=False)(index)
 
     if serve_coverage:
         app.mount(

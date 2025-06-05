@@ -68,10 +68,13 @@ class BaseEntity:
         return (datetime.now(timezone.tz) - self.updated_at).days > days
 
     def dump(
-        self, include_fields: list[str] = None, exclude_fields: list[str] = None
+        self,
+        include_fields: list[str] = None,
+        exclude_fields: list[str] = None,
     ) -> dict:
         """
-        Dump the object into a dictionary. It includes all the fields of the object.
+        Dump the object into a dictionary.
+        It includes all the fields of the object.
         """
         result = {}
         for key, value in (include_fields or self.__dict__).items():
@@ -112,7 +115,8 @@ class BaseEntity:
             tenant_id: Filter by tenant ID if the model has tenant_id field
             is_deleted: Filter by deletion status
             uid: Filter by unique identifier
-            **kwargs: Additional filters that can include range queries with _from/_to suffixes
+            **kwargs: Additional filters that can include range queries
+                      with _from/_to suffixes
 
         Returns:
             List of SQLAlchemy query conditions
@@ -141,9 +145,15 @@ class BaseEntity:
             base_field = basic.get_base_field_name(key)
 
             # Validate field is allowed for searching
-            if cls.search_field_set() and base_field not in cls.search_field_set():
+            if (
+                cls.search_field_set()
+                and base_field not in cls.search_field_set()
+            ):
                 continue
-            if cls.search_exclude_set() and base_field in cls.search_exclude_set():
+            if (
+                cls.search_exclude_set()
+                and base_field in cls.search_exclude_set()
+            ):
                 continue
             if not hasattr(cls, base_field):
                 continue
@@ -177,7 +187,6 @@ class BaseEntity:
         uid: str | None = None,
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
-        *args,
         **kwargs,
     ):
         base_query = cls.get_queryset(
@@ -187,7 +196,6 @@ class BaseEntity:
             uid=uid,
             created_at_from=created_at_from,
             created_at_to=created_at_to,
-            *args,
             **kwargs,
         )
         return base_query
@@ -225,7 +233,6 @@ class BaseEntity:
         limit: int = 10,
         **kwargs,
     ):
-
         base_query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -254,7 +261,6 @@ class BaseEntity:
         is_deleted: bool = False,
         **kwargs,
     ):
-
         base_query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -263,7 +269,9 @@ class BaseEntity:
         )
 
         # Query for getting the total count of items
-        total_count_query = select(func.count()).filter(*base_query)  # .subquery()
+        total_count_query = select(func.count()).filter(
+            *base_query
+        )  # .subquery()
 
         async with async_session() as session:
             total_result = await session.execute(total_count_query)
@@ -299,7 +307,6 @@ class BaseEntity:
 
     @classmethod
     async def get_by_uid(cls, uid: str):
-
         async with async_session() as session:
             query = select(cls).filter(cls.uid == uid)
             result = await session.execute(query)
@@ -308,7 +315,6 @@ class BaseEntity:
 
     @classmethod
     async def create_item(cls, data: dict):
-
         item = cls(**data)
         async with async_session() as session:
             session.add(item)
@@ -318,7 +324,6 @@ class BaseEntity:
 
     @classmethod
     async def update_item(cls, item: "BaseEntity", data: dict):
-
         for key, value in data.items():
             if cls.update_field_set() and key not in cls.update_field_set():
                 continue
@@ -335,7 +340,6 @@ class BaseEntity:
 
     @classmethod
     async def delete_item(cls, item: "BaseEntity"):
-
         item.is_deleted = True
         async with async_session() as session:
             session.add(item)
@@ -377,11 +381,15 @@ class TenantUserEntity(TenantScopedEntity, UserOwnedEntity):
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:
-        return list(set(super().create_exclude_set() + ["tenant_id", "user_id"]))
+        return list(
+            set(super().create_exclude_set() + ["tenant_id", "user_id"])
+        )
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
-        return list(set(super().update_exclude_set() + ["tenant_id", "user_id"]))
+        return list(
+            set(super().update_exclude_set() + ["tenant_id", "user_id"])
+        )
 
 
 class ImmutableMixin(BaseEntity):

@@ -36,7 +36,7 @@ class Settings(metaclass=Singleton):
         log_config = {
             "formatters": {
                 "standard": {
-                    "format": "[{levelname} : {filename}:{lineno} : {asctime} -> {funcName:10}] {message}",
+                    "format": "[{levelname} : {filename}:{lineno} : {asctime} -> {funcName:10}] {message}",  # noqa: E501
                     "style": "{",
                 }
             },

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 import uuid6
 from pydantic import BaseModel, Field
@@ -72,10 +72,6 @@ class UserOwnedEntitySchema(BaseEntitySchema):
     user_id: str
 
     @classmethod
-    def create_exclude_set(cls) -> list[str]:
-        return super().create_exclude_set() + ["user_id"]
-
-    @classmethod
     def update_exclude_set(cls) -> list[str]:
         return super().update_exclude_set() + ["user_id"]
 
@@ -84,29 +80,22 @@ class TenantScopedEntitySchema(BaseEntitySchema):
     tenant_id: str
 
     @classmethod
-    def create_exclude_set(cls) -> list[str]:
-        return super().create_exclude_set() + ["tenant_id"]
-
-    @classmethod
     def update_exclude_set(cls) -> list[str]:
         return super().update_exclude_set() + ["tenant_id"]
 
 
 class TenantUserEntitySchema(TenantScopedEntitySchema, UserOwnedEntitySchema):
-
-    @classmethod
-    def create_exclude_set(cls) -> list[str]:
-        return list(set(super().create_exclude_set() + ["tenant_id", "user_id"]))
-
     @classmethod
     def update_exclude_set(cls) -> list[str]:
-        return list(set(super().update_exclude_set() + ["tenant_id", "user_id"]))
+        return list(
+            set(super().update_exclude_set() + ["tenant_id", "user_id"])
+        )
 
 
 T = TypeVar("T", bound=BaseEntitySchema)
 
 
-class PaginatedResponse(BaseModel, Generic[T]):
+class PaginatedResponse[T: BaseEntitySchema](BaseModel):
     items: list[T]
     total: int
     offset: int

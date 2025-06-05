@@ -36,7 +36,9 @@ class BaseHTTPException(HTTPException):
         super().__init__(status_code, detail=detail)
 
 
-async def base_http_exception_handler(request: Request, exc: BaseHTTPException):
+async def base_http_exception_handler(
+    request: Request, exc: BaseHTTPException
+):
     return JSONResponse(
         status_code=exc.status_code,
         content={"message": exc.message, "error": exc.error},
@@ -58,7 +60,8 @@ async def request_validation_exception_handler(
     request: Request, exc: RequestValidationError
 ):
     logging.error(
-        f"request_validation_exception: {request.url} {exc}\n{(await request.body())[:100]}"
+        f"request_validation_exception: {request.url} {exc}\n"
+        f"{(await request.body())[:100]}"
     )
     from fastapi.exception_handlers import (
         request_validation_exception_handler as default_handler,

@@ -4,23 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastapi-mongo-base"
-version = "0.12.2"
+version = "0.12.3"
 description = "A simple boilerplate application, including models and schemas and abstract router, for FastAPI with MongoDB"
 readme = "README.md"
 requires-python = ">=3.9"
-license = {file = "LICENSE.txt"}
+license = "MIT"
+license-files = ["LICENSE.txt"]
 keywords = ["fastapi", "mongodb", "beanie"]
-authors = [
-  {name = "Mahdi Kiani", email = "mahdikiany@gmail.com"}
-]
-maintainers = [
-  {name = "Mahdi Kiani", email = "mahdikiany@gmail.com"}
-]
+authors = [{ name = "Mahdi Kiani", email = "mahdikiany@gmail.com" }]
+maintainers = [{ name = "Mahdi Kiani", email = "mahdikiany@gmail.com" }]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Topic :: Software Development :: Build Tools",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -35,9 +31,9 @@ dependencies = [
   "uuid6",
   "pytz",
   "fastapi>=0.65.0",
-  "uvicorn[standard]>=0.13.0"
+  "uvicorn[standard]>=0.13.0",
 ]
-optional-dependencies = {"image" = ["Pillow>=9.0.0"],"test" = ["coverage"]}
+optional-dependencies = { "image" = ["Pillow>=9.0.0"], "test" = ["coverage"] }
 
 [project.urls]
 "Homepage" = "https://github.com/mahdikiani/fastapi-mongo-base-app"
@@ -47,4 +43,17 @@ optional-dependencies = {"image" = ["Pillow>=9.0.0"],"test" = ["coverage"]}
 "Source" = "https://github.com/mahdikiani/fastapi-mongo-base-app"
 
 [tool.setuptools]
-package-data = {"usso" = ["*.dat"]}
+package-data = { "usso" = ["*.dat"] }
+
+[tool.ruff]
+line-length = 79
+target-version = "py313"
+fix = true
+unsafe-fixes = true
+preview = true
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.ruff.format]
+quote-style = "double"

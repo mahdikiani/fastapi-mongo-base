@@ -1,8 +1,9 @@
 import asyncio
 import logging
+from collections.abc import Callable, Coroutine
 from datetime import datetime
-from enum import Enum
-from typing import Any, Callable, Coroutine, Literal, Union
+from enum import StrEnum
+from typing import Any, Literal, Union
 
 import json_advanced as json
 from pydantic import BaseModel, Field, field_serializer, field_validator
@@ -13,7 +14,7 @@ from .schemas import BaseEntitySchema
 from .utils import basic
 
 
-class TaskStatusEnum(str, Enum):
+class TaskStatusEnum(StrEnum):
     none = "null"
     draft = "draft"
     init = "init"
@@ -36,12 +37,16 @@ class SignalRegistry(metaclass=Singleton):
     def __init__(self):
         self.signal_map: dict[
             str,
-            list[Callable[..., None] | Callable[..., Coroutine[Any, Any, None]]],
+            list[
+                Callable[..., None] | Callable[..., Coroutine[Any, Any, None]]
+            ],
         ] = {}
 
 
 class TaskLogRecord(BaseModel):
-    reported_at: datetime = Field(default_factory=lambda: datetime.now(timezone.tz))
+    reported_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.tz)
+    )
     message: str
     task_status: TaskStatusEnum
     duration: int = 0
@@ -60,7 +65,12 @@ class TaskLogRecord(BaseModel):
         return False
 
     def __hash__(self):
-        return hash((self.reported_at, self.message, self.task_status, self.duration))
+        return hash((
+            self.reported_at,
+            self.message,
+            self.task_status,
+            self.duration,
+        ))
 
 
 class TaskReference(BaseModel):
@@ -69,7 +79,10 @@ class TaskReference(BaseModel):
 
     def __eq__(self, other):
         if isinstance(other, TaskReference):
-            return self.task_id == other.task_id and self.task_type == other.task_type
+            return (
+                self.task_id == other.task_id
+                and self.task_type == other.task_type
+            )
         return False
 
     def __hash__(self):
@@ -90,7 +103,8 @@ class TaskReference(BaseModel):
         task_item = await task_class.find_one(task_class.uid == self.task_id)
         if not task_item:
             raise ValueError(
-                f"No task found with id {self.task_id} of type {self.task_type}."
+                f"No task found with id {self.task_id} of type "
+                f"{self.task_type}."
             )
 
         return task_item
@@ -107,7 +121,9 @@ class TaskReferenceList(BaseModel):
                 for task_item in task_items:
                     await task_item.start_processing()
             case "parallel":
-                await asyncio.gather(*[task.start_processing() for task in task_items])
+                await asyncio.gather(*[
+                    task.start_processing() for task in task_items
+                ])
 
 
 class TaskMixin(BaseModel):
@@ -165,8 +181,9 @@ class TaskMixin(BaseModel):
         cls.signals().append(signal)
 
     @classmethod
-    async def emit_signals(cls, task_instance: "TaskMixin", *, sync=False, **kwargs):
-
+    async def emit_signals(
+        cls, task_instance: "TaskMixin", *, sync=False, **kwargs
+    ):
         async def webhook_call(*args, **kwargs):
             import httpx
 
@@ -183,16 +200,18 @@ class TaskMixin(BaseModel):
                 )
                 await task_instance.save()
                 logging.error(
-                    "\n".join(
-                        ["An error occurred in webhook_call:", traceback_str, str(e)]
-                    )
+                    "\n".join([
+                        "An error occurred in webhook_call:",
+                        traceback_str,
+                        str(e),
+                    ])
                 )
 
         def webhook_task(webhook_url: str):
             return
 
         signals = []
-        meta_data = getattr(task_instance, "meta_data") or {}
+        meta_data = task_instance.meta_data or {}
         task_dict = task_instance.model_dump()
         task_dict.update({"task_type": task_instance.__class__.__name__})
         task_dict.update(kwargs)
@@ -269,7 +288,9 @@ class TaskMixin(BaseModel):
             **kwargs,
         )
 
-    async def add_log(self, log_record: TaskLogRecord, *, emit: bool = True, **kwargs):
+    async def add_log(
+        self, log_record: TaskLogRecord, *, emit: bool = True, **kwargs
+    ):
         self.task_logs.append(log_record)
         if emit:
             # await self.emit_signals(self)
@@ -277,7 +298,9 @@ class TaskMixin(BaseModel):
 
     async def start_processing(self, **kwargs):
         if self.task_references is None:
-            raise NotImplementedError("Subclasses should implement this method")
+            raise NotImplementedError(
+                "Subclasses should implement this method"
+            )
 
         await self.task_references.list_processing()
 
@@ -297,7 +320,9 @@ class TaskMixin(BaseModel):
             await self.save()
             await self.emit_signals(self, **kwargs)
         else:
-            await asyncio.gather(self.save(), self.emit_signals(self, **kwargs))
+            await asyncio.gather(
+                self.save(), self.emit_signals(self, **kwargs)
+            )
 
     async def update_and_emit(self, **kwargs):
         if kwargs.get("task_status") in [

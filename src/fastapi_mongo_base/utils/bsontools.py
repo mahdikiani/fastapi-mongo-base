@@ -6,7 +6,7 @@ from bson.decimal128 import Decimal128
 
 
 def decimal_amount(value):
-    if type(value) == Decimal128:
+    if isinstance(value, Decimal128):
         return Decimal(value.to_decimal())
     return value
 

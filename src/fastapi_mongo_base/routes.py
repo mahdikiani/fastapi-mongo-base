@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime
-from typing import Any, Type, TypeVar
+from typing import Any, TypeVar
 
 import singleton
 from fastapi import APIRouter, BackgroundTasks, Query, Request
@@ -21,15 +21,14 @@ TS = TypeVar("TS", bound=BaseEntitySchema)
 
 
 class AbstractBaseRouter(metaclass=singleton.Singleton):
-
     def __init__(
         self,
-        model: Type[T],
+        model: type[T],
         *args,
         user_dependency=None,
         prefix: str = None,
         tags: list[str] = None,
-        schema: Type[TS] = None,
+        schema: type[TS] = None,
         **kwargs,
     ):
         self.model = model
@@ -52,13 +51,25 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         self.list_response_schema = kwargs.get(
             "list_response_schema", PaginatedResponse[self.list_item_schema]
         )
-        self.retrieve_response_schema = kwargs.get("retrieve_response_schema", schema)
-        self.create_response_schema = kwargs.get("create_response_schema", schema)
-        self.update_response_schema = kwargs.get("update_response_schema", schema)
-        self.delete_response_schema = kwargs.get("delete_response_schema", schema)
+        self.retrieve_response_schema = kwargs.get(
+            "retrieve_response_schema", schema
+        )
+        self.create_response_schema = kwargs.get(
+            "create_response_schema", schema
+        )
+        self.update_response_schema = kwargs.get(
+            "update_response_schema", schema
+        )
+        self.delete_response_schema = kwargs.get(
+            "delete_response_schema", schema
+        )
 
-        self.create_request_schema = kwargs.get("create_request_schema", schema)
-        self.update_request_schema = kwargs.get("update_request_schema", schema)
+        self.create_request_schema = kwargs.get(
+            "create_request_schema", schema
+        )
+        self.update_request_schema = kwargs.get(
+            "update_request_schema", schema
+        )
 
     def config_routes(self, **kwargs):
         prefix: str = kwargs.get("prefix", "")
@@ -174,7 +185,9 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
             limit=limit,
             **kwargs,
         )
-        items_in_schema = [self.list_item_schema(**item.model_dump()) for item in items]
+        items_in_schema = [
+            self.list_item_schema(**item.model_dump()) for item in items
+        ]
 
         return PaginatedResponse(
             items=items_in_schema,
@@ -244,7 +257,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
 class AbstractTaskRouter(AbstractBaseRouter):
     def __init__(
         self,
-        model: Type[T],
+        model: type[T],
         user_dependency: Any,
         schema: TS,
         draftable: bool = True,
@@ -252,7 +265,13 @@ class AbstractTaskRouter(AbstractBaseRouter):
         **kwargs,
     ):
         self.draftable = draftable
-        super().__init__(model, user_dependency, schema=schema, *args, **kwargs)
+        super().__init__(
+            model,
+            user_dependency,
+            schema=schema,
+            *args,  # noqa: B026
+            **kwargs,
+        )
 
     def config_routes(self, **kwargs):
         super().config_routes(**kwargs)
