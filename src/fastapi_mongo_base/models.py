@@ -43,6 +43,16 @@ class BaseEntity(BaseEntitySchema, Document):
                 "__abstract__" in cls.__dict__ and cls.__dict__["__abstract__"]
             )
 
+    @classmethod
+    def get_settings(cls):
+        from beanie.odm.settings.document import DocumentSettings
+
+        settings = DocumentSettings()
+        if not cls.Settings.is_abstract():
+            settings.name = cls.__name__.lower()
+
+        return settings
+
     @before_event([Insert, Replace, Save, SaveChanges, Update])
     async def pre_save(self):
         self.updated_at = datetime.now(timezone.tz)
