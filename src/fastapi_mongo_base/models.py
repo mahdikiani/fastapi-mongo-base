@@ -303,7 +303,11 @@ class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
         __abstract__ = True
 
         indexes = BaseEntity.Settings.indexes + [
-            IndexModel([("user_id", ASCENDING), ("uid", ASCENDING)]),
+            IndexModel([
+                ("user_id", ASCENDING),
+                ("uid", ASCENDING),
+                ("is_deleted", ASCENDING),
+            ]),
         ]
 
     @classmethod
@@ -329,7 +333,11 @@ class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
         __abstract__ = True
 
         indexes = BaseEntity.Settings.indexes + [
-            IndexModel([("tenant_id", ASCENDING), ("uid", ASCENDING)]),
+            IndexModel([
+                ("tenant_id", ASCENDING),
+                ("uid", ASCENDING),
+                ("is_deleted", ASCENDING),
+            ]),
         ]
 
     @classmethod
@@ -362,6 +370,7 @@ class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
                 ("tenant_id", ASCENDING),
                 ("user_id", ASCENDING),
                 ("uid", ASCENDING),
+                ("is_deleted", ASCENDING),
             ]),
         ]
 
