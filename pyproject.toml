@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastapi-mongo-base"
-version = "0.12.3"
+version = "0.12.4"
 description = "A simple boilerplate application, including models and schemas and abstract router, for FastAPI with MongoDB"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -33,7 +33,16 @@ dependencies = [
   "fastapi>=0.65.0",
   "uvicorn[standard]>=0.13.0",
 ]
-optional-dependencies = { "image" = ["Pillow>=9.0.0"], "test" = ["coverage"] }
+
+[project.optional-dependencies]
+image = [
+  "Pillow>=9.0.0",
+]
+test = [
+  "pytest",
+  "mongomock_motor",
+  "coverage",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/mahdikiani/fastapi-mongo-base-app"

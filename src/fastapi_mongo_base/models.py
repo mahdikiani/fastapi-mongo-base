@@ -50,13 +50,13 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     def get_queryset(
         cls,
+        *,
         user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
-        *args,
         **kwargs,
-    ) -> list[dict]:
+    ) -> dict:
         """Build a MongoDB query filter based on provided parameters.
 
         Args:
@@ -71,19 +71,19 @@ class BaseEntity(BaseEntitySchema, Document):
             List of MongoDB query conditions
         """
         # Start with basic filters
-        base_query = []
+        base_query = {}
 
         # Add standard filters if applicable
-        base_query.append({"is_deleted": is_deleted})
-
-        if hasattr(cls, "user_id") and user_id:
-            base_query.append({"user_id": user_id})
+        base_query.update({"is_deleted": is_deleted})
 
         if hasattr(cls, "tenant_id"):
-            base_query.append({"tenant_id": tenant_id})
+            base_query.update({"tenant_id": tenant_id})
+
+        if hasattr(cls, "user_id") and user_id:
+            base_query.update({"user_id": user_id})
 
         if uid:
-            base_query.append({"uid": uid})
+            base_query.update({"uid": uid})
 
         # Process additional filters from kwargs
         for key, value in kwargs.items():
@@ -110,29 +110,27 @@ class BaseEntity(BaseEntitySchema, Document):
             # Handle range queries and array operators
             if key.endswith("_from") or key.endswith("_to"):
                 if basic.is_valid_range_value(value):
-                    if key.endswith("_from"):
-                        base_query.append({base_field: {"$gte": value}})
-                    elif key.endswith("_to"):
-                        base_query.append({base_field: {"$lte": value}})
+                    op = "$gte" if key.endswith("_from") else "$lte"
+                    base_query.setdefault(base_field, {}).update({op: value})
             elif key.endswith("_in") or key.endswith("_nin"):
                 value_list = basic.parse_array_parameter(value)
                 operator = "$in" if key.endswith("_in") else "$nin"
-                base_query.append({base_field: {operator: value_list}})
+                base_query.update({base_field: {operator: value_list}})
             else:
-                base_query.append({key: value})
+                base_query.update({key: value})
 
         return base_query
 
     @classmethod
     def get_query(
         cls,
+        *,
         user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
         created_at_from: datetime = None,
         created_at_to: datetime = None,
-        *args,
         **kwargs,
     ) -> FindMany:
         base_query = cls.get_queryset(
@@ -142,7 +140,6 @@ class BaseEntity(BaseEntitySchema, Document):
             uid=uid,
             created_at_from=created_at_from,
             created_at_to=created_at_to,
-            *args,  # noqa: B026
             **kwargs,
         )
         query = cls.find({"$and": base_query})
@@ -203,7 +200,6 @@ class BaseEntity(BaseEntitySchema, Document):
             user_id=user_id,
             tenant_id=tenant_id,
             is_deleted=is_deleted,
-            *args,  # noqa: B026
             **kwargs,
         )
 
@@ -307,7 +303,7 @@ class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
         __abstract__ = True
 
         indexes = BaseEntity.Settings.indexes + [
-            IndexModel([("user_id", ASCENDING)]),
+            IndexModel([("user_id", ASCENDING), ("uid", ASCENDING)]),
         ]
 
     @classmethod
@@ -333,7 +329,7 @@ class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
         __abstract__ = True
 
         indexes = BaseEntity.Settings.indexes + [
-            IndexModel([("tenant_id", ASCENDING)]),
+            IndexModel([("tenant_id", ASCENDING), ("uid", ASCENDING)]),
         ]
 
     @classmethod
@@ -361,8 +357,12 @@ class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
     class Settings(TenantScopedEntity.Settings):
         __abstract__ = True
 
-        indexes = TenantScopedEntity.Settings.indexes + [
-            IndexModel([("user_id", ASCENDING)])
+        indexes = UserOwnedEntity.Settings.indexes + [
+            IndexModel([
+                ("tenant_id", ASCENDING),
+                ("user_id", ASCENDING),
+                ("uid", ASCENDING),
+            ]),
         ]
 
     @classmethod
