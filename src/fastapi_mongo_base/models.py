@@ -142,7 +142,7 @@ class BaseEntity(BaseEntitySchema, Document):
             created_at_to=created_at_to,
             **kwargs,
         )
-        query = cls.find({"$and": base_query})
+        query = cls.find(base_query)
         return query
 
     @classmethod
