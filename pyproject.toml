@@ -39,7 +39,7 @@ dependencies = [
 image = ["Pillow>=9.0.0"]
 test = [
   "pytest",
-  "pytest-coverage",
+  "pytest-cov",
   "pytest-asyncio",
   "mongomock_motor",
   "coverage",
