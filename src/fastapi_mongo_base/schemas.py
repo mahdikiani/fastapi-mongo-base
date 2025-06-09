@@ -4,8 +4,8 @@ from typing import TypeVar
 import uuid6
 from pydantic import BaseModel, Field
 
-from .core import timezone
 from .core.config import Settings
+from .utils import timezone
 
 
 class BaseEntitySchema(BaseModel):
@@ -65,7 +65,11 @@ class BaseEntitySchema(BaseModel):
 
     @property
     def item_url(self):
-        return f"https://{Settings.root_url}{Settings.base_path}/{self.__class__.__name__.lower()}s/{self.uid}"
+        return "/".join([
+            f"https://{Settings.root_url}{Settings.base_path}",
+            f"{self.__class__.__name__.lower()}s",
+            f"{self.uid}",
+        ])
 
 
 class UserOwnedEntitySchema(BaseEntitySchema):

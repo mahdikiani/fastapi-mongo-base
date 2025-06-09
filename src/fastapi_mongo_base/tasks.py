@@ -9,9 +9,8 @@ import json_advanced as json
 from pydantic import BaseModel, Field, field_serializer, field_validator
 from singleton import Singleton
 
-from .core import timezone
 from .schemas import BaseEntitySchema
-from .utils import basic
+from .utils import basic, timezone
 
 
 class TaskStatusEnum(StrEnum):
@@ -57,9 +56,9 @@ class TaskLogRecord(BaseModel):
         if isinstance(other, TaskLogRecord):
             return (
                 self.reported_at == other.reported_at
-                and self.message == other.message
-                and self.task_status == other.task_status
-                and self.duration == other.duration
+                and self.message == other.message  # noqa: W503
+                and self.task_status == other.task_status  # noqa: W503
+                and self.duration == other.duration  # noqa: W503
                 # and self.data == other.data
             )
         return False
@@ -81,7 +80,7 @@ class TaskReference(BaseModel):
         if isinstance(other, TaskReference):
             return (
                 self.task_id == other.task_id
-                and self.task_type == other.task_type
+                and self.task_type == other.task_type  # noqa: W503
             )
         return False
 

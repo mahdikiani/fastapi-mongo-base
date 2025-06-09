@@ -77,7 +77,7 @@ def get_app_kwargs(
     version="0.1.0",
     lifespan_func=None,
     worker=None,
-    init_functions: list = None,
+    init_functions: list | None = None,
     contact=None,
     license_info=None,
     **kwargs,
@@ -85,7 +85,7 @@ def get_app_kwargs(
     if license_info is None:
         license_info = {
             "name": "MIT License",
-            "url": "https://github.com/mahdikiani/FastAPILaunchpad/blob/main/LICENSE",
+            "url": "https://github.com/mahdikiani/FastAPILaunchpad/blob/main/LICENSE",  # noqa: E501
         }
     if init_functions is None:
         init_functions = []
@@ -139,7 +139,7 @@ def create_app(
     origins: list = None,
     lifespan_func=None,
     worker=None,
-    init_functions: list = None,
+    init_functions: list | None = None,
     contact=None,
     license_info=None,
     exception_handlers: dict = None,
@@ -148,11 +148,6 @@ def create_app(
     index_route: bool = True,
     **kwargs,
 ) -> fastapi.FastAPI:
-    if license_info is None:
-        license_info = {
-            "name": "MIT License",
-            "url": "https://github.com/mahdikiani/FastAPILaunchpad/blob/main/LICENSE",
-        }
     if init_functions is None:
         init_functions = []
     data = get_app_kwargs(

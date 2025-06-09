@@ -96,7 +96,11 @@ class BaseEntity:
 
     @property
     def item_url(self):
-        return f"https://{Settings.root_url}{Settings.base_path}/{self.__class__.__name__.lower()}s/{self.uid}"
+        return "/".join([
+            f"https://{Settings.root_url}{Settings.base_path}",
+            f"{self.__class__.__name__.lower()}s",
+            f"{self.uid}",
+        ])
 
     @classmethod
     def get_queryset(
@@ -147,12 +151,12 @@ class BaseEntity:
             # Validate field is allowed for searching
             if (
                 cls.search_field_set()
-                and base_field not in cls.search_field_set()
+                and base_field not in cls.search_field_set()  # noqa: W503
             ):
                 continue
             if (
                 cls.search_exclude_set()
-                and base_field in cls.search_exclude_set()
+                and base_field in cls.search_exclude_set()  # noqa: W503
             ):
                 continue
             if not hasattr(cls, base_field):

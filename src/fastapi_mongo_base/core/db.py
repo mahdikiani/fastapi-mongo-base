@@ -22,7 +22,7 @@ async def init_mongo_db():
             for cls in basic.get_all_subclasses(BaseEntity)
             if not (
                 "Settings" in cls.__dict__
-                and getattr(cls.Settings, "__abstract__", False)
+                and getattr(cls.Settings, "__abstract__", False)  # noqa: W503
             )
         ],
     )

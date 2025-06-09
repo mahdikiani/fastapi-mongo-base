@@ -13,7 +13,6 @@ from beanie.odm.queries.find import FindMany
 from pydantic import ConfigDict
 from pymongo import ASCENDING, IndexModel
 
-from .core import timezone
 from .core.config import Settings
 from .schemas import (
     BaseEntitySchema,
@@ -21,7 +20,7 @@ from .schemas import (
     TenantUserEntitySchema,
     UserOwnedEntitySchema,
 )
-from .utils import basic
+from .utils import basic, timezone
 
 
 class BaseEntity(BaseEntitySchema, Document):
@@ -96,12 +95,12 @@ class BaseEntity(BaseEntitySchema, Document):
             # Validate field is allowed for searching
             if (
                 cls.search_field_set()
-                and base_field not in cls.search_field_set()
+                and base_field not in cls.search_field_set()  # noqa: W503
             ):
                 continue
             if (
                 cls.search_exclude_set()
-                and base_field in cls.search_exclude_set()
+                and base_field in cls.search_exclude_set()  # noqa: W503
             ):
                 continue
             if not hasattr(cls, base_field):
