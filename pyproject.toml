@@ -36,11 +36,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-image = [
-  "Pillow>=9.0.0",
-]
+image = ["Pillow>=9.0.0"]
 test = [
   "pytest",
+  "pytest-coverage",
+  "pytest-asyncio",
   "mongomock_motor",
   "coverage",
 ]
