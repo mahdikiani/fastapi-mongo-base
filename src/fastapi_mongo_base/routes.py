@@ -78,7 +78,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
 
         if kwargs.get("list_route", True):
             self.router.add_api_route(
-                f"{prefix}/",
+                f"{prefix}",
                 self.list_items,
                 methods=["GET"],
                 response_model=self.list_response_schema,
@@ -96,7 +96,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
 
         if kwargs.get("create_route", True):
             self.router.add_api_route(
-                f"{prefix}/",
+                f"{prefix}",
                 self.create_item,
                 methods=["POST"],
                 response_model=self.create_response_schema,
