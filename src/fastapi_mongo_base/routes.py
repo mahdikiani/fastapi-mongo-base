@@ -130,13 +130,17 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
 
     async def get_item(
         self,
+        *,
         uid: str,
         user_id: str | None = None,
         tenant_id: str | None = None,
         **kwargs,
     ):
         item = await self.model.get_item(
-            uid, user_id=user_id, tenant_id=tenant_id, **kwargs
+            uid=uid,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            **kwargs,
         )
         if item is None:
             raise BaseHTTPException(
@@ -218,7 +222,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         uid: str,
     ):
         user_id = await self.get_user_id(request)
-        item = await self.get_item(uid, user_id=user_id)
+        item = await self.get_item(uid=uid, user_id=user_id)
         return item
 
     async def create_item(
@@ -238,7 +242,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         data: dict,
     ):
         user_id = await self.get_user_id(request)
-        item = await self.get_item(uid, user_id=user_id)
+        item = await self.get_item(uid=uid, user_id=user_id)
         item = await self.model.update_item(item, data)
         return item
 
@@ -248,7 +252,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         uid: str,
     ):
         user_id = await self.get_user_id(request)
-        item = await self.get_item(uid, user_id=user_id)
+        item = await self.get_item(uid=uid, user_id=user_id)
 
         item = await self.model.delete_item(item)
         return item
@@ -317,7 +321,7 @@ class AbstractTaskRouter(AbstractBaseRouter):
         self, request: Request, uid: str, background_tasks: BackgroundTasks
     ):
         user_id = await self.get_user_id(request)
-        item: T = await self.get_item(uid, user_id=user_id)
+        item: T = await self.get_item(uid=uid, user_id=user_id)
         background_tasks.add_task(item.start_processing)
         return item.model_dump()
 

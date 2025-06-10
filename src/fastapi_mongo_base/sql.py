@@ -207,6 +207,7 @@ class BaseEntity:
     @classmethod
     async def get_item(
         cls,
+        *,
         uid: str,
         user_id: str | None = None,
         tenant_id: str | None = None,
@@ -230,6 +231,7 @@ class BaseEntity:
     @classmethod
     async def list_items(
         cls,
+        *,
         user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
@@ -260,6 +262,7 @@ class BaseEntity:
     @classmethod
     async def total_count(
         cls,
+        *,
         user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
@@ -286,6 +289,7 @@ class BaseEntity:
     @classmethod
     async def list_total_combined(
         cls,
+        *,
         user_id: str | None = None,
         tenant_id: str | None = None,
         offset: int = 0,

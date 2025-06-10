@@ -147,11 +147,11 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     async def get_item(
         cls,
+        *,
         uid: str,
         user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
-        *args,
         **kwargs,
     ) -> "BaseEntity":
         query = cls.get_query(
@@ -159,7 +159,6 @@ class BaseEntity(BaseEntitySchema, Document):
             tenant_id=tenant_id,
             is_deleted=is_deleted,
             uid=uid,
-            *args,  # noqa: B026
             **kwargs,
         )
         items = await query.to_list()
@@ -185,12 +184,12 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     async def list_items(
         cls,
+        *,
         user_id: str | None = None,
         tenant_id: str | None = None,
         offset: int = 0,
         limit: int = 10,
         is_deleted: bool = False,
-        *args,
         **kwargs,
     ):
         offset, limit = cls.adjust_pagination(offset, limit)
@@ -209,17 +208,16 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     async def total_count(
         cls,
+        *,
         user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
-        *args,
         **kwargs,
     ):
         query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
             is_deleted=is_deleted,
-            *args,  # noqa: B026
             **kwargs,
         )
         return await query.count()
@@ -227,12 +225,12 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     async def list_total_combined(
         cls,
+        *,
         user_id: str | None = None,
         tenant_id: str | None = None,
         offset: int = 0,
         limit: int = 10,
         is_deleted: bool = False,
-        *args,
         **kwargs,
     ) -> tuple[list["BaseEntity"], int]:
         items = await cls.list_items(
@@ -312,17 +310,35 @@ class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
     @classmethod
     async def get_item(
         cls,
-        uid,
-        user_id,
-        *args,
+        *,
+        uid: str,
+        user_id: str | None = None,
+        ignore_user_id: bool = False,
         **kwargs,
     ) -> "UserOwnedEntity":
-        if user_id is None and not kwargs.get("ignore_user_id"):
+        """Get an item by its UID and user ID.
+
+        Args:
+            uid (str): The unique identifier of the item
+            user_id (str | None, optional):
+                       The user ID to filter by.
+                       Defaults to None.
+            ignore_user_id (bool, optional):
+                       Whether to ignore the user_id filter. Defaults to False.
+            **kwargs: Additional keyword arguments to pass
+                      to the parent get_item method
+
+        Returns:
+            UserOwnedEntity: The found item
+
+        Raises:
+            ValueError: If user_id is required but not provided
+        """
+        if user_id is None and not ignore_user_id:
             raise ValueError("user_id is required")
         return await super().get_item(
-            uid,
+            uid=uid,
             user_id=user_id,
-            *args,  # noqa: B026
             **kwargs,
         )
 
@@ -342,17 +358,16 @@ class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
     @classmethod
     async def get_item(
         cls,
-        uid,
-        tenant_id,
-        *args,
+        *,
+        uid: str,
+        tenant_id: str,
         **kwargs,
     ) -> "TenantScopedEntity":
         if tenant_id is None:
             raise ValueError("tenant_id is required")
         return await super().get_item(
-            uid,
+            uid=uid,
             tenant_id=tenant_id,
-            *args,  # noqa: B026
             **kwargs,
         )
 
@@ -375,17 +390,22 @@ class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
 
     @classmethod
     async def get_item(
-        cls, uid, tenant_id, user_id, *args, **kwargs
+        cls,
+        *,
+        uid: str,
+        tenant_id: str,
+        user_id: str | None = None,
+        ignore_user_id: bool = False,
+        **kwargs,
     ) -> "TenantUserEntity":
         if tenant_id is None:
             raise ValueError("tenant_id is required")
-        # if user_id == None:
-        #     raise ValueError("user_id is required")
-        return await super().get_item(
-            uid,
+        if user_id is None and not ignore_user_id:
+            raise ValueError("user_id is required")
+        return await BaseEntity.get_item(
+            uid=uid,
             tenant_id=tenant_id,
             user_id=user_id,
-            *args,  # noqa: B026
             **kwargs,
         )
 
