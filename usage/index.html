@@ -835,48 +835,48 @@
 <p>Basic usage examples for fastapi-mongo-base.</p>
 <hr />
 <h2 id="2-define-schemas-and-models">2. Define Schemas and Models</h2>
-<p><strong>schemas.py</strong></p>
-<pre><code class="language-python">from fastapi_mongo_base.schemas import BaseEntitySchema
-
-class BookSchema(BaseEntitySchema):
-    title: str
-    author: str
-    publish_year: int
-    isbn: str | None = None
-</code></pre>
-<p><strong>models.py</strong></p>
-<pre><code class="language-python">from fastapi_mongo_base.models import BaseEntity
-from .schemas import BookSchema
-
-class Book(BookSchema, BaseEntity):
-    &quot;&quot;&quot;Book model that inherits from both BookSchema and BaseEntity&quot;&quot;&quot;
-    pass
-</code></pre>
+<p><strong>schemas.py</strong>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi_mongo_base.schemas</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseEntitySchema</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">BookSchema</span><span class="p">(</span><span class="n">BaseEntitySchema</span><span class="p">):</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">author</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">publish_year</span><span class="p">:</span> <span class="nb">int</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">isbn</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span></code></pre></div></p>
+<p><strong>models.py</strong>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi_mongo_base.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseEntity</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.schemas</span><span class="w"> </span><span class="kn">import</span> <span class="n">BookSchema</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">Book</span><span class="p">(</span><span class="n">BookSchema</span><span class="p">,</span> <span class="n">BaseEntity</span><span class="p">):</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Book model that inherits from both BookSchema and BaseEntity&quot;&quot;&quot;</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="k">pass</span>
+</span></code></pre></div></p>
 <hr />
 <h2 id="3-create-and-register-routers">3. Create and Register Routers</h2>
-<p><strong>routes.py</strong></p>
-<pre><code class="language-python">from fastapi_mongo_base.routes import AbstractBaseRouter
-from . import models, schemas
-
-class BookRouter(AbstractBaseRouter):
-    model = models.Book
-    schema = schemas.BookSchema
-
-router = BookRouter().router
-</code></pre>
-<p><strong>server/server.py</strong></p>
-<pre><code class="language-python">from fastapi import FastAPI
-from apps.books.routes import router as book_router
-from .config import Settings
-
-app = FastAPI()
-app.include_router(book_router, prefix=f&quot;{Settings().base_path}/books&quot;)
-</code></pre>
+<p><strong>routes.py</strong>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi_mongo_base.routes</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractBaseRouter</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span><span class="p">,</span> <span class="n">schemas</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">BookRouter</span><span class="p">(</span><span class="n">AbstractBaseRouter</span><span class="p">):</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">Book</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">schema</span> <span class="o">=</span> <span class="n">schemas</span><span class="o">.</span><span class="n">BookSchema</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">router</span> <span class="o">=</span> <span class="n">BookRouter</span><span class="p">()</span><span class="o">.</span><span class="n">router</span>
+</span></code></pre></div></p>
+<p><strong>server/server.py</strong>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">apps.books.routes</span><span class="w"> </span><span class="kn">import</span> <span class="n">router</span> <span class="k">as</span> <span class="n">book_router</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Settings</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">app</span><span class="o">.</span><span class="n">include_router</span><span class="p">(</span><span class="n">book_router</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">base_path</span><span class="si">}</span><span class="s2">/books&quot;</span><span class="p">)</span>
+</span></code></pre></div></p>
 <hr />
 <h2 id="4-mongodb-configuration">4. MongoDB Configuration</h2>
 <p>Set your MongoDB URI in <code>.env</code> or as an environment variable:</p>
-<pre><code class="language-env">MONGO_URI=mongodb://localhost:27017/db
-</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>MONGO_URI=mongodb://localhost:27017/db
+</span></code></pre></div>
 <ul>
 <li>For Docker, use <code>mongo</code> as the hostname:<br />
 <code>MONGO_URI=mongodb://mongo:27017/db</code></li>
@@ -884,17 +884,19 @@ app.include_router(book_router, prefix=f&quot;{Settings().base_path}/books&quot;
 <hr />
 <h2 id="5-running-the-application">5. Running the Application</h2>
 <ul>
-<li><strong>Locally</strong>:</li>
-</ul>
-<pre><code class="language-bash">pip install fastapi-mongo-base uvicorn
-
-docker run -d -p 27017:27017 --name mongo mongo
-
-uvicorn app.main:app --reload
-</code></pre>
-<ul>
-<li><strong>With Docker Compose</strong>:<br />
-  See <a href="../quickstart/">Quick Start</a> for a full example.</li>
+<li>
+<p><strong>Locally</strong>:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>fastapi-mongo-base<span class="w"> </span>uvicorn
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>-p<span class="w"> </span><span class="m">27017</span>:27017<span class="w"> </span>--name<span class="w"> </span>mongo<span class="w"> </span>mongo
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>uvicorn<span class="w"> </span>app.main:app<span class="w"> </span>--reload
+</span></code></pre></div></p>
+</li>
+<li>
+<p><strong>With Docker Compose</strong>:<br />
+  See <a href="../quickstart/">Quick Start</a> for a full example.</p>
+</li>
 </ul>
 <hr />
 <h2 id="6-custom-endpoints">6. Custom Endpoints</h2>
