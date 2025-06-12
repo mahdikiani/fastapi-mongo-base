@@ -1,5 +1,4 @@
 import dataclasses
-import inspect
 from decimal import Decimal
 from pathlib import Path
 
@@ -38,6 +37,7 @@ class Settings(config.Settings):
     project_name: str = "test"
     base_dir: Path = Path(__file__).parent
     base_path: str = ""
+    mongo_uri: str = "mongodb://!!localhost:27017"
 
 
 app = app_factory.create_app(settings=Settings())

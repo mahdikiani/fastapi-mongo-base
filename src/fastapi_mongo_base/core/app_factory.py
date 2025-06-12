@@ -7,9 +7,7 @@ import fastapi
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from fastapi_mongo_base.core import db, exceptions
-
-from .config import Settings
+from . import config, db, exceptions
 
 
 async def health(request: fastapi.Request):
@@ -22,12 +20,12 @@ async def lifespan(
     app: fastapi.FastAPI,
     worker=None,
     init_functions=None,
-    settings: Settings = None,
+    settings: config.Settings = None,
 ):
     """Initialize application services."""
     if init_functions is None:
         init_functions = []
-    await db.init_mongo_db()
+    await db.init_mongo_db(settings)
 
     if worker:
         app.state.worker = asyncio.create_task(worker())
@@ -71,7 +69,7 @@ def setup_middlewares(*, app: fastapi.FastAPI, origins: list = None, **kwargs):
 
 def get_app_kwargs(
     *,
-    settings: Settings = None,
+    settings: config.Settings | None = None,
     title=None,
     description=None,
     version="0.1.0",
@@ -93,7 +91,7 @@ def get_app_kwargs(
 
     """Create a FastAPI app with shared configurations."""
     if settings is None:
-        settings = Settings()
+        settings = config.Settings()
     if title is None:
         title = settings.project_name.replace("-", " ").title()
     if description is None:
@@ -130,7 +128,7 @@ def get_app_kwargs(
 
 
 def create_app(
-    settings: Settings = None,
+    settings: config.Settings = None,
     *,
     title=None,
     description=None,
@@ -182,7 +180,7 @@ def create_app(
 
 def configure_app(
     app: fastapi.FastAPI,
-    settings: Settings = None,
+    settings: config.Settings = None,
     *,
     serve_coverage: bool = False,
     origins: list = None,

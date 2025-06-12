@@ -155,8 +155,8 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
 
     async def get_item(
         self,
-        *,
         uid: str,
+        *,
         user_id: str | None = None,
         tenant_id: str | None = None,
         **kwargs,

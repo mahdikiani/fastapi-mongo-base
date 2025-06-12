@@ -310,8 +310,8 @@ class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
     @classmethod
     async def get_item(
         cls,
-        *,
         uid: str,
+        *,
         user_id: str | None = None,
         ignore_user_id: bool = False,
         **kwargs,
