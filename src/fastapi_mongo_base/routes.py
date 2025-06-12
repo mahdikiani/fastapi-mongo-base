@@ -4,13 +4,10 @@ from typing import Any, TypeVar
 
 import singleton
 from fastapi import APIRouter, BackgroundTasks, Query, Request
-
-try:
-    from core.exceptions import BaseHTTPException
-except ImportError:
-    from .core.exceptions import BaseHTTPException
+from pydantic import BaseModel
 
 from .core.config import Settings
+from .core.exceptions import BaseHTTPException
 from .models import BaseEntity
 from .schemas import BaseEntitySchema, PaginatedResponse
 from .tasks import TaskStatusEnum
@@ -18,28 +15,46 @@ from .tasks import TaskStatusEnum
 # Define a type variable
 T = TypeVar("T", bound=BaseEntity)
 TS = TypeVar("TS", bound=BaseEntitySchema)
+TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
 
 
 class AbstractBaseRouter(metaclass=singleton.Singleton):
+    model: type[T]
+    schema: type[TS] | None
+
     def __init__(
         self,
-        model: type[T],
-        *args,
+        *,
+        model: type[T] | None = None,
+        schema: type[TS] | None = None,
         user_dependency=None,
-        prefix: str = None,
-        tags: list[str] = None,
-        schema: type[TS] = None,
+        prefix: str | None = None,
+        tags: list[str] | None = None,
         **kwargs,
     ):
-        self.model = model
+        if model is None:
+            if self.model is None:
+                raise ValueError(
+                    f"model is required in {self.__class__.__name__} "
+                    "router class"
+                )
+        else:
+            self.model = model
         if schema is None:
-            schema = self.model
-        self.schema = schema
+            if self.schema is None:
+                raise ValueError(
+                    f"schema is required in {self.__class__.__name__} "
+                    "router class"
+                )
+        else:
+            self.schema = schema
+
         self.user_dependency = user_dependency
         if prefix is None:
             prefix = f"/{self.model.__name__.lower()}s"
         if tags is None:
             tags = [self.model.__name__]
+
         self.router = APIRouter(prefix=prefix, tags=tags, **kwargs)
 
         self.config_schemas(self.schema, **kwargs)
@@ -71,12 +86,22 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
             "update_request_schema", schema
         )
 
-    def config_routes(self, **kwargs):
-        prefix: str = kwargs.get("prefix", "")
+    def config_routes(
+        self,
+        *,
+        prefix: str = "",
+        list_route: bool = True,
+        retrieve_route: bool = True,
+        create_route: bool = True,
+        update_route: bool = True,
+        delete_route: bool = True,
+        statistics_route: bool = True,
+        **kwargs,
+    ):
         prefix = prefix.strip("/")
         prefix = f"/{prefix}" if prefix else ""
 
-        if kwargs.get("list_route", True):
+        if list_route:
             self.router.add_api_route(
                 f"{prefix}",
                 self.list_items,
@@ -85,7 +110,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
                 status_code=200,
             )
 
-        if kwargs.get("retrieve_route", True):
+        if retrieve_route:
             self.router.add_api_route(
                 f"{prefix}/{{uid:str}}",
                 self.retrieve_item,
@@ -94,7 +119,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
                 status_code=200,
             )
 
-        if kwargs.get("create_route", True):
+        if create_route:
             self.router.add_api_route(
                 f"{prefix}",
                 self.create_item,
@@ -103,7 +128,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
                 status_code=201,
             )
 
-        if kwargs.get("update_route", True):
+        if update_route:
             self.router.add_api_route(
                 f"{prefix}/{{uid:str}}",
                 self.update_item,
@@ -112,7 +137,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
                 status_code=200,
             )
 
-        if kwargs.get("delete_route", True):
+        if delete_route:
             self.router.add_api_route(
                 f"{prefix}/{{uid:str}}",
                 self.delete_item,
@@ -121,7 +146,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
                 # status_code=204,
             )
 
-        if kwargs.get("statistics_route", True):
+        if statistics_route:
             self.router.add_api_route(
                 f"{prefix}/statistics",
                 self.statistics,
@@ -231,6 +256,8 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         data: dict,
     ):
         user_id = await self.get_user_id(request)
+        if isinstance(data, BaseModel):
+            data = data.model_dump()
         item = await self.model.create_item({**data, "user_id": user_id})
         await item.save()
         return item
@@ -242,6 +269,8 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         data: dict,
     ):
         user_id = await self.get_user_id(request)
+        if isinstance(data, BaseModel):
+            data = data.model_dump()
         item = await self.get_item(uid=uid, user_id=user_id)
         item = await self.model.update_item(item, data)
         return item
