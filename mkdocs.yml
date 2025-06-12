@@ -1,0 +1,57 @@
+site_name: Fastapi Mongo Base
+
+repo_url: https://github.com/mahdikiani/fastapi-mongo-base
+repo_name: mahdikiani/fastapi-mongo-base
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - content.code.copy
+    - content.code.annotate
+  language: en
+  highlightjs: true
+  highlightjs_languages:
+    - python
+    - bash
+    - yaml
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Quickstart:
+      - Quickstart: quickstart.md
+      - Boilerplate: boilerplate.md
+      - Tutorial: tutorial.md
+  - Usage:
+      - usage: usage.md
+
+  - API Reference:
+      - Endpoints: endpoints.md
+      - Settings: settings.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
+  - License: license.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+
+extra_css:
+  - extra.css
