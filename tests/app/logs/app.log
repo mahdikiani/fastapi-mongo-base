@@ -1,0 +1,1540 @@
+[INFO : conftest.py:36 : 2025-06-09 11:09:19,342 -> db        ] Initializing database
+[INFO : conftest.py:38 : 2025-06-09 11:09:19,344 -> db        ] Database initialized
+[INFO : conftest.py:40 : 2025-06-09 11:09:19,356 -> db        ] Cleaning up database
+[INFO : conftest.py:36 : 2025-06-09 11:09:38,285 -> db        ] Initializing database
+[INFO : conftest.py:38 : 2025-06-09 11:09:38,286 -> db        ] Database initialized
+[INFO : conftest.py:40 : 2025-06-09 11:09:38,298 -> db        ] Cleaning up database
+[INFO : conftest.py:36 : 2025-06-09 11:10:01,802 -> db        ] Initializing database
+[INFO : conftest.py:38 : 2025-06-09 11:10:01,803 -> db        ] Database initialized
+[INFO : conftest.py:40 : 2025-06-09 11:10:01,816 -> db        ] Cleaning up database
+[INFO : app_factory.py:41 : 2025-06-09 11:15:57,408 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-09 11:16:00,918 -> lifespan  ] Shutdown complete
+[INFO : app_factory.py:41 : 2025-06-09 11:16:06,734 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-09 11:16:48,436 -> lifespan  ] Shutdown complete
+[INFO : app_factory.py:41 : 2025-06-09 11:17:07,929 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-09 11:17:11,138 -> lifespan  ] Shutdown complete
+[INFO : app_factory.py:41 : 2025-06-09 11:17:14,426 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-09 11:17:16,533 -> lifespan  ] Shutdown complete
+[INFO : conftest.py:36 : 2025-06-09 11:17:20,832 -> db        ] Initializing database
+[INFO : conftest.py:38 : 2025-06-09 11:17:20,833 -> db        ] Database initialized
+[INFO : conftest.py:40 : 2025-06-09 11:17:20,846 -> db        ] Cleaning up database
+[INFO : conftest.py:36 : 2025-06-09 11:17:39,594 -> db        ] Initializing database
+[INFO : conftest.py:38 : 2025-06-09 11:17:39,595 -> db        ] Database initialized
+[INFO : conftest.py:40 : 2025-06-09 11:17:39,622 -> db        ] Cleaning up database
+[INFO : conftest.py:36 : 2025-06-09 11:19:31,737 -> db        ] Initializing database
+[INFO : conftest.py:38 : 2025-06-09 11:19:31,738 -> db        ] Database initialized
+[INFO : conftest.py:40 : 2025-06-09 11:19:31,741 -> db        ] Cleaning up database
+[INFO : conftest.py:36 : 2025-06-09 11:21:50,499 -> db        ] Initializing database
+[INFO : conftest.py:38 : 2025-06-09 11:21:50,501 -> db        ] Database initialized
+[INFO : conftest.py:40 : 2025-06-09 11:21:50,522 -> db        ] Cleaning up database
+[INFO : conftest.py:36 : 2025-06-09 11:22:17,056 -> db        ] Initializing database
+[INFO : conftest.py:38 : 2025-06-09 11:22:17,057 -> db        ] Database initialized
+[ERROR : exceptions.py:75 : 2025-06-09 11:22:17,060 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 207, in list_items
+    return await self._list_items(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 182, in _list_items
+    items, total = await self.model.list_total_combined(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 239, in list_total_combined
+    items = await cls.list_items(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 199, in list_items
+    query = cls.get_query(
+        user_id=user_id,
+    ...<2 lines>...
+        **kwargs,
+    )
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 145, in get_query
+    query = cls.find({"$and": base_query})
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 268, in find
+    return cls.find_many(
+           ~~~~~~~~~~~~~^
+        *args,
+        ^^^^^^
+    ...<11 lines>...
+        **pymongo_kwargs,
+        ^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 194, in find_many
+    args = cls._add_class_id_filter(args, with_children)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 438, in _add_class_id_filter
+    if any(
+       ~~~^
+        (
+        ^
+    ...<3 lines>...
+        )
+        ^
+    ):
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 442, in <genexpr>
+    if isinstance(a, Iterable) and cls.get_settings().class_id in a
+                                   ~~~~~~~~~~~~~~~~^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/documents.py", line 1108, in get_settings
+    raise CollectionWasNotInitialized
+ 
+[ERROR : exceptions.py:76 : 2025-06-09 11:22:17,060 -> general_exception_handler] Exception on request: http://test.usso.io/test/
+[ERROR : exceptions.py:75 : 2025-06-09 11:22:17,169 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 230, in create_item
+    item = await self.model.create_item({**data, "user_id": user_id})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 276, in create_item
+    item = cls(**data)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/documents.py", line 209, in __init__
+    self.get_motor_collection()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/getters.py", line 16, in get_motor_collection
+    return cls.get_settings().motor_collection
+           ~~~~~~~~~~~~~~~~^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/documents.py", line 1108, in get_settings
+    raise CollectionWasNotInitialized
+ 
+[ERROR : exceptions.py:76 : 2025-06-09 11:22:17,169 -> general_exception_handler] Exception on request: http://test.usso.io/test/
+[ERROR : exceptions.py:75 : 2025-06-09 11:22:17,257 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 207, in list_items
+    return await self._list_items(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 182, in _list_items
+    items, total = await self.model.list_total_combined(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 239, in list_total_combined
+    items = await cls.list_items(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 199, in list_items
+    query = cls.get_query(
+        user_id=user_id,
+    ...<2 lines>...
+        **kwargs,
+    )
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 145, in get_query
+    query = cls.find({"$and": base_query})
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 268, in find
+    return cls.find_many(
+           ~~~~~~~~~~~~~^
+        *args,
+        ^^^^^^
+    ...<11 lines>...
+        **pymongo_kwargs,
+        ^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 194, in find_many
+    args = cls._add_class_id_filter(args, with_children)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 438, in _add_class_id_filter
+    if any(
+       ~~~^
+        (
+        ^
+    ...<3 lines>...
+        )
+        ^
+    ):
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 442, in <genexpr>
+    if isinstance(a, Iterable) and cls.get_settings().class_id in a
+                                   ~~~~~~~~~~~~~~~~^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/documents.py", line 1108, in get_settings
+    raise CollectionWasNotInitialized
+ 
+[ERROR : exceptions.py:76 : 2025-06-09 11:22:17,257 -> general_exception_handler] Exception on request: http://test.usso.io/test/
+[ERROR : exceptions.py:75 : 2025-06-09 11:22:17,348 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 207, in list_items
+    return await self._list_items(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 182, in _list_items
+    items, total = await self.model.list_total_combined(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 239, in list_total_combined
+    items = await cls.list_items(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 199, in list_items
+    query = cls.get_query(
+        user_id=user_id,
+    ...<2 lines>...
+        **kwargs,
+    )
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 145, in get_query
+    query = cls.find({"$and": base_query})
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 268, in find
+    return cls.find_many(
+           ~~~~~~~~~~~~~^
+        *args,
+        ^^^^^^
+    ...<11 lines>...
+        **pymongo_kwargs,
+        ^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 194, in find_many
+    args = cls._add_class_id_filter(args, with_children)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 438, in _add_class_id_filter
+    if any(
+       ~~~^
+        (
+        ^
+    ...<3 lines>...
+        )
+        ^
+    ):
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 442, in <genexpr>
+    if isinstance(a, Iterable) and cls.get_settings().class_id in a
+                                   ~~~~~~~~~~~~~~~~^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/documents.py", line 1108, in get_settings
+    raise CollectionWasNotInitialized
+ 
+[ERROR : exceptions.py:76 : 2025-06-09 11:22:17,348 -> general_exception_handler] Exception on request: http://test.usso.io/test/
+[ERROR : exceptions.py:75 : 2025-06-09 11:22:17,440 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 207, in list_items
+    return await self._list_items(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 182, in _list_items
+    items, total = await self.model.list_total_combined(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 239, in list_total_combined
+    items = await cls.list_items(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 199, in list_items
+    query = cls.get_query(
+        user_id=user_id,
+    ...<2 lines>...
+        **kwargs,
+    )
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 145, in get_query
+    query = cls.find({"$and": base_query})
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 268, in find
+    return cls.find_many(
+           ~~~~~~~~~~~~~^
+        *args,
+        ^^^^^^
+    ...<11 lines>...
+        **pymongo_kwargs,
+        ^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 194, in find_many
+    args = cls._add_class_id_filter(args, with_children)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 438, in _add_class_id_filter
+    if any(
+       ~~~^
+        (
+        ^
+    ...<3 lines>...
+        )
+        ^
+    ):
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/interfaces/find.py", line 442, in <genexpr>
+    if isinstance(a, Iterable) and cls.get_settings().class_id in a
+                                   ~~~~~~~~~~~~~~~~^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/documents.py", line 1108, in get_settings
+    raise CollectionWasNotInitialized
+ 
+[ERROR : exceptions.py:76 : 2025-06-09 11:22:17,440 -> general_exception_handler] Exception on request: http://test.usso.io/test/
+[INFO : conftest.py:40 : 2025-06-09 11:22:17,534 -> db        ] Cleaning up database
+[INFO : conftest.py:36 : 2025-06-09 11:22:52,414 -> db        ] Initializing database
+[INFO : conftest.py:38 : 2025-06-09 11:22:52,416 -> db        ] Database initialized
+[ERROR : exceptions.py:75 : 2025-06-09 11:22:52,428 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 207, in list_items
+    return await self._list_items(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 182, in _list_items
+    items, total = await self.model.list_total_combined(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 239, in list_total_combined
+    items = await cls.list_items(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 207, in list_items
+    items = await items_query.to_list()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/queries/cursor.py", line 73, in to_list
+    motor_list = await cursor.to_list(length)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock_motor/__init__.py", line 130, in to_list
+    return list(self.__cursor)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1970, in __next__
+    doc = self._compute_results(with_limit_and_skip=True)[self._emitted]
+          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1948, in _compute_results
+    results = list(self._factory())
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1115, in _get_dataset
+    dataset = self._iter_documents(spec)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock_motor/patches.py", line 114, in wrapper
+    return fn(_normalize_strings(filter))
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1351, in _iter_documents
+    filter_applies(filter, {})
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 52, in filter_applies
+    return _filterer_inst.apply(search_filter, document)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 89, in apply
+    if not LOGICAL_OPERATOR_MAP[key](document, search, self.apply):
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <lambda>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                         ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <genexpr>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                             ~~~~~~~~~~~^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 80, in apply
+    raise OperationFailure('the match filter must be an expression in an object')
+ the match filter must be an expression in an object
+[ERROR : exceptions.py:76 : 2025-06-09 11:22:52,428 -> general_exception_handler] Exception on request: http://test.usso.io/test/
+[INFO : test_apis.py:18 : 2025-06-09 11:22:52,570 -> test_create] {'uid': '0197546d-d118-7137-9570-d6d967426a61', 'created_at': '2025-06-09T11:22:52.568000', 'updated_at': '2025-06-09T11:22:52.569000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[ERROR : exceptions.py:75 : 2025-06-09 11:22:52,572 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 207, in list_items
+    return await self._list_items(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 182, in _list_items
+    items, total = await self.model.list_total_combined(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 239, in list_total_combined
+    items = await cls.list_items(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 207, in list_items
+    items = await items_query.to_list()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/queries/cursor.py", line 73, in to_list
+    motor_list = await cursor.to_list(length)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock_motor/__init__.py", line 130, in to_list
+    return list(self.__cursor)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1970, in __next__
+    doc = self._compute_results(with_limit_and_skip=True)[self._emitted]
+          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1948, in _compute_results
+    results = list(self._factory())
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1127, in _get_dataset
+    dataset = iter(sorted(
+                   ~~~~~~^
+        dataset, key=lambda x: filtering.resolve_sort_key(sort_key, x),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        reverse=sort_direction < 0))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1354, in <genexpr>
+    if filter_applies(filter, document))
+       ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 52, in filter_applies
+    return _filterer_inst.apply(search_filter, document)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 89, in apply
+    if not LOGICAL_OPERATOR_MAP[key](document, search, self.apply):
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <lambda>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                         ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <genexpr>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                             ~~~~~~~~~~~^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 80, in apply
+    raise OperationFailure('the match filter must be an expression in an object')
+ the match filter must be an expression in an object
+[ERROR : exceptions.py:76 : 2025-06-09 11:22:52,572 -> general_exception_handler] Exception on request: http://test.usso.io/test/
+[ERROR : exceptions.py:75 : 2025-06-09 11:22:52,696 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 207, in list_items
+    return await self._list_items(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 182, in _list_items
+    items, total = await self.model.list_total_combined(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 239, in list_total_combined
+    items = await cls.list_items(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 207, in list_items
+    items = await items_query.to_list()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/queries/cursor.py", line 73, in to_list
+    motor_list = await cursor.to_list(length)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock_motor/__init__.py", line 130, in to_list
+    return list(self.__cursor)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1970, in __next__
+    doc = self._compute_results(with_limit_and_skip=True)[self._emitted]
+          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1948, in _compute_results
+    results = list(self._factory())
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1127, in _get_dataset
+    dataset = iter(sorted(
+                   ~~~~~~^
+        dataset, key=lambda x: filtering.resolve_sort_key(sort_key, x),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        reverse=sort_direction < 0))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1354, in <genexpr>
+    if filter_applies(filter, document))
+       ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 52, in filter_applies
+    return _filterer_inst.apply(search_filter, document)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 89, in apply
+    if not LOGICAL_OPERATOR_MAP[key](document, search, self.apply):
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <lambda>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                         ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <genexpr>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                             ~~~~~~~~~~~^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 80, in apply
+    raise OperationFailure('the match filter must be an expression in an object')
+ the match filter must be an expression in an object
+[ERROR : exceptions.py:76 : 2025-06-09 11:22:52,696 -> general_exception_handler] Exception on request: http://test.usso.io/test/
+[ERROR : exceptions.py:75 : 2025-06-09 11:22:52,821 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 207, in list_items
+    return await self._list_items(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 182, in _list_items
+    items, total = await self.model.list_total_combined(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 239, in list_total_combined
+    items = await cls.list_items(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 207, in list_items
+    items = await items_query.to_list()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/queries/cursor.py", line 73, in to_list
+    motor_list = await cursor.to_list(length)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock_motor/__init__.py", line 130, in to_list
+    return list(self.__cursor)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1970, in __next__
+    doc = self._compute_results(with_limit_and_skip=True)[self._emitted]
+          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1948, in _compute_results
+    results = list(self._factory())
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1127, in _get_dataset
+    dataset = iter(sorted(
+                   ~~~~~~^
+        dataset, key=lambda x: filtering.resolve_sort_key(sort_key, x),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        reverse=sort_direction < 0))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1354, in <genexpr>
+    if filter_applies(filter, document))
+       ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 52, in filter_applies
+    return _filterer_inst.apply(search_filter, document)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 89, in apply
+    if not LOGICAL_OPERATOR_MAP[key](document, search, self.apply):
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <lambda>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                         ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <genexpr>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                             ~~~~~~~~~~~^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 80, in apply
+    raise OperationFailure('the match filter must be an expression in an object')
+ the match filter must be an expression in an object
+[ERROR : exceptions.py:76 : 2025-06-09 11:22:52,821 -> general_exception_handler] Exception on request: http://test.usso.io/test/
+[INFO : conftest.py:40 : 2025-06-09 11:22:52,945 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-09 11:24:30,017 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-09 11:24:30,019 -> db        ] Database initialized
+[ERROR : exceptions.py:75 : 2025-06-09 11:25:05,903 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 207, in list_items
+    return await self._list_items(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 182, in _list_items
+    items, total = await self.model.list_total_combined(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 239, in list_total_combined
+    items = await cls.list_items(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 207, in list_items
+    items = await items_query.to_list()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/queries/cursor.py", line 73, in to_list
+    motor_list = await cursor.to_list(length)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock_motor/__init__.py", line 130, in to_list
+    return list(self.__cursor)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1970, in __next__
+    doc = self._compute_results(with_limit_and_skip=True)[self._emitted]
+          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1948, in _compute_results
+    results = list(self._factory())
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1115, in _get_dataset
+    dataset = self._iter_documents(spec)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock_motor/patches.py", line 114, in wrapper
+    return fn(_normalize_strings(filter))
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1351, in _iter_documents
+    filter_applies(filter, {})
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 52, in filter_applies
+    return _filterer_inst.apply(search_filter, document)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 89, in apply
+    if not LOGICAL_OPERATOR_MAP[key](document, search, self.apply):
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <lambda>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                         ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <genexpr>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                             ~~~~~~~~~~~^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 80, in apply
+    raise OperationFailure('the match filter must be an expression in an object')
+ the match filter must be an expression in an object
+[ERROR : exceptions.py:76 : 2025-06-09 11:25:05,903 -> general_exception_handler] Exception on request: http://test.usso.io/test/
+[INFO : test_apis.py:18 : 2025-06-09 11:25:06,059 -> test_create] {'uid': '0197546f-da89-7a8d-a353-c8c2465221db', 'created_at': '2025-06-09T11:25:06.057000', 'updated_at': '2025-06-09T11:25:06.058000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[ERROR : exceptions.py:75 : 2025-06-09 11:25:06,063 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 207, in list_items
+    return await self._list_items(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 182, in _list_items
+    items, total = await self.model.list_total_combined(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 239, in list_total_combined
+    items = await cls.list_items(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 207, in list_items
+    items = await items_query.to_list()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/queries/cursor.py", line 73, in to_list
+    motor_list = await cursor.to_list(length)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock_motor/__init__.py", line 130, in to_list
+    return list(self.__cursor)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1970, in __next__
+    doc = self._compute_results(with_limit_and_skip=True)[self._emitted]
+          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1948, in _compute_results
+    results = list(self._factory())
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1127, in _get_dataset
+    dataset = iter(sorted(
+                   ~~~~~~^
+        dataset, key=lambda x: filtering.resolve_sort_key(sort_key, x),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        reverse=sort_direction < 0))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1354, in <genexpr>
+    if filter_applies(filter, document))
+       ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 52, in filter_applies
+    return _filterer_inst.apply(search_filter, document)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 89, in apply
+    if not LOGICAL_OPERATOR_MAP[key](document, search, self.apply):
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <lambda>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                         ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <genexpr>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                             ~~~~~~~~~~~^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 80, in apply
+    raise OperationFailure('the match filter must be an expression in an object')
+ the match filter must be an expression in an object
+[ERROR : exceptions.py:76 : 2025-06-09 11:25:06,063 -> general_exception_handler] Exception on request: http://test.usso.io/test/
+[ERROR : exceptions.py:75 : 2025-06-09 11:25:06,193 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 207, in list_items
+    return await self._list_items(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 182, in _list_items
+    items, total = await self.model.list_total_combined(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 239, in list_total_combined
+    items = await cls.list_items(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 207, in list_items
+    items = await items_query.to_list()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/queries/cursor.py", line 73, in to_list
+    motor_list = await cursor.to_list(length)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock_motor/__init__.py", line 130, in to_list
+    return list(self.__cursor)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1970, in __next__
+    doc = self._compute_results(with_limit_and_skip=True)[self._emitted]
+          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1948, in _compute_results
+    results = list(self._factory())
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1127, in _get_dataset
+    dataset = iter(sorted(
+                   ~~~~~~^
+        dataset, key=lambda x: filtering.resolve_sort_key(sort_key, x),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        reverse=sort_direction < 0))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1354, in <genexpr>
+    if filter_applies(filter, document))
+       ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 52, in filter_applies
+    return _filterer_inst.apply(search_filter, document)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 89, in apply
+    if not LOGICAL_OPERATOR_MAP[key](document, search, self.apply):
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <lambda>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                         ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <genexpr>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                             ~~~~~~~~~~~^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 80, in apply
+    raise OperationFailure('the match filter must be an expression in an object')
+ the match filter must be an expression in an object
+[ERROR : exceptions.py:76 : 2025-06-09 11:25:06,193 -> general_exception_handler] Exception on request: http://test.usso.io/test/
+[ERROR : exceptions.py:75 : 2025-06-09 11:25:06,325 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 207, in list_items
+    return await self._list_items(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 182, in _list_items
+    items, total = await self.model.list_total_combined(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 239, in list_total_combined
+    items = await cls.list_items(
+            ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/models.py", line 207, in list_items
+    items = await items_query.to_list()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/beanie/odm/queries/cursor.py", line 73, in to_list
+    motor_list = await cursor.to_list(length)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock_motor/__init__.py", line 130, in to_list
+    return list(self.__cursor)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1970, in __next__
+    doc = self._compute_results(with_limit_and_skip=True)[self._emitted]
+          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1948, in _compute_results
+    results = list(self._factory())
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1127, in _get_dataset
+    dataset = iter(sorted(
+                   ~~~~~~^
+        dataset, key=lambda x: filtering.resolve_sort_key(sort_key, x),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        reverse=sort_direction < 0))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/collection.py", line 1354, in <genexpr>
+    if filter_applies(filter, document))
+       ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 52, in filter_applies
+    return _filterer_inst.apply(search_filter, document)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 89, in apply
+    if not LOGICAL_OPERATOR_MAP[key](document, search, self.apply):
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <lambda>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                         ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 481, in <genexpr>
+    '$and': lambda d, subq, filter_func: all(filter_func(q, d) for q in subq),
+                                             ~~~~~~~~~~~^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/mongomock/filtering.py", line 80, in apply
+    raise OperationFailure('the match filter must be an expression in an object')
+ the match filter must be an expression in an object
+[ERROR : exceptions.py:76 : 2025-06-09 11:25:06,325 -> general_exception_handler] Exception on request: http://test.usso.io/test/
+[INFO : conftest.py:50 : 2025-06-09 11:25:06,450 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-09 11:25:15,531 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-09 11:25:15,533 -> db        ] Database initialized
+[INFO : conftest.py:50 : 2025-06-09 11:26:07,379 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-09 11:26:09,804 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-09 11:26:09,806 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-09 11:26:09,808 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:18 : 2025-06-09 11:26:09,810 -> test_create] {'uid': '01975470-d391-7263-88d9-0dd3d5dd60af', 'created_at': '2025-06-09T11:26:09.809000', 'updated_at': '2025-06-09T11:26:09.809000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:25 : 2025-06-09 11:26:09,811 -> test_list ] {'items': [{'uid': '01975470-d391-7263-88d9-0dd3d5dd60af', 'created_at': '2025-06-09T11:26:09.809000', 'updated_at': '2025-06-09T11:26:09.809000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:30 : 2025-06-09 11:26:09,812 -> test_list ] {'uid': '01975470-d391-7263-88d9-0dd3d5dd60af', 'created_at': '2025-06-09T11:26:09.809000', 'updated_at': '2025-06-09T11:26:09.809000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:37 : 2025-06-09 11:26:09,813 -> test_update] {'items': [{'uid': '01975470-d391-7263-88d9-0dd3d5dd60af', 'created_at': '2025-06-09T11:26:09.809000', 'updated_at': '2025-06-09T11:26:09.809000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:42 : 2025-06-09 11:26:09,814 -> test_update] {'uid': '01975470-d391-7263-88d9-0dd3d5dd60af', 'created_at': '2025-06-09T11:26:09.809000', 'updated_at': '2025-06-09T11:26:09.813000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}
+[INFO : test_apis.py:49 : 2025-06-09 11:26:09,815 -> test_delete] {'items': [{'uid': '01975470-d391-7263-88d9-0dd3d5dd60af', 'created_at': '2025-06-09T11:26:09.809000', 'updated_at': '2025-06-09T11:26:09.813000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:54 : 2025-06-09 11:26:09,816 -> test_delete] {'uid': '01975470-d391-7263-88d9-0dd3d5dd60af', 'created_at': '2025-06-09T11:26:09.809000', 'updated_at': '2025-06-09T11:26:09.815000', 'is_deleted': True, 'meta_data': None, 'name': 'test2'}
+[INFO : conftest.py:50 : 2025-06-09 11:26:09,817 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-09 11:27:05,504 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-09 11:27:05,508 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-09 11:27:05,512 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:18 : 2025-06-09 11:27:05,517 -> test_create] {'uid': '01975471-ad2a-7618-931f-77ab4d358cb5', 'created_at': '2025-06-09T11:27:05.514000', 'updated_at': '2025-06-09T11:27:05.516000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:25 : 2025-06-09 11:27:05,519 -> test_list ] {'items': [{'uid': '01975471-ad2a-7618-931f-77ab4d358cb5', 'created_at': '2025-06-09T11:27:05.514000', 'updated_at': '2025-06-09T11:27:05.516000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:30 : 2025-06-09 11:27:05,520 -> test_list ] {'uid': '01975471-ad2a-7618-931f-77ab4d358cb5', 'created_at': '2025-06-09T11:27:05.514000', 'updated_at': '2025-06-09T11:27:05.516000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:37 : 2025-06-09 11:27:05,522 -> test_update] {'items': [{'uid': '01975471-ad2a-7618-931f-77ab4d358cb5', 'created_at': '2025-06-09T11:27:05.514000', 'updated_at': '2025-06-09T11:27:05.516000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:42 : 2025-06-09 11:27:05,523 -> test_update] {'uid': '01975471-ad2a-7618-931f-77ab4d358cb5', 'created_at': '2025-06-09T11:27:05.514000', 'updated_at': '2025-06-09T11:27:05.522000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}
+[INFO : test_apis.py:49 : 2025-06-09 11:27:05,525 -> test_delete] {'items': [{'uid': '01975471-ad2a-7618-931f-77ab4d358cb5', 'created_at': '2025-06-09T11:27:05.514000', 'updated_at': '2025-06-09T11:27:05.522000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:54 : 2025-06-09 11:27:05,527 -> test_delete] {'uid': '01975471-ad2a-7618-931f-77ab4d358cb5', 'created_at': '2025-06-09T11:27:05.514000', 'updated_at': '2025-06-09T11:27:05.526000', 'is_deleted': True, 'meta_data': None, 'name': 'test2'}
+[INFO : conftest.py:50 : 2025-06-09 11:27:05,529 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-09 11:27:19,041 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-09 11:27:19,045 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-09 11:27:19,049 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:18 : 2025-06-09 11:27:19,054 -> test_create] {'uid': '01975471-e20b-7fb2-b370-27358a7c4edb', 'created_at': '2025-06-09T11:27:19.051000', 'updated_at': '2025-06-09T11:27:19.053000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:25 : 2025-06-09 11:27:19,056 -> test_list ] {'items': [{'uid': '01975471-e20b-7fb2-b370-27358a7c4edb', 'created_at': '2025-06-09T11:27:19.051000', 'updated_at': '2025-06-09T11:27:19.053000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:30 : 2025-06-09 11:27:19,057 -> test_list ] {'uid': '01975471-e20b-7fb2-b370-27358a7c4edb', 'created_at': '2025-06-09T11:27:19.051000', 'updated_at': '2025-06-09T11:27:19.053000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:37 : 2025-06-09 11:27:19,059 -> test_update] {'items': [{'uid': '01975471-e20b-7fb2-b370-27358a7c4edb', 'created_at': '2025-06-09T11:27:19.051000', 'updated_at': '2025-06-09T11:27:19.053000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:42 : 2025-06-09 11:27:19,060 -> test_update] {'uid': '01975471-e20b-7fb2-b370-27358a7c4edb', 'created_at': '2025-06-09T11:27:19.051000', 'updated_at': '2025-06-09T11:27:19.059000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}
+[INFO : test_apis.py:49 : 2025-06-09 11:27:19,062 -> test_delete] {'items': [{'uid': '01975471-e20b-7fb2-b370-27358a7c4edb', 'created_at': '2025-06-09T11:27:19.051000', 'updated_at': '2025-06-09T11:27:19.059000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:54 : 2025-06-09 11:27:19,064 -> test_delete] {'uid': '01975471-e20b-7fb2-b370-27358a7c4edb', 'created_at': '2025-06-09T11:27:19.051000', 'updated_at': '2025-06-09T11:27:19.063000', 'is_deleted': True, 'meta_data': None, 'name': 'test2'}
+[INFO : conftest.py:50 : 2025-06-09 11:27:19,066 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-09 11:28:01,386 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-09 11:28:01,390 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-09 11:28:01,394 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:18 : 2025-06-09 11:28:01,399 -> test_create] {'uid': '01975472-8774-705e-921c-2ed24bb01ed6', 'created_at': '2025-06-09T11:28:01.396000', 'updated_at': '2025-06-09T11:28:01.398000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:25 : 2025-06-09 11:28:01,401 -> test_list ] {'items': [{'uid': '01975472-8774-705e-921c-2ed24bb01ed6', 'created_at': '2025-06-09T11:28:01.396000', 'updated_at': '2025-06-09T11:28:01.398000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:30 : 2025-06-09 11:28:01,402 -> test_list ] {'uid': '01975472-8774-705e-921c-2ed24bb01ed6', 'created_at': '2025-06-09T11:28:01.396000', 'updated_at': '2025-06-09T11:28:01.398000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:37 : 2025-06-09 11:28:01,404 -> test_update] {'items': [{'uid': '01975472-8774-705e-921c-2ed24bb01ed6', 'created_at': '2025-06-09T11:28:01.396000', 'updated_at': '2025-06-09T11:28:01.398000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:42 : 2025-06-09 11:28:01,405 -> test_update] {'uid': '01975472-8774-705e-921c-2ed24bb01ed6', 'created_at': '2025-06-09T11:28:01.396000', 'updated_at': '2025-06-09T11:28:01.404000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}
+[INFO : test_apis.py:49 : 2025-06-09 11:28:01,407 -> test_delete] {'items': [{'uid': '01975472-8774-705e-921c-2ed24bb01ed6', 'created_at': '2025-06-09T11:28:01.396000', 'updated_at': '2025-06-09T11:28:01.404000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:54 : 2025-06-09 11:28:01,409 -> test_delete] {'uid': '01975472-8774-705e-921c-2ed24bb01ed6', 'created_at': '2025-06-09T11:28:01.396000', 'updated_at': '2025-06-09T11:28:01.408000', 'is_deleted': True, 'meta_data': None, 'name': 'test2'}
+[INFO : conftest.py:50 : 2025-06-09 11:28:01,411 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-09 15:32:39,605 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-09 15:32:39,609 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-09 15:32:39,613 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:18 : 2025-06-09 15:32:39,617 -> test_create] {'uid': '01975552-803f-7117-95a8-5619c421c755', 'created_at': '2025-06-09T15:32:39.615000', 'updated_at': '2025-06-09T15:32:39.616000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:25 : 2025-06-09 15:32:39,620 -> test_list ] {'items': [{'uid': '01975552-803f-7117-95a8-5619c421c755', 'created_at': '2025-06-09T15:32:39.615000', 'updated_at': '2025-06-09T15:32:39.616000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:30 : 2025-06-09 15:32:39,620 -> test_list ] {'uid': '01975552-803f-7117-95a8-5619c421c755', 'created_at': '2025-06-09T15:32:39.615000', 'updated_at': '2025-06-09T15:32:39.616000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:37 : 2025-06-09 15:32:39,622 -> test_update] {'items': [{'uid': '01975552-803f-7117-95a8-5619c421c755', 'created_at': '2025-06-09T15:32:39.615000', 'updated_at': '2025-06-09T15:32:39.616000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:42 : 2025-06-09 15:32:39,624 -> test_update] {'uid': '01975552-803f-7117-95a8-5619c421c755', 'created_at': '2025-06-09T15:32:39.615000', 'updated_at': '2025-06-09T15:32:39.623000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}
+[INFO : test_apis.py:49 : 2025-06-09 15:32:39,626 -> test_delete] {'items': [{'uid': '01975552-803f-7117-95a8-5619c421c755', 'created_at': '2025-06-09T15:32:39.615000', 'updated_at': '2025-06-09T15:32:39.623000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:54 : 2025-06-09 15:32:39,627 -> test_delete] {'uid': '01975552-803f-7117-95a8-5619c421c755', 'created_at': '2025-06-09T15:32:39.615000', 'updated_at': '2025-06-09T15:32:39.626000', 'is_deleted': True, 'meta_data': None, 'name': 'test2'}
+[INFO : conftest.py:50 : 2025-06-09 15:32:39,629 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-10 12:31:00,667 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-10 12:31:00,671 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-10 12:31:00,676 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:18 : 2025-06-10 12:31:00,681 -> test_create] {'uid': '019759d2-8e46-732d-a869-2e67793de278', 'created_at': '2025-06-10T12:31:00.678000', 'updated_at': '2025-06-10T12:31:00.679000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:25 : 2025-06-10 12:31:00,683 -> test_list ] {'items': [{'uid': '019759d2-8e46-732d-a869-2e67793de278', 'created_at': '2025-06-10T12:31:00.678000', 'updated_at': '2025-06-10T12:31:00.679000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:30 : 2025-06-10 12:31:00,683 -> test_list ] {'uid': '019759d2-8e46-732d-a869-2e67793de278', 'created_at': '2025-06-10T12:31:00.678000', 'updated_at': '2025-06-10T12:31:00.679000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:37 : 2025-06-10 12:31:00,685 -> test_update] {'items': [{'uid': '019759d2-8e46-732d-a869-2e67793de278', 'created_at': '2025-06-10T12:31:00.678000', 'updated_at': '2025-06-10T12:31:00.679000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:42 : 2025-06-10 12:31:00,687 -> test_update] {'uid': '019759d2-8e46-732d-a869-2e67793de278', 'created_at': '2025-06-10T12:31:00.678000', 'updated_at': '2025-06-10T12:31:00.686000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}
+[INFO : test_apis.py:49 : 2025-06-10 12:31:00,689 -> test_delete] {'items': [{'uid': '019759d2-8e46-732d-a869-2e67793de278', 'created_at': '2025-06-10T12:31:00.678000', 'updated_at': '2025-06-10T12:31:00.686000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:54 : 2025-06-10 12:31:00,691 -> test_delete] {'uid': '019759d2-8e46-732d-a869-2e67793de278', 'created_at': '2025-06-10T12:31:00.678000', 'updated_at': '2025-06-10T12:31:00.690000', 'is_deleted': True, 'meta_data': None, 'name': 'test2'}
+[INFO : conftest.py:50 : 2025-06-10 12:31:00,693 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:42:57,459 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:42:57,463 -> db        ] Database initialized
+[INFO : conftest.py:50 : 2025-06-12 07:42:57,494 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:43:23,811 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:43:23,815 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:43:23,819 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[ERROR : exceptions.py:62 : 2025-06-12 07:43:23,822 -> request_validation_exception_handler] request_validation_exception: http://test.usso.io/test [{'type': 'missing', 'loc': ('query', 'self'), 'msg': 'Field required', 'input': None}, {'type': 'missing', 'loc': ('query', 'args'), 'msg': 'Field required', 'input': None}, {'type': 'missing', 'loc': ('query', 'kwargs'), 'msg': 'Field required', 'input': None}]
+b'{"name":"test"}'
+[INFO : test_apis.py:25 : 2025-06-12 07:43:23,837 -> test_list ] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:37 : 2025-06-12 07:43:23,841 -> test_update] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:49 : 2025-06-12 07:43:23,844 -> test_delete] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : conftest.py:50 : 2025-06-12 07:43:23,848 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:44:11,130 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:44:11,133 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:44:11,138 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[ERROR : exceptions.py:62 : 2025-06-12 07:44:11,141 -> request_validation_exception_handler] request_validation_exception: http://test.usso.io/test [{'type': 'missing', 'loc': ('query', 'self'), 'msg': 'Field required', 'input': None}, {'type': 'missing', 'loc': ('query', 'args'), 'msg': 'Field required', 'input': None}, {'type': 'missing', 'loc': ('query', 'kwargs'), 'msg': 'Field required', 'input': None}]
+b'{"name":"test"}'
+[INFO : test_apis.py:25 : 2025-06-12 07:44:11,156 -> test_list ] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:37 : 2025-06-12 07:44:11,160 -> test_update] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:49 : 2025-06-12 07:44:11,163 -> test_delete] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : conftest.py:50 : 2025-06-12 07:44:11,167 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:44:50,309 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:44:50,313 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:44:50,317 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[ERROR : exceptions.py:62 : 2025-06-12 07:44:50,320 -> request_validation_exception_handler] request_validation_exception: http://test.usso.io/test [{'type': 'missing', 'loc': ('query', 'args'), 'msg': 'Field required', 'input': None}, {'type': 'missing', 'loc': ('query', 'kwargs'), 'msg': 'Field required', 'input': None}]
+b'{"name":"test"}'
+[INFO : test_apis.py:25 : 2025-06-12 07:44:50,335 -> test_list ] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:37 : 2025-06-12 07:44:50,339 -> test_update] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:49 : 2025-06-12 07:44:50,342 -> test_delete] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : conftest.py:50 : 2025-06-12 07:44:50,346 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:45:58,085 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:45:58,089 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:45:58,093 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[ERROR : exceptions.py:62 : 2025-06-12 07:45:58,096 -> request_validation_exception_handler] request_validation_exception: http://test.usso.io/test [{'type': 'missing', 'loc': ('query', 'args'), 'msg': 'Field required', 'input': None}, {'type': 'missing', 'loc': ('query', 'kwargs'), 'msg': 'Field required', 'input': None}]
+b'{"name":"test"}'
+[INFO : test_apis.py:25 : 2025-06-12 07:45:58,111 -> test_list ] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:37 : 2025-06-12 07:45:58,115 -> test_update] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:49 : 2025-06-12 07:45:58,119 -> test_delete] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : conftest.py:50 : 2025-06-12 07:45:58,123 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:46:30,101 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:46:30,105 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:46:30,110 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[ERROR : exceptions.py:75 : 2025-06-12 07:46:30,114 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 26, in wrapper
+    return await func(request, item)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 284, in create_item
+    item = await self.model.create_item({**data, "user_id": user_id})
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 'TestEntitySchema' object is not a mapping
+[ERROR : exceptions.py:76 : 2025-06-12 07:46:30,115 -> general_exception_handler] Exception on request: http://test.usso.io/test
+[INFO : test_apis.py:25 : 2025-06-12 07:46:30,353 -> test_list ] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:37 : 2025-06-12 07:46:30,357 -> test_update] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:49 : 2025-06-12 07:46:30,361 -> test_delete] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : conftest.py:50 : 2025-06-12 07:46:30,365 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:47:26,432 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:47:26,436 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:47:26,440 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:18 : 2025-06-12 07:47:26,446 -> test_create] {'uid': '0197631b-a86c-76c4-9ff1-9aaf20420d70', 'created_at': '2025-06-12T07:47:26.443000', 'updated_at': '2025-06-12T07:47:26.445000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:25 : 2025-06-12 07:47:26,448 -> test_list ] {'items': [{'uid': '0197631b-a86c-76c4-9ff1-9aaf20420d70', 'created_at': '2025-06-12T07:47:26.443000', 'updated_at': '2025-06-12T07:47:26.445000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:30 : 2025-06-12 07:47:26,449 -> test_list ] {'uid': '0197631b-a86c-76c4-9ff1-9aaf20420d70', 'created_at': '2025-06-12T07:47:26.443000', 'updated_at': '2025-06-12T07:47:26.445000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:37 : 2025-06-12 07:47:26,451 -> test_update] {'items': [{'uid': '0197631b-a86c-76c4-9ff1-9aaf20420d70', 'created_at': '2025-06-12T07:47:26.443000', 'updated_at': '2025-06-12T07:47:26.445000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:42 : 2025-06-12 07:47:26,452 -> test_update] {'uid': '0197631b-a86c-76c4-9ff1-9aaf20420d70', 'created_at': '2025-06-12T07:47:26.443000', 'updated_at': '2025-06-12T07:47:26.451000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}
+[INFO : test_apis.py:49 : 2025-06-12 07:47:26,454 -> test_delete] {'items': [{'uid': '0197631b-a86c-76c4-9ff1-9aaf20420d70', 'created_at': '2025-06-12T07:47:26.443000', 'updated_at': '2025-06-12T07:47:26.451000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:54 : 2025-06-12 07:47:26,456 -> test_delete] {'uid': '0197631b-a86c-76c4-9ff1-9aaf20420d70', 'created_at': '2025-06-12T07:47:26.443000', 'updated_at': '2025-06-12T07:47:26.455000', 'is_deleted': True, 'meta_data': None, 'name': 'test2'}
+[INFO : conftest.py:50 : 2025-06-12 07:47:26,458 -> db        ] Cleaning up database
+[INFO : app_factory.py:41 : 2025-06-12 07:48:04,545 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 07:48:51,267 -> lifespan  ] Shutdown complete
+[INFO : app_factory.py:41 : 2025-06-12 07:48:52,463 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 07:50:15,759 -> lifespan  ] Shutdown complete
+[INFO : app_factory.py:41 : 2025-06-12 07:50:18,020 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 07:50:34,070 -> lifespan  ] Shutdown complete
+[INFO : app_factory.py:41 : 2025-06-12 07:51:23,307 -> lifespan  ] Startup complete
+[ERROR : exceptions.py:75 : 2025-06-12 07:51:34,727 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 24, in wrapper
+    return await func(request, item)
+                 ~~~~^^^^^^^^^^^^^^^
+ AbstractBaseRouter.update_item() missing 1 required positional argument: 'data'
+[ERROR : exceptions.py:76 : 2025-06-12 07:51:34,727 -> general_exception_handler] Exception on request: http://localhost:8000/test/{uid}
+[INFO : app_factory.py:45 : 2025-06-12 07:51:49,680 -> lifespan  ] Shutdown complete
+[INFO : conftest.py:46 : 2025-06-12 07:51:54,688 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:51:54,691 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:51:54,695 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:18 : 2025-06-12 07:51:54,701 -> test_create] {'uid': '0197631f-c04b-7c10-810f-55696d7efbca', 'created_at': '2025-06-12T07:51:54.698000', 'updated_at': '2025-06-12T07:51:54.700000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:25 : 2025-06-12 07:51:54,703 -> test_list ] {'items': [{'uid': '0197631f-c04b-7c10-810f-55696d7efbca', 'created_at': '2025-06-12T07:51:54.698000', 'updated_at': '2025-06-12T07:51:54.700000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:30 : 2025-06-12 07:51:54,704 -> test_list ] {'uid': '0197631f-c04b-7c10-810f-55696d7efbca', 'created_at': '2025-06-12T07:51:54.698000', 'updated_at': '2025-06-12T07:51:54.700000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:37 : 2025-06-12 07:51:54,706 -> test_update] {'items': [{'uid': '0197631f-c04b-7c10-810f-55696d7efbca', 'created_at': '2025-06-12T07:51:54.698000', 'updated_at': '2025-06-12T07:51:54.700000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[ERROR : exceptions.py:75 : 2025-06-12 07:51:54,708 -> general_exception_handler] Exception:   File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/mahdi/venv/lib/python3.13/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/mahdi/venv/lib/python3.13/site-packages/fastapi/routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mahdi/Projects/pkgs/fastapi-mongo-base/src/fastapi_mongo_base/routes.py", line 24, in wrapper
+    return await func(request, item)
+                 ~~~~^^^^^^^^^^^^^^^
+ AbstractBaseRouter.update_item() missing 1 required positional argument: 'data'
+[ERROR : exceptions.py:76 : 2025-06-12 07:51:54,708 -> general_exception_handler] Exception on request: http://test.usso.io/test/0197631f-c04b-7c10-810f-55696d7efbca
+[INFO : test_apis.py:49 : 2025-06-12 07:51:54,940 -> test_delete] {'items': [{'uid': '0197631f-c04b-7c10-810f-55696d7efbca', 'created_at': '2025-06-12T07:51:54.698000', 'updated_at': '2025-06-12T07:51:54.700000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:54 : 2025-06-12 07:51:54,941 -> test_delete] {'uid': '0197631f-c04b-7c10-810f-55696d7efbca', 'created_at': '2025-06-12T07:51:54.698000', 'updated_at': '2025-06-12T07:51:54.940000', 'is_deleted': True, 'meta_data': None, 'name': 'test'}
+[INFO : conftest.py:50 : 2025-06-12 07:51:54,944 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:52:41,616 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:52:41,620 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:52:41,624 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:18 : 2025-06-12 07:52:41,629 -> test_create] {'uid': '01976320-779a-7503-9934-a7bca82f7d61', 'created_at': '2025-06-12T07:52:41.626000', 'updated_at': '2025-06-12T07:52:41.628000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:25 : 2025-06-12 07:52:41,631 -> test_list ] {'items': [{'uid': '01976320-779a-7503-9934-a7bca82f7d61', 'created_at': '2025-06-12T07:52:41.626000', 'updated_at': '2025-06-12T07:52:41.628000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:30 : 2025-06-12 07:52:41,632 -> test_list ] {'uid': '01976320-779a-7503-9934-a7bca82f7d61', 'created_at': '2025-06-12T07:52:41.626000', 'updated_at': '2025-06-12T07:52:41.628000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:37 : 2025-06-12 07:52:41,634 -> test_update] {'items': [{'uid': '01976320-779a-7503-9934-a7bca82f7d61', 'created_at': '2025-06-12T07:52:41.626000', 'updated_at': '2025-06-12T07:52:41.628000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:42 : 2025-06-12 07:52:41,635 -> test_update] {'uid': '01976320-779a-7503-9934-a7bca82f7d61', 'created_at': '2025-06-12T07:52:41.626000', 'updated_at': '2025-06-12T07:52:41.634000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}
+[INFO : test_apis.py:49 : 2025-06-12 07:52:41,637 -> test_delete] {'items': [{'uid': '01976320-779a-7503-9934-a7bca82f7d61', 'created_at': '2025-06-12T07:52:41.626000', 'updated_at': '2025-06-12T07:52:41.634000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:54 : 2025-06-12 07:52:41,639 -> test_delete] {'uid': '01976320-779a-7503-9934-a7bca82f7d61', 'created_at': '2025-06-12T07:52:41.626000', 'updated_at': '2025-06-12T07:52:41.638000', 'is_deleted': True, 'meta_data': None, 'name': 'test2'}
+[INFO : conftest.py:50 : 2025-06-12 07:52:41,641 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:54:06,122 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:54:06,126 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:54:06,130 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:25 : 2025-06-12 07:54:06,147 -> test_list ] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:37 : 2025-06-12 07:54:06,151 -> test_update] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:49 : 2025-06-12 07:54:06,155 -> test_delete] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : conftest.py:50 : 2025-06-12 07:54:06,159 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:54:20,903 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:54:20,907 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:54:20,911 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : conftest.py:50 : 2025-06-12 07:54:20,942 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:54:53,066 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:54:53,070 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:54:53,074 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : conftest.py:50 : 2025-06-12 07:54:53,104 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:55:07,420 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:55:07,424 -> db        ] Database initialized
+[INFO : test_apis.py:10 : 2025-06-12 07:55:07,428 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : conftest.py:50 : 2025-06-12 07:55:07,457 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:55:21,024 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:55:21,028 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:55:21,032 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:17 : 2025-06-12 07:55:21,036 -> test_create] {'message': "1 validation error for TestEntity\nnumber\n  Decimal input should be an integer, float, string or Decimal object [type=decimal_type, input_value=Decimal128('8'), input_type=Decimal128]\n    For further information visit https://errors.pydantic.dev/2.11/v/decimal_type", 'error': 'Exception', 'errors': [{'type': 'decimal_type', 'loc': ['number'], 'msg': 'Decimal input should be an integer, float, string or Decimal object', 'input': '8', 'url': 'https://errors.pydantic.dev/2.11/v/decimal_type'}]}
+[INFO : conftest.py:50 : 2025-06-12 07:55:21,062 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:55:58,879 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:55:58,882 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:55:58,886 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:17 : 2025-06-12 07:55:58,890 -> test_create] {'message': "1 validation error for TestEntity\nnumber\n  Decimal input should be an integer, float, string or Decimal object [type=decimal_type, input_value=Decimal128('8'), input_type=Decimal128]\n    For further information visit https://errors.pydantic.dev/2.11/v/decimal_type", 'error': 'Exception', 'errors': [{'type': 'decimal_type', 'loc': ['number'], 'msg': 'Decimal input should be an integer, float, string or Decimal object', 'input': '8', 'url': 'https://errors.pydantic.dev/2.11/v/decimal_type'}]}
+[INFO : conftest.py:50 : 2025-06-12 07:55:58,915 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:56:29,179 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:56:29,183 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:56:29,187 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:17 : 2025-06-12 07:56:29,191 -> test_create] {'message': "1 validation error for TestEntity\nnumber\n  Decimal input should be an integer, float, string or Decimal object [type=decimal_type, input_value=Decimal128('8'), input_type=Decimal128]\n    For further information visit https://errors.pydantic.dev/2.11/v/decimal_type", 'error': 'Exception', 'errors': [{'type': 'decimal_type', 'loc': ['number'], 'msg': 'Decimal input should be an integer, float, string or Decimal object', 'input': '8', 'url': 'https://errors.pydantic.dev/2.11/v/decimal_type'}]}
+[INFO : conftest.py:50 : 2025-06-12 07:56:29,217 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:56:55,755 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:56:55,759 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:56:55,764 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:17 : 2025-06-12 07:56:55,768 -> test_create] {'uid': '01976324-5856-7723-8a1a-c3bd0dc1542f', 'created_at': '2025-06-12T07:56:55.765000', 'updated_at': '2025-06-12T07:56:55.767000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}
+[INFO : test_apis.py:25 : 2025-06-12 07:56:55,771 -> test_list ] {'items': [{'uid': '01976324-5856-7723-8a1a-c3bd0dc1542f', 'created_at': '2025-06-12T07:56:55.765000', 'updated_at': '2025-06-12T07:56:55.767000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:30 : 2025-06-12 07:56:55,771 -> test_list ] {'uid': '01976324-5856-7723-8a1a-c3bd0dc1542f', 'created_at': '2025-06-12T07:56:55.765000', 'updated_at': '2025-06-12T07:56:55.767000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}
+[INFO : test_apis.py:37 : 2025-06-12 07:56:55,773 -> test_update] {'items': [{'uid': '01976324-5856-7723-8a1a-c3bd0dc1542f', 'created_at': '2025-06-12T07:56:55.765000', 'updated_at': '2025-06-12T07:56:55.767000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:42 : 2025-06-12 07:56:55,775 -> test_update] {'uid': '01976324-5856-7723-8a1a-c3bd0dc1542f', 'created_at': '2025-06-12T07:56:55.765000', 'updated_at': '2025-06-12T07:56:55.774000', 'is_deleted': False, 'meta_data': None, 'name': 'test2', 'number': '8'}
+[INFO : test_apis.py:49 : 2025-06-12 07:56:55,777 -> test_delete] {'items': [{'uid': '01976324-5856-7723-8a1a-c3bd0dc1542f', 'created_at': '2025-06-12T07:56:55.765000', 'updated_at': '2025-06-12T07:56:55.774000', 'is_deleted': False, 'meta_data': None, 'name': 'test2', 'number': '8'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:54 : 2025-06-12 07:56:55,779 -> test_delete] {'uid': '01976324-5856-7723-8a1a-c3bd0dc1542f', 'created_at': '2025-06-12T07:56:55.765000', 'updated_at': '2025-06-12T07:56:55.778000', 'is_deleted': True, 'meta_data': None, 'name': 'test2', 'number': '8'}
+[INFO : conftest.py:50 : 2025-06-12 07:56:55,781 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:57:06,636 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:57:06,640 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:57:06,645 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:19 : 2025-06-12 07:57:06,649 -> test_create] {'uid': '01976324-82d7-73ea-a3ad-606d2d831dff', 'created_at': '2025-06-12T07:57:06.646000', 'updated_at': '2025-06-12T07:57:06.648000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}
+[INFO : test_apis.py:27 : 2025-06-12 07:57:06,652 -> test_list ] {'items': [{'uid': '01976324-82d7-73ea-a3ad-606d2d831dff', 'created_at': '2025-06-12T07:57:06.646000', 'updated_at': '2025-06-12T07:57:06.648000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:32 : 2025-06-12 07:57:06,652 -> test_list ] {'uid': '01976324-82d7-73ea-a3ad-606d2d831dff', 'created_at': '2025-06-12T07:57:06.646000', 'updated_at': '2025-06-12T07:57:06.648000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}
+[INFO : test_apis.py:39 : 2025-06-12 07:57:06,654 -> test_update] {'items': [{'uid': '01976324-82d7-73ea-a3ad-606d2d831dff', 'created_at': '2025-06-12T07:57:06.646000', 'updated_at': '2025-06-12T07:57:06.648000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:44 : 2025-06-12 07:57:06,656 -> test_update] {'uid': '01976324-82d7-73ea-a3ad-606d2d831dff', 'created_at': '2025-06-12T07:57:06.646000', 'updated_at': '2025-06-12T07:57:06.655000', 'is_deleted': False, 'meta_data': None, 'name': 'test2', 'number': '8'}
+[INFO : test_apis.py:51 : 2025-06-12 07:57:06,658 -> test_delete] {'items': [{'uid': '01976324-82d7-73ea-a3ad-606d2d831dff', 'created_at': '2025-06-12T07:57:06.646000', 'updated_at': '2025-06-12T07:57:06.655000', 'is_deleted': False, 'meta_data': None, 'name': 'test2', 'number': '8'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:56 : 2025-06-12 07:57:06,660 -> test_delete] {'uid': '01976324-82d7-73ea-a3ad-606d2d831dff', 'created_at': '2025-06-12T07:57:06.646000', 'updated_at': '2025-06-12T07:57:06.659000', 'is_deleted': True, 'meta_data': None, 'name': 'test2', 'number': '8'}
+[INFO : conftest.py:50 : 2025-06-12 07:57:06,662 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:58:45,567 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:58:45,571 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:58:45,575 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:17 : 2025-06-12 07:58:45,579 -> test_create] {'message': "1 validation error for TestEntity\nnumber\n  Decimal input should be an integer, float, string or Decimal object [type=decimal_type, input_value=Decimal128('8'), input_type=Decimal128]\n    For further information visit https://errors.pydantic.dev/2.11/v/decimal_type", 'error': 'Exception', 'errors': [{'type': 'decimal_type', 'loc': ['number'], 'msg': 'Decimal input should be an integer, float, string or Decimal object', 'input': '8', 'url': 'https://errors.pydantic.dev/2.11/v/decimal_type'}]}
+[INFO : conftest.py:50 : 2025-06-12 07:58:45,605 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:59:00,064 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:59:00,068 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:59:00,072 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:17 : 2025-06-12 07:59:00,076 -> test_create] {'uid': '01976326-3dea-7bff-9a06-082eb2149d7a', 'created_at': '2025-06-12T07:59:00.074000', 'updated_at': '2025-06-12T07:59:00.075000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:25 : 2025-06-12 07:59:00,078 -> test_list ] {'items': [{'uid': '01976326-3dea-7bff-9a06-082eb2149d7a', 'created_at': '2025-06-12T07:59:00.074000', 'updated_at': '2025-06-12T07:59:00.075000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:30 : 2025-06-12 07:59:00,079 -> test_list ] {'uid': '01976326-3dea-7bff-9a06-082eb2149d7a', 'created_at': '2025-06-12T07:59:00.074000', 'updated_at': '2025-06-12T07:59:00.075000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}
+[INFO : test_apis.py:37 : 2025-06-12 07:59:00,081 -> test_update] {'items': [{'uid': '01976326-3dea-7bff-9a06-082eb2149d7a', 'created_at': '2025-06-12T07:59:00.074000', 'updated_at': '2025-06-12T07:59:00.075000', 'is_deleted': False, 'meta_data': None, 'name': 'test'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:42 : 2025-06-12 07:59:00,083 -> test_update] {'uid': '01976326-3dea-7bff-9a06-082eb2149d7a', 'created_at': '2025-06-12T07:59:00.074000', 'updated_at': '2025-06-12T07:59:00.082000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}
+[INFO : test_apis.py:49 : 2025-06-12 07:59:00,085 -> test_delete] {'items': [{'uid': '01976326-3dea-7bff-9a06-082eb2149d7a', 'created_at': '2025-06-12T07:59:00.074000', 'updated_at': '2025-06-12T07:59:00.082000', 'is_deleted': False, 'meta_data': None, 'name': 'test2'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:54 : 2025-06-12 07:59:00,086 -> test_delete] {'uid': '01976326-3dea-7bff-9a06-082eb2149d7a', 'created_at': '2025-06-12T07:59:00.074000', 'updated_at': '2025-06-12T07:59:00.085000', 'is_deleted': True, 'meta_data': None, 'name': 'test2'}
+[INFO : conftest.py:50 : 2025-06-12 07:59:00,088 -> db        ] Cleaning up database
+[INFO : conftest.py:46 : 2025-06-12 07:59:23,216 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 07:59:23,220 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 07:59:23,224 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:17 : 2025-06-12 07:59:23,229 -> test_create] {'uid': '01976326-985a-76a0-85e5-9dc0ccb5834c', 'created_at': '2025-06-12T07:59:23.226000', 'updated_at': '2025-06-12T07:59:23.228000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}
+[INFO : test_apis.py:25 : 2025-06-12 07:59:23,231 -> test_list ] {'items': [{'uid': '01976326-985a-76a0-85e5-9dc0ccb5834c', 'created_at': '2025-06-12T07:59:23.226000', 'updated_at': '2025-06-12T07:59:23.228000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:30 : 2025-06-12 07:59:23,232 -> test_list ] {'uid': '01976326-985a-76a0-85e5-9dc0ccb5834c', 'created_at': '2025-06-12T07:59:23.226000', 'updated_at': '2025-06-12T07:59:23.228000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}
+[INFO : test_apis.py:37 : 2025-06-12 07:59:23,234 -> test_update] {'items': [{'uid': '01976326-985a-76a0-85e5-9dc0ccb5834c', 'created_at': '2025-06-12T07:59:23.226000', 'updated_at': '2025-06-12T07:59:23.228000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:42 : 2025-06-12 07:59:23,235 -> test_update] {'uid': '01976326-985a-76a0-85e5-9dc0ccb5834c', 'created_at': '2025-06-12T07:59:23.226000', 'updated_at': '2025-06-12T07:59:23.234000', 'is_deleted': False, 'meta_data': None, 'name': 'test2', 'number': '8'}
+[INFO : test_apis.py:49 : 2025-06-12 07:59:23,238 -> test_delete] {'items': [{'uid': '01976326-985a-76a0-85e5-9dc0ccb5834c', 'created_at': '2025-06-12T07:59:23.226000', 'updated_at': '2025-06-12T07:59:23.234000', 'is_deleted': False, 'meta_data': None, 'name': 'test2', 'number': '8'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:54 : 2025-06-12 07:59:23,239 -> test_delete] {'uid': '01976326-985a-76a0-85e5-9dc0ccb5834c', 'created_at': '2025-06-12T07:59:23.226000', 'updated_at': '2025-06-12T07:59:23.238000', 'is_deleted': True, 'meta_data': None, 'name': 'test2', 'number': '8'}
+[INFO : conftest.py:50 : 2025-06-12 07:59:23,241 -> db        ] Cleaning up database
+[INFO : app_factory.py:41 : 2025-06-12 08:04:28,453 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 08:05:39,130 -> lifespan  ] Shutdown complete
+[INFO : app_factory.py:41 : 2025-06-12 08:09:02,685 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 08:09:28,348 -> lifespan  ] Shutdown complete
+[INFO : server.py:48 : 2025-06-12 08:09:29,191 -> <module>  ] (self, request: starlette.requests.Request, data: dict)
+[INFO : app_factory.py:41 : 2025-06-12 08:09:29,212 -> lifespan  ] Startup complete
+[INFO : server.py:48 : 2025-06-12 14:40:06,366 -> <module>  ] mongodb://localhost:27017
+[INFO : app_factory.py:41 : 2025-06-12 14:40:06,389 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 14:40:10,000 -> lifespan  ] Shutdown complete
+[INFO : server.py:48 : 2025-06-12 14:40:13,640 -> <module>  ] mongodb://localhost:27017
+[INFO : app_factory.py:41 : 2025-06-12 14:40:13,662 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 14:40:20,283 -> lifespan  ] Shutdown complete
+[INFO : server.py:50 : 2025-06-12 14:42:35,980 -> <module>  ] mongodb://localhost:27017
+[INFO : app_factory.py:41 : 2025-06-12 14:42:36,003 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 14:42:37,709 -> lifespan  ] Shutdown complete
+[INFO : server.py:50 : 2025-06-12 14:42:44,766 -> <module>  ] mongodb://local!!host:27017
+[INFO : app_factory.py:41 : 2025-06-12 14:42:44,788 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 14:42:46,395 -> lifespan  ] Shutdown complete
+[INFO : server.py:50 : 2025-06-12 14:42:49,008 -> <module>  ] mongodb://l1ocal!!host:27017
+[INFO : app_factory.py:41 : 2025-06-12 14:42:49,032 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 14:42:51,440 -> lifespan  ] Shutdown complete
+[INFO : server.py:50 : 2025-06-12 14:42:55,798 -> <module>  ] mongodb://local!!host:27017
+[INFO : app_factory.py:41 : 2025-06-12 14:42:55,820 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 14:42:57,226 -> lifespan  ] Shutdown complete
+[INFO : server.py:50 : 2025-06-12 14:43:03,115 -> <module>  ] mongodb://mongo:27017/
+[INFO : app_factory.py:41 : 2025-06-12 14:43:03,136 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 14:43:05,043 -> lifespan  ] Shutdown complete
+[INFO : server.py:50 : 2025-06-12 14:43:12,262 -> <module>  ] mongodb://localhost:27017
+[INFO : app_factory.py:41 : 2025-06-12 14:43:12,283 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 14:43:14,090 -> lifespan  ] Shutdown complete
+[INFO : server.py:50 : 2025-06-12 14:43:17,287 -> <module>  ] mongodb://!!localhost:27017
+[INFO : app_factory.py:41 : 2025-06-12 14:43:17,308 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 14:43:18,413 -> lifespan  ] Shutdown complete
+[INFO : server.py:50 : 2025-06-12 14:43:22,232 -> <module>  ] mongodb://!!localhost:27017
+[INFO : app_factory.py:41 : 2025-06-12 14:43:22,253 -> lifespan  ] Startup complete
+[INFO : app_factory.py:45 : 2025-06-12 14:43:23,658 -> lifespan  ] Shutdown complete
+[INFO : conftest.py:46 : 2025-06-12 14:46:36,399 -> db        ] Initializing database
+[INFO : conftest.py:48 : 2025-06-12 14:46:36,403 -> db        ] Database initialized
+[INFO : test_apis.py:11 : 2025-06-12 14:46:36,407 -> test_empty] {'items': [], 'total': 0, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:17 : 2025-06-12 14:46:36,412 -> test_create] {'uid': '0197649b-6a79-7f12-b7bc-0de36afe8fa1', 'created_at': '2025-06-12T14:46:36.409000', 'updated_at': '2025-06-12T14:46:36.411000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}
+[INFO : test_apis.py:25 : 2025-06-12 14:46:36,414 -> test_list ] {'items': [{'uid': '0197649b-6a79-7f12-b7bc-0de36afe8fa1', 'created_at': '2025-06-12T14:46:36.409000', 'updated_at': '2025-06-12T14:46:36.411000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:30 : 2025-06-12 14:46:36,415 -> test_list ] {'uid': '0197649b-6a79-7f12-b7bc-0de36afe8fa1', 'created_at': '2025-06-12T14:46:36.409000', 'updated_at': '2025-06-12T14:46:36.411000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}
+[INFO : test_apis.py:37 : 2025-06-12 14:46:36,417 -> test_update] {'items': [{'uid': '0197649b-6a79-7f12-b7bc-0de36afe8fa1', 'created_at': '2025-06-12T14:46:36.409000', 'updated_at': '2025-06-12T14:46:36.411000', 'is_deleted': False, 'meta_data': None, 'name': 'test', 'number': '8'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:42 : 2025-06-12 14:46:36,418 -> test_update] {'uid': '0197649b-6a79-7f12-b7bc-0de36afe8fa1', 'created_at': '2025-06-12T14:46:36.409000', 'updated_at': '2025-06-12T14:46:36.417000', 'is_deleted': False, 'meta_data': None, 'name': 'test2', 'number': '8'}
+[INFO : test_apis.py:49 : 2025-06-12 14:46:36,420 -> test_delete] {'items': [{'uid': '0197649b-6a79-7f12-b7bc-0de36afe8fa1', 'created_at': '2025-06-12T14:46:36.409000', 'updated_at': '2025-06-12T14:46:36.417000', 'is_deleted': False, 'meta_data': None, 'name': 'test2', 'number': '8'}], 'total': 1, 'offset': 0, 'limit': 10}
+[INFO : test_apis.py:54 : 2025-06-12 14:46:36,422 -> test_delete] {'uid': '0197649b-6a79-7f12-b7bc-0de36afe8fa1', 'created_at': '2025-06-12T14:46:36.409000', 'updated_at': '2025-06-12T14:46:36.421000', 'is_deleted': True, 'meta_data': None, 'name': 'test2', 'number': '8'}
+[INFO : conftest.py:50 : 2025-06-12 14:46:36,424 -> db        ] Cleaning up database
