@@ -1,1 +1,22 @@
+# Config and metadata files
+include LICENSE.txt
+include README.md
 include pytest.ini
+include pyproject.toml
+include mkdocs.yml
+
+# Docs sources
+recursive-include docs *.md
+recursive-include docs *.css
+
+# Include examples (if applicable)
+recursive-include examples *
+
+# YAML files (in case you have any settings or configs)
+include *.yml
+
+# Include the whole source package under src
+recursive-include src *
+
+# Optional: if you want to include tests in sdist (not necessary for wheels)
+recursive-include tests *
