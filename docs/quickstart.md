@@ -73,7 +73,13 @@ services:
 ```
 2. **Start everything:**
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
+
+3. **See Logs**
+```bash
+docker compose logs -f app
+```
+
 
 Your API will be available at [http://localhost:8000/docs](http://localhost:8000/docs) 

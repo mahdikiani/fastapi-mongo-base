@@ -44,11 +44,9 @@ nav:
       - Quickstart: quickstart.md
       - Boilerplate: boilerplate.md
       - Tutorial: tutorial.md
-  - Usage:
-      - usage: usage.md
-
+  - Usage: usage.md
   - API Reference:
-      - Endpoints: endpoints.md
+      - Endpoints & Customization: endpoints.md
       - Settings: settings.md
   - Contributing: contributing.md
   - Changelog: changelog.md

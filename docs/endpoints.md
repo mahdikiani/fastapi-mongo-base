@@ -13,8 +13,36 @@ class MyRouter(AbstractBaseRouter):
         super().__init__(model=MyModel)
     
     def config_routes(self, **kwargs):
-        super().config_routes(update_route=False)
+        super().config_routes(delete_route=False)
+        
+    async def get_summary(self, uid: str):
+        item = await self.get_item(uid)
+        return item.get_summary()
 ```
+
+
+### Example: Add custom summary endpoint
+```python
+from fastapi_mongo_base.routes import AbstractBaseRouter
+
+class MyRouter(AbstractBaseRouter):
+    def __init__(self):
+        super().__init__(model=MyModel)
+    
+    def config_routes(self, **kwargs):
+        super().config_routes()
+        self.router.add_api_route(
+            path="/{uid}/summary",
+            endpoint=self.summary,
+            methods=["GET"],
+            status_code=201,
+        )
+
+    async def get_summary(self, uid: str):
+        item = await self.get_item(uid)
+        return item.get_summary()
+```
+
 
 ## Adding Custom Endpoints
 

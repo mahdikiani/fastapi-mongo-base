@@ -64,7 +64,10 @@ MONGO_URI=mongodb://localhost:27017/db
 ```
 
 - For Docker, use `mongo` as the hostname:  
-  `MONGO_URI=mongodb://mongo:27017/db`
+
+```
+MONGO_URI=mongodb://mongo:27017/db
+```
 
 ---
 

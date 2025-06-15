@@ -18,6 +18,15 @@ A powerful package that provides base classes and utilities for building FastAPI
 pip install fastapi-mongo-base
 ```
 
+## 📄 Documentation
+
+The complete documentation is available at: [https://mahdikiani.github.io/fastapi-mongo-base/](https://mahdikiani.github.io/fastapi-mongo-base/)
+
+You can also ask questions about the project using DeepWiki:
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mahdikiani/fastapi-mongo-base)
+
+
 ## 🚀 Quick Start
 
 1. Create your schema:

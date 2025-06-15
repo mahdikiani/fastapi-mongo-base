@@ -31,7 +31,7 @@ class Settings(metaclass=Singleton):
 
     @classmethod
     def get_log_config(
-        cls, console_level: str = "INFO", file_level: str = "INFO", **kwargs
+        cls, console_level: str = "INFO", **kwargs
     ):
         log_config = {
             "formatters": {
@@ -45,17 +45,11 @@ class Settings(metaclass=Singleton):
                     "class": "logging.StreamHandler",
                     "level": console_level,
                     "formatter": "standard",
-                },
-                "file": {
-                    "class": "logging.FileHandler",
-                    "level": file_level,
-                    "filename": cls.base_dir / "logs" / "app.log",
-                    "formatter": "standard",
-                },
+                }
             },
             "loggers": {
                 "": {
-                    "handlers": ["console", "file"],
+                    "handlers": ["console"],
                     "level": "INFO",
                     "propagate": True,
                 },
