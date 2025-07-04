@@ -95,7 +95,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         create_route: bool = True,
         update_route: bool = True,
         delete_route: bool = True,
-        statistics_route: bool = True,
+        statistics_route: bool = False,
         **kwargs,
     ):
         prefix = prefix.strip("/")
