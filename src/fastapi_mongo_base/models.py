@@ -75,7 +75,7 @@ class BaseEntity(BaseEntitySchema, Document):
         # Add standard filters if applicable
         base_query.update({"is_deleted": is_deleted})
 
-        if hasattr(cls, "tenant_id"):
+        if hasattr(cls, "tenant_id") and tenant_id:
             base_query.update({"tenant_id": tenant_id})
 
         if hasattr(cls, "user_id") and user_id:

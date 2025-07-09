@@ -259,7 +259,6 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         if isinstance(data, BaseModel):
             data = data.model_dump()
         item = await self.model.create_item({**data, "user_id": user_id})
-        await item.save()
         return item
 
     async def update_item(
