@@ -402,7 +402,7 @@ class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
             raise ValueError("tenant_id is required")
         if user_id is None and not ignore_user_id:
             raise ValueError("user_id is required")
-        return await BaseEntity.get_item(
+        return await cls.get_item(
             uid=uid,
             tenant_id=tenant_id,
             user_id=user_id,
