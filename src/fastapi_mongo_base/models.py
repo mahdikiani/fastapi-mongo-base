@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from beanie import (
@@ -97,11 +98,13 @@ class BaseEntity(BaseEntitySchema, Document):
                 cls.search_field_set()
                 and base_field not in cls.search_field_set()  # noqa: W503
             ):
+                logging.warning(f"Key {key} is not in search_field_set")
                 continue
             if (
                 cls.search_exclude_set()
                 and base_field in cls.search_exclude_set()  # noqa: W503
             ):
+                logging.warning(f"Key {key} is in search_exclude_set")
                 continue
             if not hasattr(cls, base_field):
                 continue
@@ -147,8 +150,8 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     async def get_item(
         cls,
-        *,
         uid: str,
+        *,
         user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
@@ -260,8 +263,10 @@ class BaseEntity(BaseEntitySchema, Document):
         pop_keys = []
         for key in data.keys():
             if cls.create_field_set() and key not in cls.create_field_set():
+                logging.warning(f"Key {key} is not in create_field_set")
                 pop_keys.append(key)
             elif cls.create_exclude_set() and key in cls.create_exclude_set():
+                logging.warning(f"Key {key} is in create_exclude_set")
                 pop_keys.append(key)
 
         for key in pop_keys:
@@ -278,8 +283,10 @@ class BaseEntity(BaseEntitySchema, Document):
     async def update_item(cls, item: "BaseEntity", data: dict):
         for key, value in data.items():
             if cls.update_field_set() and key not in cls.update_field_set():
+                logging.warning(f"Key {key} is not in update_field_set")
                 continue
             if cls.update_exclude_set() and key in cls.update_exclude_set():
+                logging.warning(f"Key {key} is in update_exclude_set")
                 continue
 
             if hasattr(item, key):
@@ -358,8 +365,8 @@ class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
     @classmethod
     async def get_item(
         cls,
-        *,
         uid: str,
+        *,
         tenant_id: str,
         **kwargs,
     ) -> "TenantScopedEntity":
@@ -391,8 +398,8 @@ class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
     @classmethod
     async def get_item(
         cls,
-        *,
         uid: str,
+        *,
         tenant_id: str,
         user_id: str | None = None,
         ignore_user_id: bool = False,

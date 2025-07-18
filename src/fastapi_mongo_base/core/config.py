@@ -30,9 +30,7 @@ class Settings(metaclass=Singleton):
         return cls.base_dir / "htmlcov"
 
     @classmethod
-    def get_log_config(
-        cls, console_level: str = "INFO", **kwargs
-    ):
+    def get_log_config(cls, console_level: str = "INFO", **kwargs):
         log_config = {
             "formatters": {
                 "standard": {
