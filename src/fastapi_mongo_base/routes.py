@@ -11,7 +11,8 @@ from .core.config import Settings
 from .core.exceptions import BaseHTTPException
 from .models import BaseEntity
 from .schemas import BaseEntitySchema, PaginatedResponse
-from .tasks import TaskStatusEnum
+
+# from .tasks import TaskStatusEnum
 
 # Define a type variable
 T = TypeVar("T", bound=BaseEntity)
@@ -337,7 +338,7 @@ class AbstractTaskRouter(AbstractBaseRouter):
         request: Request,
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
-        task_status: TaskStatusEnum | None = None,
+        task_status=None,  # : TaskStatusEnum | None = None,
     ):
         return await super().statistics(request)
 
