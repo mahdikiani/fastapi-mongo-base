@@ -20,13 +20,16 @@ class PermissionDenied(exceptions.BaseHTTPException):
     def __init__(
         self,
         error: str = "permission_denied",
-        message: dict = None,
-        detail: str = None,
+        message: dict | None = None,
+        detail: str | None = None,
         **kwargs,
     ):
         super().__init__(
             403, error=error, message=message, detail=detail, **kwargs
         )
+
+
+BASE_USSO_URL = os.getenv("BASE_USSO_URL") or "https://usso.uln.me"
 
 
 class AbstractTenantUSSORouter(AbstractBaseRouter):
@@ -45,12 +48,15 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         usso = USSOAuthentication(
             jwt_config=AuthConfig(
                 jwks_url=(
-                    f"https://usso.uln.me/.well-known/jwks.json?domain={request.url.hostname}"
+                    f"{BASE_USSO_URL}/.well-known/jwks.json"
+                    f"?domain={request.url.hostname}"
                 ),
                 api_key_header=APIHeaderConfig(
                     type="CustomHeader",
                     name="x-api-key",
-                    verify_endpoint="https://usso.uln.me/api/sso/v1/apikeys/verify",
+                    verify_endpoint=(
+                        f"{BASE_USSO_URL}/api/sso/v1/apikeys/verify"
+                    ),
                 ),
             )
         )
@@ -82,7 +88,9 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         self, *, user: UserData, self_access: bool = True
     ) -> dict:
         matched_scopes: list[dict] = authorization.get_scope_filters(
-            action="read", resource=self.resource_path, user_scopes=user.scopes
+            action="read",
+            resource=self.resource_path,
+            user_scopes=user.scopes or [],
         )
         if self_access:
             matched_scopes.append({"user_id": user.uid})
@@ -109,7 +117,9 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
             raise exceptions.BaseHTTPException(
                 status_code=404,
                 error="item_not_found",
-                message=f"{self.model.__name__.capitalize()} not found",
+                message={
+                    "en": f"{self.model.__name__.capitalize()} not found"
+                },
             )
         return item
 
@@ -153,7 +163,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
             action="read",
             user=user,
             filter_data=item.model_dump(
-                include=["uid", "tenant_id", "user_id", "workspace_id"]
+                include={"uid", "tenant_id", "user_id", "workspace_id"}
             ),
         )
         return item
@@ -162,7 +172,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         user = await self.get_user(request)
         if isinstance(data, BaseModel):
             data = data.model_dump()
-        await self.authorize(action="create", user=user, filter_data={})
+        await self.authorize(action="create", user=user, filter_data=data)
         item = await self.model.create_item({
             **data,
             "user_id": user.user_id,
@@ -181,7 +191,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
             action="update",
             user=user,
             filter_data=item.model_dump(
-                include=["uid", "tenant_id", "user_id", "workspace_id"]
+                include={"uid", "tenant_id", "user_id", "workspace_id"}
             ),
         )
         item = await self.model.update_item(item, data)
@@ -197,7 +207,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
             action="delete",
             user=user,
             filter_data=item.model_dump(
-                include=["uid", "tenant_id", "user_id", "workspace_id"]
+                include={"uid", "tenant_id", "user_id", "workspace_id"}
             ),
         )
         item = await self.model.delete_item(item)

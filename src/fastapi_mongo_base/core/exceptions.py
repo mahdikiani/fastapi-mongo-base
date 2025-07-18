@@ -12,6 +12,13 @@ from fastapi.exceptions import (
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
+try:
+    from usso.integrations.fastapi import (
+        EXCEPTION_HANDLERS as usso_exception_handler,
+    )
+except ImportError:
+    usso_exception_handler = {}
+
 error_messages = {}
 
 
@@ -20,18 +27,23 @@ class BaseHTTPException(HTTPException):
         self,
         status_code: int,
         error: str,
-        message: dict = None,
-        detail: str = None,
+        message: dict | None = None,
+        detail: str | None = None,
         **kwargs,
     ):
         self.status_code = status_code
         self.error = error
-        self.message = message
+        msg: dict = {}
         if message is None:
-            self.message = error_messages.get(error, error)
-        if detail is None:
-            detail = self.message
-        self.detail = detail
+            if detail:
+                msg["en"] = detail
+            else:
+                msg["en"] = error_messages.get(error, error)
+        else:
+            msg = message
+
+        self.message = msg
+        self.detail = detail or str(self.message)
         self.data = kwargs
         super().__init__(status_code, detail=detail)
 
@@ -88,3 +100,5 @@ EXCEPTION_HANDLERS = {
     RequestValidationError: request_validation_exception_handler,
     Exception: general_exception_handler,
 }
+
+EXCEPTION_HANDLERS.update(usso_exception_handler)

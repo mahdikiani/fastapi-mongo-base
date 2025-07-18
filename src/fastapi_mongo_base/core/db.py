@@ -43,12 +43,13 @@ def init_redis(settings: Settings | None = None):
         if settings is None:
             settings = Settings()
 
-        if settings.redis_uri:
-            redis_sync: RedisSync = RedisSync.from_url(settings.redis_uri)
-            redis: Redis = Redis.from_url(settings.redis_uri)
+        redis_uri = getattr(settings, "redis_uri", None)
+        if redis_uri:
+            redis_sync: RedisSync = RedisSync.from_url(redis_uri)
+            redis: Redis = Redis.from_url(redis_uri)
+
+            return redis_sync, redis
     except (ImportError, AttributeError, Exception) as e:
         logging.error(f"Error initializing Redis: {e}")
-        redis_sync = None
-        redis = None
 
-    return redis_sync, redis
+    return None, None

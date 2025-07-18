@@ -4,6 +4,7 @@ import dataclasses
 import logging
 import logging.config
 import os
+from pathlib import Path
 
 import dotenv
 from singleton import Singleton
@@ -20,14 +21,14 @@ class Settings(metaclass=Singleton):
     project_name: str = os.getenv("PROJECT_NAME") or "PROJECT"
     base_path: str = "/api/v1"
     worker_update_time: int = int(os.getenv("WORKER_UPDATE_TIME", default=180))
-    debug: bool = os.getenv("DEBUG", default=False)
+    debug: bool = os.getenv("DEBUG", default="false").lower() == "true"
 
     page_max_limit: int = 100
     mongo_uri: str = os.getenv("MONGO_URI", default="mongodb://mongo:27017/")
 
     @classmethod
     def get_coverage_dir(cls):
-        return cls.base_dir / "htmlcov"
+        return getattr(cls, "base_dir", Path(".")) / "htmlcov"
 
     @classmethod
     def get_log_config(cls, console_level: str = "INFO", **kwargs):
@@ -60,6 +61,8 @@ class Settings(metaclass=Singleton):
     def config_logger(cls):
         log_config = cls.get_log_config()
         if log_config["handlers"].get("file"):
-            (cls.base_dir / "logs").mkdir(parents=True, exist_ok=True)
+            (getattr(cls, "base_dir", Path(".")) / "logs").mkdir(
+                parents=True, exist_ok=True
+            )
 
         logging.config.dictConfig(cls.get_log_config())

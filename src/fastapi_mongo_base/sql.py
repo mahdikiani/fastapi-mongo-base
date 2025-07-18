@@ -4,13 +4,19 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import JSON, event, select
-from sqlalchemy.orm import Mapped, as_declarative, declared_attr, mapped_column
+from sqlalchemy.orm import (
+    Mapped,
+    as_declarative,
+    declared_attr,
+    mapped_column,
+    sessionmaker,
+)
 from sqlalchemy.sql import func
 
 from .core.config import Settings
 from .utils import basic, timezone
 
-async_session = None
+async_session: sessionmaker = None  # type: ignore
 
 
 @as_declarative()
@@ -19,7 +25,7 @@ class BaseEntity:
     __name__: str
     __abstract__ = True
 
-    @declared_attr
+    @declared_attr  # type: ignore
     def __tablename__(cls) -> str:
         return cls.__name__.lower()
 
@@ -68,15 +74,18 @@ class BaseEntity:
 
     def dump(
         self,
-        include_fields: list[str] = None,
-        exclude_fields: list[str] = None,
+        include_fields: list[str] | None = None,
+        exclude_fields: list[str] | None = None,
     ) -> dict:
         """
         Dump the object into a dictionary.
         It includes all the fields of the object.
         """
         result = {}
-        for key, value in (include_fields or self.__dict__).items():
+        for key in include_fields or self.__dict__.keys():
+            if not hasattr(self, key):
+                continue
+            value = getattr(self, key)
             # Skip SQLAlchemy internal attributes
             if key.startswith("_"):
                 continue
@@ -131,10 +140,10 @@ class BaseEntity:
         base_query.append(cls.is_deleted == is_deleted)
 
         if hasattr(cls, "user_id") and user_id:
-            base_query.append(cls.user_id == user_id)
+            base_query.append(cls.user_id == user_id)  # type: ignore
 
         if hasattr(cls, "tenant_id") and tenant_id:
-            base_query.append(cls.tenant_id == tenant_id)
+            base_query.append(cls.tenant_id == tenant_id)  # type: ignore
 
         if uid:
             base_query.append(cls.uid == uid)

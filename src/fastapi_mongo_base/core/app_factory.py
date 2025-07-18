@@ -1,7 +1,9 @@
 import asyncio
 import logging
 from collections import deque
+from collections.abc import Callable
 from contextlib import asynccontextmanager
+from typing import Any
 
 import fastapi
 from fastapi.responses import RedirectResponse
@@ -20,7 +22,7 @@ async def lifespan(
     app: fastapi.FastAPI,
     worker=None,
     init_functions=None,
-    settings: config.Settings = None,
+    settings: config.Settings | None = None,
 ):
     """Initialize application services."""
     if init_functions is None:
@@ -44,7 +46,7 @@ async def lifespan(
 
 
 def setup_exception_handlers(
-    *, app: fastapi.FastAPI, handlers: dict = None, **kwargs
+    *, app: fastapi.FastAPI, handlers: dict | None = None, **kwargs
 ):
     exception_handlers = exceptions.EXCEPTION_HANDLERS
     if handlers:
@@ -54,7 +56,9 @@ def setup_exception_handlers(
         app.exception_handler(exc_class)(handler)
 
 
-def setup_middlewares(*, app: fastapi.FastAPI, origins: list = None, **kwargs):
+def setup_middlewares(
+    *, app: fastapi.FastAPI, origins: list | None = None, **kwargs
+):
     from fastapi.middleware.cors import CORSMiddleware
 
     if origins:
@@ -69,17 +73,17 @@ def setup_middlewares(*, app: fastapi.FastAPI, origins: list = None, **kwargs):
 
 def get_app_kwargs(
     *,
-    settings: config.Settings | None = None,
+    settings: config.Settings,
     title=None,
     description=None,
     version="0.1.0",
-    lifespan_func=None,
+    lifespan_func: Callable[[fastapi.FastAPI], Any] | None = None,
     worker=None,
     init_functions: list | None = None,
     contact=None,
     license_info=None,
     **kwargs,
-):
+) -> dict[str, Any]:
     if license_info is None:
         license_info = {
             "name": "MIT License",
@@ -87,6 +91,7 @@ def get_app_kwargs(
         }
     if init_functions is None:
         init_functions = []
+
     settings.config_logger()
 
     """Create a FastAPI app with shared configurations."""
@@ -103,13 +108,15 @@ def get_app_kwargs(
 
     if lifespan_func is None:
 
-        def lifespan_func(app):
+        def lf(app: fastapi.FastAPI):
             return lifespan(
                 app=app,
                 worker=worker,
                 init_functions=init_functions,
                 settings=settings,
             )
+
+        lifespan_func = lf
 
     docs_url = f"{base_path}/docs"
     openapi_url = f"{base_path}/openapi.json"
@@ -128,19 +135,19 @@ def get_app_kwargs(
 
 
 def create_app(
-    settings: config.Settings = None,
+    settings: config.Settings,
     *,
     title=None,
     description=None,
     version="0.1.0",
     serve_coverage: bool = False,
-    origins: list = None,
-    lifespan_func=None,
+    origins: list | None = None,
+    lifespan_func: Callable[[fastapi.FastAPI], Any] | None = None,
     worker=None,
     init_functions: list | None = None,
     contact=None,
     license_info=None,
-    exception_handlers: dict = None,
+    exception_handlers: dict | None = None,
     log_route: bool = False,
     health_route: bool = True,
     index_route: bool = True,
@@ -180,11 +187,11 @@ def create_app(
 
 def configure_app(
     app: fastapi.FastAPI,
-    settings: config.Settings = None,
+    settings: config.Settings,
     *,
     serve_coverage: bool = False,
-    origins: list = None,
-    exception_handlers: dict = None,
+    origins: list | None = None,
+    exception_handlers: dict | None = None,
     log_route: bool = False,
     health_route: bool = True,
     index_route: bool = True,

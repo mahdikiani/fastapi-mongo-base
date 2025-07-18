@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from typing import Optional, cast
 
 from beanie import (
     Document,
@@ -36,7 +37,7 @@ class BaseEntity(BaseEntitySchema, Document):
         ]
 
         @classmethod
-        def is_abstract(cls):
+        def is_abstract(cls) -> bool:
             # Use `__dict__` to check if `__abstract__` is defined
             # in the class itself
             return (
@@ -44,7 +45,7 @@ class BaseEntity(BaseEntitySchema, Document):
             )
 
     @before_event([Insert, Replace, Save, SaveChanges, Update])
-    async def pre_save(self):
+    async def pre_save(self) -> None:
         self.updated_at = datetime.now(timezone.tz)
 
     @classmethod
@@ -131,8 +132,8 @@ class BaseEntity(BaseEntitySchema, Document):
         tenant_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
-        created_at_from: datetime = None,
-        created_at_to: datetime = None,
+        created_at_from: datetime | None = None,
+        created_at_to: datetime | None = None,
         **kwargs,
     ) -> FindMany:
         base_query = cls.get_queryset(
@@ -156,7 +157,7 @@ class BaseEntity(BaseEntitySchema, Document):
         tenant_id: str | None = None,
         is_deleted: bool = False,
         **kwargs,
-    ) -> "BaseEntity":
+    ) -> Optional["BaseEntity"]:
         query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -172,7 +173,7 @@ class BaseEntity(BaseEntitySchema, Document):
         return items[0]
 
     @classmethod
-    def adjust_pagination(cls, offset: int, limit: int):
+    def adjust_pagination(cls, offset: int, limit: int) -> tuple[int, int]:
         from fastapi import params
 
         if isinstance(offset, params.Query):
@@ -194,7 +195,7 @@ class BaseEntity(BaseEntitySchema, Document):
         limit: int = 10,
         is_deleted: bool = False,
         **kwargs,
-    ):
+    ) -> list["BaseEntity"]:
         offset, limit = cls.adjust_pagination(offset, limit)
 
         query = cls.get_query(
@@ -216,7 +217,7 @@ class BaseEntity(BaseEntitySchema, Document):
         tenant_id: str | None = None,
         is_deleted: bool = False,
         **kwargs,
-    ):
+    ) -> int:
         query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -254,12 +255,12 @@ class BaseEntity(BaseEntitySchema, Document):
         return items, total
 
     @classmethod
-    async def get_by_uid(cls, uid: str):
+    async def get_by_uid(cls, uid: str) -> Optional["BaseEntity"]:
         item = await cls.find_one({"uid": uid})
         return item
 
     @classmethod
-    async def create_item(cls, data: dict):
+    async def create_item(cls, data: dict) -> "BaseEntity":
         pop_keys = []
         for key in data.keys():
             if cls.create_field_set() and key not in cls.create_field_set():
@@ -280,7 +281,7 @@ class BaseEntity(BaseEntitySchema, Document):
         return item
 
     @classmethod
-    async def update_item(cls, item: "BaseEntity", data: dict):
+    async def update_item(cls, item: "BaseEntity", data: dict) -> "BaseEntity":
         for key, value in data.items():
             if cls.update_field_set() and key not in cls.update_field_set():
                 logging.warning(f"Key {key} is not in update_field_set")
@@ -296,7 +297,7 @@ class BaseEntity(BaseEntitySchema, Document):
         return item
 
     @classmethod
-    async def delete_item(cls, item: "BaseEntity"):
+    async def delete_item(cls, item: "BaseEntity") -> "BaseEntity":
         item.is_deleted = True
         await item.save()
         return item
@@ -322,7 +323,7 @@ class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
         user_id: str | None = None,
         ignore_user_id: bool = False,
         **kwargs,
-    ) -> "UserOwnedEntity":
+    ) -> Optional["UserOwnedEntity"]:
         """Get an item by its UID and user ID.
 
         Args:
@@ -343,10 +344,13 @@ class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
         """
         if user_id is None and not ignore_user_id:
             raise ValueError("user_id is required")
-        return await super().get_item(
-            uid=uid,
-            user_id=user_id,
-            **kwargs,
+        return cast(
+            "UserOwnedEntity | None",
+            await super().get_item(
+                uid=uid,
+                user_id=user_id,
+                **kwargs,
+            ),
         )
 
 
@@ -369,16 +373,19 @@ class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
         *,
         tenant_id: str,
         **kwargs,
-    ) -> "TenantScopedEntity":
+    ) -> Optional["TenantScopedEntity"]:
         if tenant_id is None:
             raise ValueError("tenant_id is required")
-        return await super().get_item(
-            uid=uid,
-            tenant_id=tenant_id,
-            **kwargs,
+        return cast(
+            "TenantScopedEntity | None",
+            await super().get_item(
+                uid=uid,
+                tenant_id=tenant_id,
+                **kwargs,
+            ),
         )
 
-    async def get_tenant(self):
+    async def get_tenant(self) -> "TenantScopedEntity":
         raise NotImplementedError
 
 
@@ -404,16 +411,19 @@ class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
         user_id: str | None = None,
         ignore_user_id: bool = False,
         **kwargs,
-    ) -> "TenantUserEntity":
+    ) -> Optional["TenantUserEntity"]:
         if tenant_id is None:
             raise ValueError("tenant_id is required")
         if user_id is None and not ignore_user_id:
             raise ValueError("user_id is required")
-        return await super().get_item(
-            uid=uid,
-            tenant_id=tenant_id,
-            user_id=user_id,
-            **kwargs,
+        return cast(
+            "TenantUserEntity | None",
+            await super().get_item(
+                uid=uid,
+                tenant_id=tenant_id,
+                user_id=user_id,
+                **kwargs,
+            ),
         )
 
 
@@ -424,9 +434,9 @@ class ImmutableMixin(BaseEntity):
         __abstract__ = True
 
     @classmethod
-    async def update_item(cls, item: "BaseEntity", data: dict):
+    async def update_item(cls, item: "BaseEntity", data: dict) -> "BaseEntity":
         raise ValueError("Immutable items cannot be updated")
 
     @classmethod
-    async def delete_item(cls, item: "BaseEntity"):
+    async def delete_item(cls, item: "BaseEntity") -> "BaseEntity":
         raise ValueError("Immutable items cannot be deleted")

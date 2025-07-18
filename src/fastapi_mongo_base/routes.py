@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
-from typing import Any, TypeVar
+from enum import Enum
+from typing import Any, TypeVar, cast
 
 import singleton
 from fastapi import APIRouter, BackgroundTasks, Query, Request
@@ -19,8 +20,8 @@ TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
 
 
 class AbstractBaseRouter(metaclass=singleton.Singleton):
-    model: type[T]
-    schema: type[TS] | None
+    model: type[T]  # type: ignore
+    schema: type[TS] | None  # type: ignore
 
     def __init__(
         self,
@@ -55,7 +56,9 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         if tags is None:
             tags = [self.model.__name__]
 
-        self.router = APIRouter(prefix=prefix, tags=tags, **kwargs)
+        self.router = APIRouter(
+            prefix=prefix, tags=cast(list[str | Enum], tags), **kwargs
+        )
 
         self.config_schemas(self.schema, **kwargs)
         self.config_routes(**kwargs)
@@ -171,7 +174,9 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
             raise BaseHTTPException(
                 status_code=404,
                 error="item_not_found",
-                message=f"{self.model.__name__.capitalize()} not found",
+                message={
+                    "en": f"{self.model.__name__.capitalize()} not found"
+                },
             )
         return item
 
@@ -193,9 +198,13 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
     ):
+        params: dict[str, Any] = dict(request.query_params)
+        if "is_deleted" in params:
+            params["is_deleted"] = params["is_deleted"].lower() == "true"
+
         return {
-            "total": await self.model.total_count(**request.query_params),
-            **request.query_params,
+            "total": await self.model.total_count(**params),
+            **params,
         }
 
     async def _list_items(
@@ -289,19 +298,18 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
 class AbstractTaskRouter(AbstractBaseRouter):
     def __init__(
         self,
+        *,
         model: type[T],
         user_dependency: Any,
-        schema: TS,
+        schema: type[TS],
         draftable: bool = True,
-        *args,
         **kwargs,
     ):
         self.draftable = draftable
         super().__init__(
-            model,
-            user_dependency,
+            model=model,
+            user_dependency=user_dependency,
             schema=schema,
-            *args,  # noqa: B026
             **kwargs,
         )
 
@@ -339,7 +347,7 @@ class AbstractTaskRouter(AbstractBaseRouter):
         if not self.draftable:
             data["task_status"] = "init"
 
-        item: T = await super().create_item(request, data)
+        item = await super().create_item(request, data)
 
         if item.task_status == "init" or not self.draftable:
             background_tasks.add_task(item.start_processing)
@@ -349,7 +357,7 @@ class AbstractTaskRouter(AbstractBaseRouter):
         self, request: Request, uid: str, background_tasks: BackgroundTasks
     ):
         user_id = await self.get_user_id(request)
-        item: T = await self.get_item(uid=uid, user_id=user_id)
+        item = await self.get_item(uid=uid, user_id=user_id)
         background_tasks.add_task(item.start_processing)
         return item.model_dump()
 
