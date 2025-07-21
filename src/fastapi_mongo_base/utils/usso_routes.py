@@ -49,7 +49,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
             jwt_config=AuthConfig(
                 jwks_url=(
                     f"{BASE_USSO_URL}/.well-known/jwks.json"
-                    f"?domain={request.url.hostname}"
+                    # f"?domain={request.url.hostname}"
                 ),
                 api_key_header=APIHeaderConfig(
                     type="CustomHeader",
