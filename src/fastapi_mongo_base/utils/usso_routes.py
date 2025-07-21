@@ -12,6 +12,7 @@ try:
     from usso.config import APIHeaderConfig, AuthConfig
     from usso.exceptions import USSOException
     from usso.integrations.fastapi import USSOAuthentication
+    from usso_jwt import JWT, JWTConfig
 except ImportError as e:
     raise ImportError("USSO is not installed") from e
 
