@@ -27,10 +27,10 @@ class BaseHTTPException(HTTPException):
         self,
         status_code: int,
         error: str,
-        message: dict | None = None,
         detail: str | None = None,
+        message: dict | None = None,
         **kwargs,
-    ):
+    ) -> None:
         self.status_code = status_code
         self.error = error
         msg: dict = {}
@@ -53,7 +53,12 @@ async def base_http_exception_handler(
 ):
     return JSONResponse(
         status_code=exc.status_code,
-        content={"message": exc.message, "error": exc.error},
+        content={
+            "message": exc.message,
+            "error": exc.error,
+            "detail": exc.detail,
+            **exc.data,
+        },
     )
 
 

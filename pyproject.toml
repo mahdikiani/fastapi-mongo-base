@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastapi-mongo-base"
-version = "0.12.21"
+version = "1.0.0"
 description = "A simple boilerplate application, including models and schemas and abstract router, for FastAPI with MongoDB"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -30,7 +30,7 @@ dependencies = [
   "json-advanced",
   "uuid6",
   "pytz",
-  "beanie>=1.28.0",
+  "beanie>=2.0.0",
   "fastapi>=0.65.0",
   "uvicorn[standard]>=0.13.0",
 ]
@@ -58,7 +58,13 @@ unsafe-fixes = true
 preview = true
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B"]
+select = ["E", "F", "W", "I", "UP", "B", "T"]
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.mypy]
+python_version = "3.13"
+ignore_missing_imports = true
+check_untyped_defs = false
+disallow_untyped_defs = false

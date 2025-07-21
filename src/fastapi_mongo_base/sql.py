@@ -1,7 +1,7 @@
 import json
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Never
 
 from sqlalchemy import JSON, event, select
 from sqlalchemy.orm import (
@@ -69,7 +69,7 @@ class BaseEntity:
     def search_field_set(cls) -> list:
         return []
 
-    def expired(self, days: int = 3):
+    def expired(self, days: int = 3) -> bool:
         return (datetime.now(timezone.tz) - self.updated_at).days > days
 
     def dump(
@@ -98,12 +98,12 @@ class BaseEntity:
                 result[key] = value
         return result
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         json_str = json.dumps(self.dump())
         return hash(json_str)
 
     @property
-    def item_url(self):
+    def item_url(self) -> str:
         return "/".join([
             f"https://{Settings.root_url}{Settings.base_path}",
             f"{self.__class__.__name__.lower()}s",
@@ -113,11 +113,11 @@ class BaseEntity:
     @classmethod
     def get_queryset(
         cls,
+        *,
         user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
-        *args,
         **kwargs,
     ) -> list:
         """Build SQLAlchemy query filters based on provided parameters.
@@ -200,7 +200,7 @@ class BaseEntity:
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
         **kwargs,
-    ):
+    ) -> list:
         base_query = cls.get_queryset(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -215,13 +215,13 @@ class BaseEntity:
     @classmethod
     async def get_item(
         cls,
-        *,
         uid: str,
+        *,
         user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
         **kwargs,
-    ):
+    ) -> "BaseEntity":
         base_query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -246,7 +246,7 @@ class BaseEntity:
         offset: int = 0,
         limit: int = 10,
         **kwargs,
-    ):
+    ) -> list:
         base_query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -275,7 +275,7 @@ class BaseEntity:
         tenant_id: str | None = None,
         is_deleted: bool = False,
         **kwargs,
-    ):
+    ) -> int:
         base_query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -322,7 +322,7 @@ class BaseEntity:
         return items, total
 
     @classmethod
-    async def get_by_uid(cls, uid: str):
+    async def get_by_uid(cls, uid: str) -> "BaseEntity":
         async with async_session() as session:
             query = select(cls).filter(cls.uid == uid)
             result = await session.execute(query)
@@ -330,7 +330,7 @@ class BaseEntity:
         return item
 
     @classmethod
-    async def create_item(cls, data: dict):
+    async def create_item(cls, data: dict) -> "BaseEntity":
         item = cls(**data)
         async with async_session() as session:
             session.add(item)
@@ -339,7 +339,7 @@ class BaseEntity:
         return item
 
     @classmethod
-    async def update_item(cls, item: "BaseEntity", data: dict):
+    async def update_item(cls, item: "BaseEntity", data: dict) -> "BaseEntity":
         for key, value in data.items():
             if cls.update_field_set() and key not in cls.update_field_set():
                 continue
@@ -355,7 +355,7 @@ class BaseEntity:
         return item
 
     @classmethod
-    async def delete_item(cls, item: "BaseEntity"):
+    async def delete_item(cls, item: "BaseEntity") -> "BaseEntity":
         item.is_deleted = True
         async with async_session() as session:
             session.add(item)
@@ -412,18 +412,18 @@ class ImmutableMixin(BaseEntity):
     __abstract__ = True
 
     @staticmethod
-    def prevent_update(mapper, connection, target):
+    def prevent_update(mapper, connection, target) -> None:
         if connection.in_transaction() and target.id is not None:
             raise ValueError("Immutable items cannot be updated")
 
     @classmethod
-    def __declare_last__(cls):
+    def __declare_last__(cls) -> None:
         event.listen(cls, "before_update", cls.prevent_update)
 
     @classmethod
-    async def update_item(cls, item: "BaseEntity", data: dict):
+    async def update_item(cls, item: "BaseEntity", data: dict) -> Never:
         raise ValueError("Immutable items cannot be updated")
 
     @classmethod
-    async def delete_item(cls, item: "BaseEntity"):
+    async def delete_item(cls, item: "BaseEntity") -> Never:
         raise ValueError("Immutable items cannot be deleted")

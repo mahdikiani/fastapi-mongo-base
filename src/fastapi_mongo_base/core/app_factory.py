@@ -47,7 +47,7 @@ async def lifespan(
 
 def setup_exception_handlers(
     *, app: fastapi.FastAPI, handlers: dict | None = None, **kwargs
-):
+) -> None:
     exception_handlers = exceptions.EXCEPTION_HANDLERS
     if handlers:
         exception_handlers.update(handlers)
@@ -58,7 +58,7 @@ def setup_exception_handlers(
 
 def setup_middlewares(
     *, app: fastapi.FastAPI, origins: list | None = None, **kwargs
-):
+) -> None:
     from fastapi.middleware.cors import CORSMiddleware
 
     if origins:
@@ -121,17 +121,17 @@ def get_app_kwargs(
     docs_url = f"{base_path}/docs"
     openapi_url = f"{base_path}/openapi.json"
     redoc_url = f"{base_path}/redoc"
-    return dict(
-        title=title,
-        version=version,
-        description=description,
-        lifespan=lifespan_func,
-        contact=contact,
-        license_info=license_info,
-        docs_url=docs_url,
-        openapi_url=openapi_url,
-        redoc_url=redoc_url,
-    )
+    return {
+        "title": title,
+        "version": version,
+        "description": description,
+        "lifespan": lifespan_func,
+        "contact": contact,
+        "license_info": license_info,
+        "docs_url": docs_url,
+        "openapi_url": openapi_url,
+        "redoc_url": redoc_url,
+    }
 
 
 def create_app(

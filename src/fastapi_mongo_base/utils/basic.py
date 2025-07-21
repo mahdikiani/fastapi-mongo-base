@@ -44,7 +44,7 @@ def parse_array_parameter(value: Any) -> list:
         pass
 
     # Fallback to comma-separated values
-    return list(set([v.strip() for v in value.split(",") if v.strip()]))
+    return list({v.strip() for v in value.split(",") if v.strip()})
 
 
 def get_base_field_name(field: str) -> str:
@@ -69,7 +69,7 @@ def is_valid_range_value(value) -> bool:
 
 
 def try_except_wrapper(func, sync_to_thread=False):
-    def exception_handler(*, e: Exception, args, kwargs):
+    def exception_handler(*, e: Exception, args, kwargs) -> None:
         import inspect
         import traceback
 

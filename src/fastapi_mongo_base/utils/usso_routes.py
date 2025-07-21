@@ -23,7 +23,7 @@ class PermissionDenied(exceptions.BaseHTTPException):
         message: dict | None = None,
         detail: str | None = None,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(
             403, error=error, message=message, detail=detail, **kwargs
         )
@@ -141,10 +141,11 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         items, total = await self.model.list_total_combined(
             offset=offset,
             limit=limit,
+            tenant_id=user.tenant_id,
             **(kwargs | filters),
         )
         items_in_schema = [
-            self.list_item_schema(**item.model_dump()) for item in items
+            self.list_item_schema.model_validate(item) for item in items
         ]
 
         return PaginatedResponse(

@@ -58,7 +58,7 @@ class Settings(metaclass=Singleton):
         return log_config
 
     @classmethod
-    def config_logger(cls):
+    def config_logger(cls) -> None:
         log_config = cls.get_log_config()
         if log_config["handlers"].get("file"):
             (getattr(cls, "base_dir", Path(".")) / "logs").mkdir(

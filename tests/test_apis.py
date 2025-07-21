@@ -5,21 +5,21 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_empty(client: httpx.AsyncClient):
+async def test_empty(client: httpx.AsyncClient) -> None:
     response = await client.get("/test")
     assert response.status_code == 200
     logging.info(response.json())
 
 
 @pytest.mark.asyncio
-async def test_create(client: httpx.AsyncClient):
+async def test_create(client: httpx.AsyncClient) -> None:
     response = await client.post("/test", json={"name": "test"})
     logging.info(response.json())
     assert response.status_code == 201
 
 
 @pytest.mark.asyncio
-async def test_list(client: httpx.AsyncClient):
+async def test_list(client: httpx.AsyncClient) -> None:
     response = await client.get("/test")
     assert response.status_code == 200
     logging.info(response.json())
@@ -31,7 +31,7 @@ async def test_list(client: httpx.AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_update(client: httpx.AsyncClient):
+async def test_update(client: httpx.AsyncClient) -> None:
     response = await client.get("/test")
     assert response.status_code == 200
     logging.info(response.json())
@@ -43,7 +43,7 @@ async def test_update(client: httpx.AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_delete(client: httpx.AsyncClient):
+async def test_delete(client: httpx.AsyncClient) -> None:
     response = await client.get("/test")
     assert response.status_code == 200
     logging.info(response.json())

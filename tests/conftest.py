@@ -6,6 +6,7 @@ import httpx
 import pytest
 import pytest_asyncio
 from beanie import init_beanie
+from mongomock_motor import AsyncMongoMockClient
 
 from src.fastapi_mongo_base import models as base_mongo_models
 from src.fastapi_mongo_base.utils import basic
@@ -15,24 +16,22 @@ from .app.server import app as fastapi_app
 
 
 @pytest.fixture(scope="session", autouse=True)
-def setup_debugpy():
+def setup_debugpy() -> None:
     if os.getenv("DEBUGPY", "False").lower() in ("true", "1", "yes"):
-        import debugpy
+        import debugpy  # noqa: T100
 
-        debugpy.listen(("0.0.0.0", 3020))
-        debugpy.wait_for_client()
+        debugpy.listen(("127.0.0.1", 3020))  # noqa: T100
+        debugpy.wait_for_client()  # noqa: T100
 
 
-@pytest.fixture(scope="session")
-def mongo_client():
-    from mongomock_motor import AsyncMongoMockClient
-
+@pytest_asyncio.fixture(scope="session")
+async def mongo_client() -> AsyncGenerator[AsyncMongoMockClient]:
     mongo_client = AsyncMongoMockClient()
     yield mongo_client
 
 
 # Async setup function to initialize the database with Beanie
-async def init_db(mongo_client):
+async def init_db(mongo_client: AsyncMongoMockClient) -> None:
     database = mongo_client.get_database("test_db")
     await init_beanie(
         database=database,
@@ -41,7 +40,7 @@ async def init_db(mongo_client):
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
-async def db(mongo_client):
+async def db(mongo_client: AsyncMongoMockClient) -> AsyncGenerator[None]:
     Settings.config_logger()
     logging.info("Initializing database")
     await init_db(mongo_client)

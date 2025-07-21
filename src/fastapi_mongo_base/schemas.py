@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import TypeVar
 
 import uuid6
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .core.config import Settings
 from .utils import timezone
@@ -32,6 +32,8 @@ class BaseEntitySchema(BaseModel):
         default=None,
         description="Additional metadata for the entity",
     )
+
+    model_config = ConfigDict(from_attributes=True)
 
     def __hash__(self):
         return hash(self.model_dump_json())

@@ -33,7 +33,7 @@ class TaskStatusEnum(StrEnum):
 
 
 class SignalRegistry(metaclass=Singleton):
-    def __init__(self):
+    def __init__(self) -> None:
         self.signal_map: dict[
             str,
             list[
@@ -116,7 +116,7 @@ class TaskReferenceList(BaseModel):
     async def get_task_item(self):
         return [await task.get_task_item() for task in self.tasks]
 
-    async def list_processing(self):
+    async def list_processing(self) -> None:
         task_items = [await task.get_task_item() for task in self.tasks]
         match self.mode:
             case "serial":
@@ -142,11 +142,11 @@ class TaskMixin(BaseModel):
     webhook_url: str | None = None
 
     @classmethod
-    def get_queue_name(cls):
+    def get_queue_name(cls) -> str:
         return f"{cls.__name__.lower()}_queue"
 
     @property
-    def item_webhook_url(self):
+    def item_webhook_url(self) -> str:
         return f"{self.item_url}/webhook"  # type: ignore
 
     @property
@@ -180,14 +180,14 @@ class TaskMixin(BaseModel):
     def add_signal(
         cls,
         signal: Callable[..., None] | Callable[..., Coroutine[Any, Any, None]],
-    ):
+    ) -> None:
         cls.signals().append(signal)
 
     @classmethod
     async def emit_signals(
         cls, task_instance: "TaskMixin", *, sync=False, **kwargs
-    ):
-        async def webhook_call(*args, **kwargs):
+    ) -> None:
+        async def webhook_call(*args, **kwargs) -> None:
             import httpx
 
             try:
@@ -210,7 +210,7 @@ class TaskMixin(BaseModel):
                     ])
                 )
 
-        def webhook_task(webhook_url: str):
+        def webhook_task(webhook_url: str) -> None:
             return
 
         signals = []
@@ -258,7 +258,7 @@ class TaskMixin(BaseModel):
         self,
         status: TaskStatusEnum,
         **kwargs,
-    ):
+    ) -> None:
         self.task_status = status
         await self.add_log(
             TaskLogRecord(
@@ -269,7 +269,7 @@ class TaskMixin(BaseModel):
             **kwargs,
         )
 
-    async def add_reference(self, task_id: str, **kwargs):
+    async def add_reference(self, task_id: str, **kwargs) -> None:
         if self.task_references is None:
             self.task_references = TaskReferenceList()
         self.task_references.tasks.append(
@@ -284,7 +284,7 @@ class TaskMixin(BaseModel):
             **kwargs,
         )
 
-    async def save_report(self, report: str, **kwargs):
+    async def save_report(self, report: str, **kwargs) -> None:
         self.task_report = report
         await self.add_log(
             TaskLogRecord(
@@ -297,13 +297,13 @@ class TaskMixin(BaseModel):
 
     async def add_log(
         self, log_record: TaskLogRecord, *, emit: bool = True, **kwargs
-    ):
+    ) -> None:
         self.task_logs.append(log_record)
         if emit:
             # await self.emit_signals(self)
             await self.save_and_emit()
 
-    async def start_processing(self, **kwargs):
+    async def start_processing(self, **kwargs) -> None:
         if self.task_references is None:
             raise NotImplementedError(
                 "Subclasses should implement this method"
@@ -311,7 +311,7 @@ class TaskMixin(BaseModel):
 
         await self.task_references.list_processing()
 
-    async def push_to_queue(self, redis_client, **kwargs):
+    async def push_to_queue(self, redis_client, **kwargs) -> None:
         """Add the task to Redis queue"""
         import json
 
@@ -322,7 +322,7 @@ class TaskMixin(BaseModel):
         )
 
     @basic.try_except_wrapper
-    async def save_and_emit(self, **kwargs):
+    async def save_and_emit(self, **kwargs) -> None:
         if kwargs.get("sync"):
             await self.save()  # type: ignore
             await self.emit_signals(self, **kwargs)
@@ -332,7 +332,7 @@ class TaskMixin(BaseModel):
                 self.emit_signals(self, **kwargs),
             )
 
-    async def update_and_emit(self, **kwargs):
+    async def update_and_emit(self, **kwargs) -> None:
         if kwargs.get("task_status") in [
             TaskStatusEnum.done,
             TaskStatusEnum.error,

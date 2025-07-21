@@ -11,8 +11,7 @@ from .core.config import Settings
 from .core.exceptions import BaseHTTPException
 from .models import BaseEntity
 from .schemas import BaseEntitySchema, PaginatedResponse
-
-# from .tasks import TaskStatusEnum
+from .tasks import TaskStatusEnum
 
 # Define a type variable
 T = TypeVar("T", bound=BaseEntity)
@@ -33,7 +32,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         prefix: str | None = None,
         tags: list[str] | None = None,
         **kwargs,
-    ):
+    ) -> None:
         if model is None:
             if self.model is None:
                 raise ValueError(
@@ -64,7 +63,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         self.config_schemas(self.schema, **kwargs)
         self.config_routes(**kwargs)
 
-    def config_schemas(self, schema, **kwargs):
+    def config_schemas(self, schema, **kwargs) -> None:
         self.schema = schema
         self.list_item_schema = kwargs.get("list_item_schema", schema)
         self.list_response_schema = kwargs.get(
@@ -101,7 +100,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         delete_route: bool = True,
         statistics_route: bool = False,
         **kwargs,
-    ):
+    ) -> None:
         prefix = prefix.strip("/")
         prefix = f"/{prefix}" if prefix else ""
 
@@ -305,7 +304,7 @@ class AbstractTaskRouter(AbstractBaseRouter):
         schema: type[TS],
         draftable: bool = True,
         **kwargs,
-    ):
+    ) -> None:
         self.draftable = draftable
         super().__init__(
             model=model,
@@ -314,7 +313,7 @@ class AbstractTaskRouter(AbstractBaseRouter):
             **kwargs,
         )
 
-    def config_routes(self, **kwargs):
+    def config_routes(self, **kwargs) -> None:
         super().config_routes(**kwargs)
 
         if self.draftable and kwargs.get("start_route", True):
@@ -338,7 +337,7 @@ class AbstractTaskRouter(AbstractBaseRouter):
         request: Request,
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
-        task_status=None,  # : TaskStatusEnum | None = None,
+        task_status: TaskStatusEnum | None = None,
     ):
         return await super().statistics(request)
 
