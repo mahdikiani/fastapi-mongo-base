@@ -3,20 +3,24 @@ import uuid
 from datetime import datetime
 from typing import Any, Never
 
-from sqlalchemy import JSON, event, select
-from sqlalchemy.orm import (
-    Mapped,
-    as_declarative,
-    declared_attr,
-    mapped_column,
-    sessionmaker,
-)
-from sqlalchemy.sql import func
+try:
+    from sqlalchemy import JSON, event, select
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy.orm import (
+        Mapped,
+        as_declarative,
+        declared_attr,
+        mapped_column,
+        sessionmaker,
+    )
+    from sqlalchemy.sql import func
+except ImportError as e:
+    raise ImportError("SQLAlchemy is not installed") from e
 
 from .core.config import Settings
 from .utils import basic, timezone
 
-async_session: sessionmaker = None  # type: ignore
+async_session: sessionmaker[AsyncSession] = None  # type: ignore
 
 
 @as_declarative()
@@ -111,6 +115,61 @@ class BaseEntity:
         ])
 
     @classmethod
+    def _range_filter(cls, field, key, value):
+        if not basic.is_valid_range_value(value):
+            return None
+        if key.endswith("_from"):
+            return field >= value
+        elif key.endswith("_to"):
+            return field <= value
+        return None
+
+    @classmethod
+    def _in_nin_filter(cls, field, key, value):
+        value_list = basic.parse_array_parameter(value)
+        if key.endswith("_in"):
+            return field.in_(value_list)
+        elif key.endswith("_nin"):
+            return ~field.in_(value_list)
+        return None
+
+    @classmethod
+    def _equality_filter(cls, field, value):
+        return field == value
+
+    @classmethod
+    def _build_extra_filters(cls, kwargs: dict[str, Any]) -> list:
+        extra_filters = []
+        for key, value in kwargs.items():
+            if value is None:
+                continue
+            base_field = basic.get_base_field_name(key)
+            if (
+                cls.search_field_set()
+                and base_field not in cls.search_field_set()
+            ):
+                continue
+            if (
+                cls.search_exclude_set()
+                and base_field in cls.search_exclude_set()
+            ):
+                continue
+            if not hasattr(cls, base_field):
+                continue
+            field = getattr(cls, base_field)
+            if key.endswith("_from") or key.endswith("_to"):
+                filt = cls._range_filter(field, key, value)
+                if filt is not None:
+                    extra_filters.append(filt)
+            elif key.endswith("_in") or key.endswith("_nin"):
+                filt = cls._in_nin_filter(field, key, value)
+                if filt is not None:
+                    extra_filters.append(filt)
+            else:
+                extra_filters.append(cls._equality_filter(field, value))
+        return extra_filters
+
+    @classmethod
     def get_queryset(
         cls,
         *,
@@ -120,74 +179,18 @@ class BaseEntity:
         uid: str | None = None,
         **kwargs,
     ) -> list:
-        """Build SQLAlchemy query filters based on provided parameters.
-
-        Args:
-            user_id: Filter by user ID if the model has user_id field
-            tenant_id: Filter by tenant ID if the model has tenant_id field
-            is_deleted: Filter by deletion status
-            uid: Filter by unique identifier
-            **kwargs: Additional filters that can include range queries
-                      with _from/_to suffixes
-
-        Returns:
-            List of SQLAlchemy query conditions
-        """
-        # Start with basic filters
+        """Build SQLAlchemy query filters based on provided parameters."""
         base_query = []
-
-        # Add standard filters if applicable
         base_query.append(cls.is_deleted == is_deleted)
-
         if hasattr(cls, "user_id") and user_id:
             base_query.append(cls.user_id == user_id)  # type: ignore
-
         if hasattr(cls, "tenant_id") and tenant_id:
             base_query.append(cls.tenant_id == tenant_id)  # type: ignore
-
         if uid:
             base_query.append(cls.uid == uid)
-
-        # Process additional filters from kwargs
-        for key, value in kwargs.items():
-            if value is None:
-                continue
-
-            # Extract base field name without suffixes
-            base_field = basic.get_base_field_name(key)
-
-            # Validate field is allowed for searching
-            if (
-                cls.search_field_set()
-                and base_field not in cls.search_field_set()  # noqa: W503
-            ):
-                continue
-            if (
-                cls.search_exclude_set()
-                and base_field in cls.search_exclude_set()  # noqa: W503
-            ):
-                continue
-            if not hasattr(cls, base_field):
-                continue
-
-            field = getattr(cls, base_field)
-
-            # Handle range queries and array operators
-            if key.endswith("_from") or key.endswith("_to"):
-                if basic.is_valid_range_value(value):
-                    if key.endswith("_from"):
-                        base_query.append(field >= value)
-                    elif key.endswith("_to"):
-                        base_query.append(field <= value)
-            elif key.endswith("_in") or key.endswith("_nin"):
-                value_list = basic.parse_array_parameter(value)
-                if key.endswith("_in"):
-                    base_query.append(field.in_(value_list))
-                else:  # _nin
-                    base_query.append(~field.in_(value_list))
-            else:
-                base_query.append(field == value)
-
+        # Extract extra filters from kwargs
+        extra_filters = cls._build_extra_filters(kwargs)
+        base_query.extend(extra_filters)
         return base_query
 
     @classmethod

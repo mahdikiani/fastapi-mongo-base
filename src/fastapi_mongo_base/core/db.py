@@ -9,13 +9,12 @@ from .config import Settings
 
 
 async def init_mongo_db(settings: Settings | None = None):
-    # from pymongo import AsyncMongoClient
-    from motor.motor_asyncio import AsyncIOMotorClient
+    from pymongo import AsyncMongoClient
 
     if settings is None:
         settings = Settings()
 
-    client = AsyncIOMotorClient(settings.mongo_uri)
+    client = AsyncMongoClient(settings.mongo_uri)
     try:
         await client.server_info()
     except Exception as e:

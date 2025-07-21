@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastapi-mongo-base"
-version = "0.12.22"
+version = "1.0.1"
 description = "A simple boilerplate application, including models and schemas and abstract router, for FastAPI with MongoDB"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -30,14 +30,14 @@ dependencies = [
   "json-advanced",
   "uuid6",
   "pytz",
-  "beanie<2.0.0",
+  "beanie>=2.0.0",
   "fastapi>=0.65.0",
   "uvicorn[standard]>=0.13.0",
 ]
 
 [project.optional-dependencies]
-image = ["Pillow>=9.0.0"]
 usso = ["usso>=0.28.26"]
+sql = ["sqlalchemy>=2.0.0"]
 test = ["pytest", "pytest-cov", "pytest-asyncio", "mongomock_motor", "coverage"]
 
 [project.urls]

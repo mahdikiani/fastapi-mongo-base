@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Optional, cast
+from typing import Any, Optional, cast
 
 from beanie import (
     Document,
@@ -49,6 +49,41 @@ class BaseEntity(BaseEntitySchema, Document):
         self.updated_at = datetime.now(timezone.tz)
 
     @classmethod
+    def _build_extra_filters(cls, kwargs: dict[str, Any]) -> dict:
+        extra_filters = {}
+        for key, value in kwargs.items():
+            if value is None:
+                continue
+            base_field = basic.get_base_field_name(key)
+            if (
+                cls.search_field_set()
+                and base_field not in cls.search_field_set()
+            ):
+                logging.warning(f"Key {key} is not in search_field_set")
+                continue
+            if (
+                cls.search_exclude_set()
+                and base_field in cls.search_exclude_set()
+            ):
+                logging.warning(f"Key {key} is in search_exclude_set")
+                continue
+            if not hasattr(cls, base_field):
+                continue
+            if key.endswith("_from") or key.endswith("_to"):
+                if basic.is_valid_range_value(value):
+                    op = "$gte" if key.endswith("_from") else "$lte"
+                    extra_filters.setdefault(base_field, {}).update({
+                        op: value
+                    })
+            elif key.endswith("_in") or key.endswith("_nin"):
+                value_list = basic.parse_array_parameter(value)
+                operator = "$in" if key.endswith("_in") else "$nin"
+                extra_filters.update({base_field: {operator: value_list}})
+            else:
+                extra_filters.update({key: value})
+        return extra_filters
+
+    @classmethod
     def get_queryset(
         cls,
         *,
@@ -58,70 +93,18 @@ class BaseEntity(BaseEntitySchema, Document):
         uid: str | None = None,
         **kwargs,
     ) -> dict:
-        """Build a MongoDB query filter based on provided parameters.
-
-        Args:
-            user_id: Filter by user ID if the model has user_id field
-            tenant_id: Filter by tenant ID if the model has tenant_id field
-            is_deleted: Filter by deletion status
-            uid: Filter by unique identifier
-            **kwargs: Additional filters that can include range queries
-                      with _from/_to suffixes
-
-        Returns:
-            List of MongoDB query conditions
-        """
-        # Start with basic filters
+        """Build a MongoDB query filter based on provided parameters."""
         base_query = {}
-
-        # Add standard filters if applicable
         base_query.update({"is_deleted": is_deleted})
-
         if hasattr(cls, "tenant_id") and tenant_id:
             base_query.update({"tenant_id": tenant_id})
-
         if hasattr(cls, "user_id") and user_id:
             base_query.update({"user_id": user_id})
-
         if uid:
             base_query.update({"uid": uid})
-
-        # Process additional filters from kwargs
-        for key, value in kwargs.items():
-            if value is None:
-                continue
-
-            # Extract base field name without suffixes
-            base_field = basic.get_base_field_name(key)
-
-            # Validate field is allowed for searching
-            if (
-                cls.search_field_set()
-                and base_field not in cls.search_field_set()  # noqa: W503
-            ):
-                logging.warning(f"Key {key} is not in search_field_set")
-                continue
-            if (
-                cls.search_exclude_set()
-                and base_field in cls.search_exclude_set()  # noqa: W503
-            ):
-                logging.warning(f"Key {key} is in search_exclude_set")
-                continue
-            if not hasattr(cls, base_field):
-                continue
-
-            # Handle range queries and array operators
-            if key.endswith("_from") or key.endswith("_to"):
-                if basic.is_valid_range_value(value):
-                    op = "$gte" if key.endswith("_from") else "$lte"
-                    base_query.setdefault(base_field, {}).update({op: value})
-            elif key.endswith("_in") or key.endswith("_nin"):
-                value_list = basic.parse_array_parameter(value)
-                operator = "$in" if key.endswith("_in") else "$nin"
-                base_query.update({base_field: {operator: value_list}})
-            else:
-                base_query.update({key: value})
-
+        # Extract extra filters from kwargs
+        extra_filters = cls._build_extra_filters(cls, kwargs)
+        base_query.update(extra_filters)
         return base_query
 
     @classmethod

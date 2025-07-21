@@ -12,7 +12,6 @@ try:
     from usso.config import APIHeaderConfig, AuthConfig
     from usso.exceptions import USSOException
     from usso.integrations.fastapi import USSOAuthentication
-    from usso_jwt import JWT, JWTConfig
 except ImportError as e:
     raise ImportError("USSO is not installed") from e
 
@@ -59,7 +58,8 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
                         f"{BASE_USSO_URL}/api/sso/v1/apikeys/verify"
                     ),
                 ),
-            )
+            ),
+            from_base_usso_url=BASE_USSO_URL,
         )
         return usso(request)
 
