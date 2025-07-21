@@ -49,7 +49,7 @@ class BaseEntity(BaseEntitySchema, Document):
         self.updated_at = datetime.now(timezone.tz)
 
     @classmethod
-    def _build_extra_filters(cls, kwargs: dict[str, Any]) -> dict:
+    def _build_extra_filters(cls, **kwargs: dict[str, Any]) -> dict:
         extra_filters = {}
         for key, value in kwargs.items():
             if value is None:
@@ -103,7 +103,7 @@ class BaseEntity(BaseEntitySchema, Document):
         if uid:
             base_query.update({"uid": uid})
         # Extract extra filters from kwargs
-        extra_filters = cls._build_extra_filters(cls, kwargs)
+        extra_filters = cls._build_extra_filters(**kwargs)
         base_query.update(extra_filters)
         return base_query
 

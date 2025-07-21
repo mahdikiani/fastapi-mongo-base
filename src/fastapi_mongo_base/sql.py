@@ -125,7 +125,7 @@ class BaseEntity:
         return None
 
     @classmethod
-    def _in_nin_filter(cls, field, key, value):
+    def _in_nin_filter(cls, field: Any, key: str, value: Any) -> Any:
         value_list = basic.parse_array_parameter(value)
         if key.endswith("_in"):
             return field.in_(value_list)
@@ -134,11 +134,11 @@ class BaseEntity:
         return None
 
     @classmethod
-    def _equality_filter(cls, field, value):
+    def _equality_filter(cls, field: Any, value: Any) -> Any:
         return field == value
 
     @classmethod
-    def _build_extra_filters(cls, kwargs: dict[str, Any]) -> list:
+    def _build_extra_filters(cls, **kwargs: dict[str, Any]) -> list:
         extra_filters = []
         for key, value in kwargs.items():
             if value is None:
@@ -189,7 +189,7 @@ class BaseEntity:
         if uid:
             base_query.append(cls.uid == uid)
         # Extract extra filters from kwargs
-        extra_filters = cls._build_extra_filters(kwargs)
+        extra_filters = cls._build_extra_filters(**kwargs)
         base_query.extend(extra_filters)
         return base_query
 
