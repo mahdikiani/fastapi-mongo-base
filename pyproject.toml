@@ -58,7 +58,7 @@ unsafe-fixes = true
 preview = true
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "T"]
+select = ["E", "F", "W", "I", "UP", "B", "T", "C", "A"]
 
 [tool.ruff.format]
 quote-style = "double"
