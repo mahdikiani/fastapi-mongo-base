@@ -8,7 +8,7 @@ from bson.decimal128 import Decimal128
 def decimal_amount(value):
     if isinstance(value, Decimal128):
         return Decimal(value.to_decimal())
-    return value
+    return Decimal(value)
 
 
 def get_bson_value(value):
