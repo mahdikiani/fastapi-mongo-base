@@ -35,7 +35,7 @@ class BaseEntitySchema(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.model_dump_json())
 
     @classmethod
@@ -62,11 +62,11 @@ class BaseEntitySchema(BaseModel):
     def search_field_set(cls) -> list:
         return []
 
-    def expired(self, days: int = 3):
+    def expired(self, days: int = 3) -> bool:
         return (datetime.now(timezone.tz) - self.updated_at).days > days
 
     @property
-    def item_url(self):
+    def item_url(self) -> str:
         return "/".join([
             f"https://{Settings.root_url}{Settings.base_path}",
             f"{self.__class__.__name__.lower()}s",

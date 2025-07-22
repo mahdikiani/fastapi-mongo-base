@@ -1,7 +1,7 @@
 import json
 import uuid
 from datetime import datetime
-from typing import Any, Never
+from typing import Never
 
 try:
     from sqlalchemy import JSON, event, select
@@ -25,7 +25,7 @@ async_session: sessionmaker[AsyncSession] = None  # type: ignore
 
 @as_declarative()
 class BaseEntity:
-    id: Any
+    id: object
     __name__: str
     __abstract__ = True
 
@@ -115,7 +115,9 @@ class BaseEntity:
         ])
 
     @classmethod
-    def _range_filter(cls, field, key, value):
+    def _range_filter(
+        cls, field: object, key: str, value: object
+    ) -> object:
         if not basic.is_valid_range_value(value):
             return None
         if key.endswith("_from"):
@@ -125,7 +127,7 @@ class BaseEntity:
         return None
 
     @classmethod
-    def _in_nin_filter(cls, field: Any, key: str, value: Any) -> Any:
+    def _in_nin_filter(cls, field: object, key: str, value: object) -> object:
         value_list = basic.parse_array_parameter(value)
         if key.endswith("_in"):
             return field.in_(value_list)
@@ -134,11 +136,11 @@ class BaseEntity:
         return None
 
     @classmethod
-    def _equality_filter(cls, field: Any, value: Any) -> Any:
+    def _equality_filter(cls, field: object, value: object) -> object:
         return field == value
 
     @classmethod
-    def _build_extra_filters(cls, **kwargs: dict[str, Any]) -> list:
+    def _build_extra_filters(cls, **kwargs: dict[str, object]) -> list:
         extra_filters = []
         for key, value in kwargs.items():
             if value is None:
@@ -177,7 +179,7 @@ class BaseEntity:
         tenant_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
-        **kwargs,
+        **kwargs: object,
     ) -> list:
         """Build SQLAlchemy query filters based on provided parameters."""
         base_query = []
@@ -202,7 +204,7 @@ class BaseEntity:
         uid: str | None = None,
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
-        **kwargs,
+        **kwargs: object,
     ) -> list:
         base_query = cls.get_queryset(
             user_id=user_id,
@@ -223,7 +225,7 @@ class BaseEntity:
         user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
-        **kwargs,
+        **kwargs: object,
     ) -> "BaseEntity":
         base_query = cls.get_query(
             user_id=user_id,
@@ -248,7 +250,7 @@ class BaseEntity:
         is_deleted: bool = False,
         offset: int = 0,
         limit: int = 10,
-        **kwargs,
+        **kwargs: object,
     ) -> list:
         base_query = cls.get_query(
             user_id=user_id,
@@ -277,7 +279,7 @@ class BaseEntity:
         user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
-        **kwargs,
+        **kwargs: object,
     ) -> int:
         base_query = cls.get_query(
             user_id=user_id,
@@ -306,7 +308,7 @@ class BaseEntity:
         offset: int = 0,
         limit: int = 10,
         is_deleted: bool = False,
-        **kwargs,
+        **kwargs: object,
     ) -> tuple[list["BaseEntity"], int]:
         items = await cls.list_items(
             user_id=user_id,
@@ -415,7 +417,9 @@ class ImmutableMixin(BaseEntity):
     __abstract__ = True
 
     @staticmethod
-    def prevent_update(mapper, connection, target) -> None:
+    def prevent_update(
+        mapper: object, connection: object, target: object
+    ) -> None:
         if connection.in_transaction() and target.id is not None:
             raise ValueError("Immutable items cannot be updated")
 

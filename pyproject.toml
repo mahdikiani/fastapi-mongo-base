@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastapi-mongo-base"
-version = "1.0.4"
+version = "1.0.5"
 description = "A simple boilerplate application, including models and schemas and abstract router, for FastAPI with MongoDB"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -58,7 +58,7 @@ unsafe-fixes = true
 preview = true
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "T", "C", "A"]
+select = ["E", "F", "W", "I", "UP", "B", "T", "C", "A", "ANN"]
 
 [tool.ruff.format]
 quote-style = "double"

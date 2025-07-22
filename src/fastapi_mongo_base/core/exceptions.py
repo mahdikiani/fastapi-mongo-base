@@ -29,7 +29,7 @@ class BaseHTTPException(HTTPException):
         error: str,
         detail: str | None = None,
         message: dict | None = None,
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         self.status_code = status_code
         self.error = error
@@ -77,7 +77,7 @@ async def pydantic_exception_handler(
 
 async def request_validation_exception_handler(
     request: Request, exc: RequestValidationError
-):
+) -> JSONResponse:
     logging.error(
         f"request_validation_exception: {request.url} {exc}\n"
         f"{(await request.body())[:100]}"
@@ -89,7 +89,9 @@ async def request_validation_exception_handler(
     return await default_handler(request, exc)
 
 
-async def general_exception_handler(request: Request, exc: Exception):
+async def general_exception_handler(
+    request: Request, exc: Exception
+) -> JSONResponse:
     traceback_str = "".join(traceback.format_tb(exc.__traceback__))
     logging.error(f"Exception: {traceback_str} {exc}")
     logging.error(f"Exception on request: {request.url}")

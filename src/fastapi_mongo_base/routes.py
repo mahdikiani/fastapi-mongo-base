@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
 from typing import Any, TypeVar, cast
@@ -28,10 +29,10 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         *,
         model: type[T] | None = None,
         schema: type[TS] | None = None,
-        user_dependency=None,
+        user_dependency: Callable[[Request], Any] | None = None,
         prefix: str | None = None,
         tags: list[str] | None = None,
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         if model is None:
             if self.model is None:
@@ -63,7 +64,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         self.config_schemas(self.schema, **kwargs)
         self.config_routes(**kwargs)
 
-    def config_schemas(self, schema, **kwargs) -> None:
+    def config_schemas(self, schema: TS, **kwargs: object) -> None:
         self.schema = schema
         self.list_item_schema = kwargs.get("list_item_schema", schema)
         self.list_response_schema = kwargs.get(
@@ -99,7 +100,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         update_route: bool = True,
         delete_route: bool = True,
         statistics_route: bool = False,
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         prefix = prefix.strip("/")
         prefix = f"/{prefix}" if prefix else ""
@@ -162,8 +163,8 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         *,
         user_id: str | None = None,
         tenant_id: str | None = None,
-        **kwargs,
-    ):
+        **kwargs: object,
+    ) -> T:
         item = await self.model.get_item(
             uid=uid,
             user_id=user_id,
@@ -180,14 +181,16 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
             )
         return item
 
-    async def get_user(self, request: Request, *args, **kwargs):
+    async def get_user(self, request: Request, **kwargs: object) -> object:
         if self.user_dependency is None:
             return None
         if asyncio.iscoroutinefunction(self.user_dependency):
             return await self.user_dependency(request)
         return self.user_dependency(request)
 
-    async def get_user_id(self, request: Request, *args, **kwargs):
+    async def get_user_id(
+        self, request: Request, **kwargs: object
+    ) -> str | None:
         user = await self.get_user(request)
         user_id = user.uid if user else None
         return user_id
@@ -197,7 +200,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         request: Request,
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
-    ):
+    ) -> dict:
         params: dict[str, Any] = dict(request.query_params)
         if "is_deleted" in params:
             params["is_deleted"] = params["is_deleted"].lower() == "true"
@@ -212,8 +215,8 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         request: Request,
         offset: int = 0,
         limit: int = 10,
-        **kwargs,
-    ):
+        **kwargs: object,
+    ) -> PaginatedResponse[TS]:
         user_id = kwargs.pop("user_id", await self.get_user_id(request))
         limit = max(1, min(limit, Settings.page_max_limit))
 
@@ -241,7 +244,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         limit: int = Query(10, ge=1, le=Settings.page_max_limit),
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
-    ):
+    ) -> PaginatedResponse[TS]:
         return await self._list_items(
             request=request,
             offset=offset,
@@ -254,7 +257,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         self,
         request: Request,
         uid: str,
-    ):
+    ) -> T:
         user_id = await self.get_user_id(request)
         item = await self.get_item(uid=uid, user_id=user_id)
         return item
@@ -263,7 +266,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         self,
         request: Request,
         data: dict,
-    ):
+    ) -> T:
         user_id = await self.get_user_id(request)
         if isinstance(data, BaseModel):
             data = data.model_dump()
@@ -275,7 +278,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         request: Request,
         uid: str,
         data: dict,
-    ):
+    ) -> T:
         user_id = await self.get_user_id(request)
         if isinstance(data, BaseModel):
             data = data.model_dump()
@@ -287,7 +290,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         self,
         request: Request,
         uid: str,
-    ):
+    ) -> T:
         user_id = await self.get_user_id(request)
         item = await self.get_item(uid=uid, user_id=user_id)
 
@@ -300,10 +303,10 @@ class AbstractTaskRouter(AbstractBaseRouter):
         self,
         *,
         model: type[T],
-        user_dependency: Any,
+        user_dependency: Callable[[Request], Any] | None = None,
         schema: type[TS],
         draftable: bool = True,
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         self.draftable = draftable
         super().__init__(
@@ -313,7 +316,7 @@ class AbstractTaskRouter(AbstractBaseRouter):
             **kwargs,
         )
 
-    def config_routes(self, **kwargs) -> None:
+    def config_routes(self, **kwargs: object) -> None:
         super().config_routes(**kwargs)
 
         if self.draftable and kwargs.get("start_route", True):
@@ -338,12 +341,12 @@ class AbstractTaskRouter(AbstractBaseRouter):
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
         task_status: TaskStatusEnum | None = None,
-    ):
+    ) -> dict:
         return await super().statistics(request)
 
     async def create_item(
         self, request: Request, data: dict, background_tasks: BackgroundTasks
-    ):
+    ) -> T:
         if not self.draftable:
             data["task_status"] = "init"
 
@@ -355,7 +358,7 @@ class AbstractTaskRouter(AbstractBaseRouter):
 
     async def start_item(
         self, request: Request, uid: str, background_tasks: BackgroundTasks
-    ):
+    ) -> dict:
         user_id = await self.get_user_id(request)
         item = await self.get_item(uid=uid, user_id=user_id)
         background_tasks.add_task(item.start_processing)
@@ -366,14 +369,14 @@ class AbstractTaskRouter(AbstractBaseRouter):
         request: Request,
         uid: str,
         data: dict,
-    ):
+    ) -> dict:
         import logging
 
         logging.info(f"Webhook received for {uid} with data {data}")
         return {"message": f"Webhook received for {uid} with data", **data}
 
 
-def copy_router(router: APIRouter, new_prefix: str):
+def copy_router(router: APIRouter, new_prefix: str) -> APIRouter:
     new_router = APIRouter(prefix=new_prefix)
     for route in router.routes:
         route_data = route.__dict__

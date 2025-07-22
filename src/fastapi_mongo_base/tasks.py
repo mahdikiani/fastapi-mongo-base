@@ -24,11 +24,11 @@ class TaskStatusEnum(StrEnum):
     error = "error"
 
     @classmethod
-    def Finishes(cls):
+    def Finishes(cls) -> list["TaskStatusEnum"]:
         return [cls.done, cls.error, cls.completed]
 
     @property
-    def is_done(self):
+    def is_done(self) -> bool:
         return self in self.Finishes()
 
 
@@ -52,7 +52,7 @@ class TaskLogRecord(BaseModel):
     log_type: str | None = None
     # data: dict | None = None
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, TaskLogRecord):
             return (
                 self.reported_at == other.reported_at
@@ -63,7 +63,7 @@ class TaskLogRecord(BaseModel):
             )
         return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((
             self.reported_at,
             self.message,
@@ -76,7 +76,7 @@ class TaskReference(BaseModel):
     task_id: str
     task_type: str
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, TaskReference):
             return (
                 self.task_id == other.task_id
@@ -84,7 +84,7 @@ class TaskReference(BaseModel):
             )
         return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.task_id, self.task_type))
 
     async def get_task_item(self) -> BaseEntitySchema | None:
@@ -113,7 +113,7 @@ class TaskReferenceList(BaseModel):
     tasks: list[Union[TaskReference, "TaskReferenceList"]] = []
     mode: Literal["serial", "parallel"] = "serial"
 
-    async def get_task_item(self):
+    async def get_task_item(self) -> list[BaseEntitySchema]:
         return [await task.get_task_item() for task in self.tasks]
 
     async def list_processing(self) -> None:
@@ -150,7 +150,7 @@ class TaskMixin(BaseModel):
         return f"{self.item_url}/webhook"  # type: ignore
 
     @property
-    def task_duration(self):
+    def task_duration(self) -> int:
         if self.task_start_at:
             if self.task_end_at:
                 return self.task_end_at - self.task_start_at
@@ -158,19 +158,21 @@ class TaskMixin(BaseModel):
         return 0
 
     @field_validator("task_status", mode="before")
-    def validate_task_status(cls, value):
+    def validate_task_status(cls, value: object) -> "TaskStatusEnum":
         if isinstance(value, str):
             return TaskStatusEnum(value)
         return value
 
     @field_serializer("task_status")
-    def serialize_task_status(self, value):
+    def serialize_task_status(self, value: object) -> str:
         if isinstance(value, TaskStatusEnum):
             return value.value
         return value
 
     @classmethod
-    def signals(cls):
+    def signals(
+        cls,
+    ) -> list[Callable[..., None] | Callable[..., Coroutine[Any, Any, None]]]:
         registry = SignalRegistry()
         if cls.__name__ not in registry.signal_map:
             registry.signal_map[cls.__name__] = []
@@ -185,9 +187,13 @@ class TaskMixin(BaseModel):
 
     @classmethod
     async def emit_signals(
-        cls, task_instance: "TaskMixin", *, sync=False, **kwargs
+        cls,
+        task_instance: "TaskMixin",
+        *,
+        sync: bool = False,
+        **kwargs: object,
     ) -> None:
-        async def webhook_call(*args, **kwargs) -> None:
+        async def webhook_call(*args: object, **kwargs: object) -> None:
             import httpx
 
             try:
@@ -257,7 +263,7 @@ class TaskMixin(BaseModel):
     async def save_status(
         self,
         status: TaskStatusEnum,
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         self.task_status = status
         await self.add_log(
@@ -269,7 +275,7 @@ class TaskMixin(BaseModel):
             **kwargs,
         )
 
-    async def add_reference(self, task_id: str, **kwargs) -> None:
+    async def add_reference(self, task_id: str, **kwargs: object) -> None:
         if self.task_references is None:
             self.task_references = TaskReferenceList()
         self.task_references.tasks.append(
@@ -284,7 +290,7 @@ class TaskMixin(BaseModel):
             **kwargs,
         )
 
-    async def save_report(self, report: str, **kwargs) -> None:
+    async def save_report(self, report: str, **kwargs: object) -> None:
         self.task_report = report
         await self.add_log(
             TaskLogRecord(
@@ -296,14 +302,18 @@ class TaskMixin(BaseModel):
         )
 
     async def add_log(
-        self, log_record: TaskLogRecord, *, emit: bool = True, **kwargs
+        self,
+        log_record: TaskLogRecord,
+        *,
+        emit: bool = True,
+        **kwargs: object,
     ) -> None:
         self.task_logs.append(log_record)
         if emit:
             # await self.emit_signals(self)
             await self.save_and_emit()
 
-    async def start_processing(self, **kwargs) -> None:
+    async def start_processing(self, **kwargs: object) -> None:
         if self.task_references is None:
             raise NotImplementedError(
                 "Subclasses should implement this method"
@@ -311,7 +321,9 @@ class TaskMixin(BaseModel):
 
         await self.task_references.list_processing()
 
-    async def push_to_queue(self, redis_client, **kwargs) -> None:
+    async def push_to_queue(
+        self, redis_client: object, **kwargs: object
+    ) -> None:
         """Add the task to Redis queue"""
         import json
 
@@ -322,7 +334,7 @@ class TaskMixin(BaseModel):
         )
 
     @basic.try_except_wrapper
-    async def save_and_emit(self, **kwargs) -> None:
+    async def save_and_emit(self, **kwargs: object) -> None:
         if kwargs.get("sync"):
             await self.save()  # type: ignore
             await self.emit_signals(self, **kwargs)
@@ -332,7 +344,7 @@ class TaskMixin(BaseModel):
                 self.emit_signals(self, **kwargs),
             )
 
-    async def update_and_emit(self, **kwargs) -> None:
+    async def update_and_emit(self, **kwargs: object) -> None:
         if kwargs.get("task_status") in [
             TaskStatusEnum.done,
             TaskStatusEnum.error,

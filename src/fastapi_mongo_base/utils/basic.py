@@ -3,19 +3,19 @@ import functools
 import json
 import logging
 import time
-from typing import Any
+from collections.abc import Callable
 
 import json_advanced
 
 
-def get_all_subclasses(cls: type):
+def get_all_subclasses(cls: type) -> list[type]:
     subclasses = cls.__subclasses__()
     return subclasses + [
         sub for subclass in subclasses for sub in get_all_subclasses(subclass)
     ]
 
 
-def parse_array_parameter(value: Any) -> list:
+def parse_array_parameter(value: object) -> list:
     """Parse input value into a list, handling various input formats.
 
     Args:
@@ -60,7 +60,7 @@ def get_base_field_name(field: str) -> str:
     return field
 
 
-def is_valid_range_value(value) -> bool:
+def is_valid_range_value(value: object) -> bool:
     """Check if value is valid for range comparison."""
     from datetime import date, datetime
     from decimal import Decimal
@@ -68,7 +68,12 @@ def is_valid_range_value(value) -> bool:
     return isinstance(value, (int, float, Decimal, datetime, date, str))
 
 
-def _exception_handler(func, e: Exception, args, kwargs) -> None:
+def _exception_handler(
+    func: Callable,
+    e: Exception,
+    args: tuple[object, ...],
+    kwargs: dict[str, object],
+) -> None:
     import inspect
     import traceback
 
@@ -86,9 +91,9 @@ def _exception_handler(func, e: Exception, args, kwargs) -> None:
     return None
 
 
-def _async_try_except_wrapper(func):
+def _async_try_except_wrapper(func: Callable) -> Callable:
     @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: object, **kwargs: object) -> object:
         try:
             if asyncio.iscoroutinefunction(func):
                 return await func(*args, **kwargs)
@@ -99,9 +104,9 @@ def _async_try_except_wrapper(func):
     return wrapper
 
 
-def _sync_try_except_wrapper(func):
+def _sync_try_except_wrapper(func: Callable) -> Callable:
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: object, **kwargs: object) -> object:
         try:
             return func(*args, **kwargs)
         except Exception as e:
@@ -110,23 +115,26 @@ def _sync_try_except_wrapper(func):
     return wrapper
 
 
-def try_except_wrapper(func, sync_to_thread=False):
+def try_except_wrapper(
+    func: Callable,
+    sync_to_thread: bool = False,
+) -> Callable:
     if sync_to_thread or asyncio.iscoroutinefunction(func):
         return _async_try_except_wrapper(func)
     return _sync_try_except_wrapper(func)
 
 
-def delay_execution(seconds, sync_to_thread=False):
-    def decorator(func):
+def delay_execution(seconds: int, sync_to_thread: bool = False) -> Callable:
+    def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        async def awrapped_func(*args, **kwargs):
+        async def awrapped_func(*args: object, **kwargs: object) -> object:
             await asyncio.sleep(seconds)
             if asyncio.iscoroutinefunction(func):
                 return await func(*args, **kwargs)
             return await asyncio.to_thread(func, *args, **kwargs)
 
         @functools.wraps(func)
-        def wrapped_func(*args, **kwargs):
+        def wrapped_func(*args: object, **kwargs: object) -> object:
             time.sleep(seconds)
             return func(*args, **kwargs)
 
@@ -137,9 +145,11 @@ def delay_execution(seconds, sync_to_thread=False):
     return decorator
 
 
-def _async_retry_wrapper(func, attempts, delay):
+def _async_retry_wrapper(
+    func: Callable, attempts: int, delay: int
+) -> Callable:
     @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: object, **kwargs: object) -> object:
         last_exception = None
         for attempt in range(attempts):
             try:
@@ -159,9 +169,9 @@ def _async_retry_wrapper(func, attempts, delay):
     return wrapper
 
 
-def _sync_retry_wrapper(func, attempts, delay):
+def _sync_retry_wrapper(func: Callable, attempts: int, delay: int) -> Callable:
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: object, **kwargs: object) -> object:
         last_exception = None
         for attempt in range(attempts):
             try:
@@ -179,8 +189,10 @@ def _sync_retry_wrapper(func, attempts, delay):
     return wrapper
 
 
-def retry_execution(attempts, delay=0, sync_to_thread=False):
-    def decorator(func):
+def retry_execution(
+    attempts: int, delay: int = 0, sync_to_thread: bool = False
+) -> Callable[[Callable], Callable]:
+    def decorator(func: Callable) -> Callable:
         if sync_to_thread or asyncio.iscoroutinefunction(func):
             return _async_retry_wrapper(func, attempts, delay)
         return _sync_retry_wrapper(func, attempts, delay)

@@ -27,11 +27,11 @@ class Language(StrEnum):
     Indonesian = "Indonesian"
 
     @classmethod
-    def has_value(cls, value):
+    def has_value(cls, value: str) -> bool:
         return value in cls._value2member_map_
 
     @property
-    def _info(self):
+    def _info(self) -> dict[str, str]:
         return {
             Language.English: {
                 "fa": "انگلیسی",
@@ -151,20 +151,20 @@ class Language(StrEnum):
         }[self]
 
     @property
-    def fa(self):
+    def fa(self) -> str:
         return self._info["fa"]
 
     @property
-    def en(self):
+    def en(self) -> str:
         return self._info["en"]
 
     @property
-    def abbreviation(self):
+    def abbreviation(self) -> str:
         return self._info["abbreviation"]
 
-    def get_dict(self):
+    def get_dict(self) -> dict[str, str]:
         return self._info | {"value": self.value}
 
     @classmethod
-    def get_choices(cls):
+    def get_choices(cls) -> list[dict[str, str]]:
         return [item.get_dict() for item in cls]

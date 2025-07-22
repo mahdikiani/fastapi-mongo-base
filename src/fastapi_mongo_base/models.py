@@ -91,7 +91,7 @@ class BaseEntity(BaseEntitySchema, Document):
         tenant_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
-        **kwargs,
+        **kwargs: object,
     ) -> dict:
         """Build a MongoDB query filter based on provided parameters."""
         base_query = {}
@@ -117,7 +117,7 @@ class BaseEntity(BaseEntitySchema, Document):
         uid: str | None = None,
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
-        **kwargs,
+        **kwargs: object,
     ) -> FindMany:
         base_query = cls.get_queryset(
             user_id=user_id,
@@ -139,7 +139,7 @@ class BaseEntity(BaseEntitySchema, Document):
         user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
-        **kwargs,
+        **kwargs: object,
     ) -> Optional["BaseEntity"]:
         query = cls.get_query(
             user_id=user_id,
@@ -177,7 +177,7 @@ class BaseEntity(BaseEntitySchema, Document):
         offset: int = 0,
         limit: int = 10,
         is_deleted: bool = False,
-        **kwargs,
+        **kwargs: object,
     ) -> list["BaseEntity"]:
         offset, limit = cls.adjust_pagination(offset, limit)
 
@@ -199,7 +199,7 @@ class BaseEntity(BaseEntitySchema, Document):
         user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
-        **kwargs,
+        **kwargs: object,
     ) -> int:
         query = cls.get_query(
             user_id=user_id,
@@ -218,7 +218,7 @@ class BaseEntity(BaseEntitySchema, Document):
         offset: int = 0,
         limit: int = 10,
         is_deleted: bool = False,
-        **kwargs,
+        **kwargs: object,
     ) -> tuple[list["BaseEntity"], int]:
         items = await cls.list_items(
             user_id=user_id,
@@ -305,7 +305,7 @@ class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
         *,
         user_id: str | None = None,
         ignore_user_id: bool = False,
-        **kwargs,
+        **kwargs: object,
     ) -> Optional["UserOwnedEntity"]:
         """Get an item by its UID and user ID.
 
@@ -355,7 +355,7 @@ class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
         uid: str,
         *,
         tenant_id: str,
-        **kwargs,
+        **kwargs: object,
     ) -> Optional["TenantScopedEntity"]:
         if tenant_id is None:
             raise ValueError("tenant_id is required")
@@ -393,7 +393,7 @@ class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
         tenant_id: str,
         user_id: str | None = None,
         ignore_user_id: bool = False,
-        **kwargs,
+        **kwargs: object,
     ) -> Optional["TenantUserEntity"]:
         if tenant_id is None:
             raise ValueError("tenant_id is required")

@@ -1,11 +1,13 @@
 import os
+from typing import TypeVar
 
 from fastapi import Request
 from pydantic import BaseModel
 
 from ..core import config, exceptions
+from ..models import BaseEntity
 from ..routes import AbstractBaseRouter
-from ..schemas import PaginatedResponse
+from ..schemas import BaseEntitySchema, PaginatedResponse
 
 try:
     from usso import UserData, authorization
@@ -15,6 +17,10 @@ try:
 except ImportError as e:
     raise ImportError("USSO is not installed") from e
 
+T = TypeVar("T", bound=BaseEntity)
+TS = TypeVar("TS", bound=BaseEntitySchema)
+TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
+
 
 class PermissionDenied(exceptions.BaseHTTPException):
     def __init__(
@@ -22,7 +28,7 @@ class PermissionDenied(exceptions.BaseHTTPException):
         error: str = "permission_denied",
         message: dict | None = None,
         detail: str | None = None,
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         super().__init__(
             403, error=error, message=message, detail=detail, **kwargs
@@ -36,7 +42,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
     resource: str | None = None
 
     @property
-    def resource_path(self):
+    def resource_path(self) -> str:
         namespace = (
             getattr(self, "namespace", None) or os.getenv("namespace") or ""
         )
@@ -44,7 +50,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         resource = self.resource or self.model.__name__.lower() or ""
         return f"{namespace}/{service}/{resource}".lstrip("/")
 
-    async def get_user(self, request: Request, **kwargs) -> UserData:
+    async def get_user(self, request: Request, **kwargs: object) -> UserData:
         usso = USSOAuthentication(
             jwt_config=AuthConfig(
                 jwks_url=(
@@ -105,8 +111,8 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         uid: str,
         user_id: str | None = None,
         tenant_id: str | None = None,
-        **kwargs,
-    ):
+        **kwargs: object,
+    ) -> T:
         item = await self.model.get_item(
             uid=uid,
             user_id=user_id,
@@ -125,8 +131,12 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         return item
 
     async def _list_items(
-        self, request: Request, offset: int = 0, limit: int = 10, **kwargs
-    ):
+        self,
+        request: Request,
+        offset: int = 0,
+        limit: int = 10,
+        **kwargs: object,
+    ) -> PaginatedResponse[TS]:
         user = await self.get_user(request)
         limit = max(1, min(limit, config.Settings.page_max_limit))
 
@@ -156,7 +166,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
             limit=limit,
         )
 
-    async def retrieve_item(self, request: Request, uid: str):
+    async def retrieve_item(self, request: Request, uid: str) -> T:
         user = await self.get_user(request)
         item = await self.get_item(
             uid=uid, user_id=None, tenant_id=user.tenant_id
@@ -168,7 +178,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         )
         return item
 
-    async def create_item(self, request: Request, data: dict):
+    async def create_item(self, request: Request, data: dict) -> T:
         user = await self.get_user(request)
         if isinstance(data, BaseModel):
             data = data.model_dump()
@@ -180,7 +190,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         })
         return item
 
-    async def update_item(self, request: Request, uid: str, data: dict):
+    async def update_item(self, request: Request, uid: str, data: dict) -> T:
         user = await self.get_user(request)
         if isinstance(data, BaseModel):
             data = data.model_dump()
@@ -195,7 +205,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         item = await self.model.update_item(item, data)
         return item
 
-    async def delete_item(self, request: Request, uid: str):
+    async def delete_item(self, request: Request, uid: str) -> T:
         user = await self.get_user(request)
         item = await self.get_item(
             uid=uid, user_id=None, tenant_id=user.tenant_id

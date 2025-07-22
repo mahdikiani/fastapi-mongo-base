@@ -27,11 +27,13 @@ class Settings(metaclass=Singleton):
     mongo_uri: str = os.getenv("MONGO_URI", default="mongodb://mongo:27017/")
 
     @classmethod
-    def get_coverage_dir(cls):
+    def get_coverage_dir(cls) -> str:
         return getattr(cls, "base_dir", Path(".")) / "htmlcov"
 
     @classmethod
-    def get_log_config(cls, console_level: str = "INFO", **kwargs):
+    def get_log_config(
+        cls, console_level: str = "INFO", **kwargs: object
+    ) -> dict[str, object]:
         log_config = {
             "formatters": {
                 "standard": {

@@ -5,13 +5,15 @@ from bson import Binary
 from bson.decimal128 import Decimal128
 
 
-def decimal_amount(value):
+def decimal_amount(value: object) -> Decimal:
+    if value is None:
+        return value
     if isinstance(value, Decimal128):
         return Decimal(value.to_decimal())
     return Decimal(value)
 
 
-def get_bson_value(value):
+def get_bson_value(value: object) -> object:
     if isinstance(value, Decimal):
         return Decimal128(value)
     if isinstance(value, bytes):

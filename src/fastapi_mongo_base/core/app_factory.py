@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from collections import deque
-from collections.abc import Callable
+from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from . import config, db, exceptions
 
 
-async def health(request: fastapi.Request):
+async def health(request: fastapi.Request) -> dict[str, str]:
     return {"status": "up"}
 
 
@@ -20,10 +20,10 @@ async def health(request: fastapi.Request):
 async def lifespan(
     *,
     app: fastapi.FastAPI,
-    worker=None,
-    init_functions=None,
+    worker: Callable[[], Any] | None = None,
+    init_functions: list | None = None,
     settings: config.Settings | None = None,
-):
+) -> AsyncGenerator[None]:
     """Initialize application services."""
     if init_functions is None:
         init_functions = []
@@ -46,7 +46,7 @@ async def lifespan(
 
 
 def setup_exception_handlers(
-    *, app: fastapi.FastAPI, handlers: dict | None = None, **kwargs
+    *, app: fastapi.FastAPI, handlers: dict | None = None, **kwargs: object
 ) -> None:
     exception_handlers = exceptions.EXCEPTION_HANDLERS
     if handlers:
@@ -57,7 +57,7 @@ def setup_exception_handlers(
 
 
 def setup_middlewares(
-    *, app: fastapi.FastAPI, origins: list | None = None, **kwargs
+    *, app: fastapi.FastAPI, origins: list | None = None, **kwargs: object
 ) -> None:
     from fastapi.middleware.cors import CORSMiddleware
 
@@ -74,15 +74,15 @@ def setup_middlewares(
 def get_app_kwargs(
     *,
     settings: config.Settings,
-    title=None,
-    description=None,
-    version="0.1.0",
+    title: str | None = None,
+    description: str | None = None,
+    version: str = "0.1.0",
     lifespan_func: Callable[[fastapi.FastAPI], Any] | None = None,
-    worker=None,
+    worker: Callable[[], Any] | None = None,
     init_functions: list | None = None,
-    contact=None,
-    license_info=None,
-    **kwargs,
+    contact: dict[str, str] | None = None,
+    license_info: dict[str, str] | None = None,
+    **kwargs: object,
 ) -> dict[str, Any]:
     if license_info is None:
         license_info = {
@@ -108,7 +108,7 @@ def get_app_kwargs(
 
     if lifespan_func is None:
 
-        def lf(app: fastapi.FastAPI):
+        def lf(app: fastapi.FastAPI) -> AsyncGenerator[None]:
             return lifespan(
                 app=app,
                 worker=worker,
@@ -137,21 +137,21 @@ def get_app_kwargs(
 def create_app(
     settings: config.Settings,
     *,
-    title=None,
-    description=None,
-    version="0.1.0",
+    title: str | None = None,
+    description: str | None = None,
+    version: str = "0.1.0",
     serve_coverage: bool = False,
     origins: list | None = None,
     lifespan_func: Callable[[fastapi.FastAPI], Any] | None = None,
-    worker=None,
+    worker: Callable[[], Any] | None = None,
     init_functions: list | None = None,
-    contact=None,
-    license_info=None,
+    contact: dict[str, str] | None = None,
+    license_info: dict[str, str] | None = None,
     exception_handlers: dict | None = None,
     log_route: bool = False,
     health_route: bool = True,
     index_route: bool = True,
-    **kwargs,
+    **kwargs: object,
 ) -> fastapi.FastAPI:
     if init_functions is None:
         init_functions = []
@@ -195,7 +195,7 @@ def configure_app(
     log_route: bool = False,
     health_route: bool = True,
     index_route: bool = True,
-    **kwargs,
+    **kwargs: object,
 ) -> fastapi.FastAPI:
     base_path: str = settings.base_path
     setup_exception_handlers(app=app, handlers=exception_handlers, **kwargs)
@@ -204,13 +204,13 @@ def configure_app(
     if origins is None:
         origins = ["http://localhost:8000"]
 
-    async def logs():
+    async def logs() -> list[str]:
         with open(settings.get_log_config()["info_log_path"], "rb") as f:
             last_100_lines = deque(f, maxlen=100)
 
         return [line.decode("utf-8") for line in last_100_lines]
 
-    async def index(request: fastapi.Request):
+    async def index(request: fastapi.Request) -> RedirectResponse:
         return RedirectResponse(url=f"{base_path}/docs")
 
     if health_route:

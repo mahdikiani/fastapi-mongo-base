@@ -8,8 +8,16 @@ from fastapi_mongo_base.utils import basic
 from .config import Settings
 
 
-async def init_mongo_db(settings: Settings | None = None):
-    from pymongo import AsyncMongoClient
+async def init_mongo_db(settings: Settings | None = None) -> object:
+    try:
+        from pymongo import AsyncMongoClient
+    except ImportError:
+        try:
+            from motor.motor_asyncio import AsyncIOMotorClient
+
+            AsyncMongoClient = AsyncIOMotorClient
+        except ImportError as e:
+            raise ImportError("MongoDB is not installed") from e
 
     if settings is None:
         settings = Settings()
@@ -36,7 +44,7 @@ async def init_mongo_db(settings: Settings | None = None):
     return db
 
 
-def init_redis(settings: Settings | None = None):
+def init_redis(settings: Settings | None = None) -> tuple:
     try:
         from redis import Redis as RedisSync
         from redis.asyncio.client import Redis
