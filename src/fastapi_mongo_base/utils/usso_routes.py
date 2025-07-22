@@ -164,9 +164,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         await self.authorize(
             action="read",
             user=user,
-            filter_data=item.model_dump(
-                include={"uid", "tenant_id", "user_id", "workspace_id"}
-            ),
+            filter_data=item.model_dump(),
         )
         return item
 
@@ -192,9 +190,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         await self.authorize(
             action="update",
             user=user,
-            filter_data=item.model_dump(
-                include={"uid", "tenant_id", "user_id", "workspace_id"}
-            ),
+            filter_data=item.model_dump(),
         )
         item = await self.model.update_item(item, data)
         return item
@@ -208,9 +204,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         await self.authorize(
             action="delete",
             user=user,
-            filter_data=item.model_dump(
-                include={"uid", "tenant_id", "user_id", "workspace_id"}
-            ),
+            filter_data=item.model_dump(),
         )
         item = await self.model.delete_item(item)
         return item
