@@ -205,7 +205,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
     async def update_item(self, request: Request, uid: str, data: dict) -> T:
         user = await self.get_user(request)
         if isinstance(data, BaseModel):
-            data = data.model_dump()
+            data = data.model_dump(exclude_unset=True)
         item = await self.get_item(
             uid=uid, user_id=None, tenant_id=user.tenant_id
         )

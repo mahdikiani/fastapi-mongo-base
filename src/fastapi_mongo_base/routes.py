@@ -281,7 +281,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
     ) -> T:
         user_id = await self.get_user_id(request)
         if isinstance(data, BaseModel):
-            data = data.model_dump()
+            data = data.model_dump(exclude_unset=True)
         item = await self.get_item(uid=uid, user_id=user_id)
         item = await self.model.update_item(item, data)
         return item
