@@ -45,9 +45,13 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
     @property
     def resource_path(self) -> str:
         namespace = (
-            getattr(self, "namespace", None) or os.getenv("namespace") or ""
+            getattr(self, "namespace", None)
+            or os.getenv("USSO_NAMESPACE")
+            or ""
         )
-        service = getattr(self, "service", None) or os.getenv("service") or ""
+        service = (
+            getattr(self, "service", None) or os.getenv("USSO_SERVICE") or ""
+        )
         resource = self.resource or self.model.__name__.lower() or ""
         return f"{namespace}/{service}/{resource}".lstrip("/")
 
