@@ -198,11 +198,11 @@ def configure_app(
     **kwargs: object,
 ) -> fastapi.FastAPI:
     base_path: str = settings.base_path
-    setup_exception_handlers(app=app, handlers=exception_handlers, **kwargs)
-    setup_middlewares(app=app, origins=origins, **kwargs)
-
     if origins is None:
         origins = settings.origins
+
+    setup_exception_handlers(app=app, handlers=exception_handlers, **kwargs)
+    setup_middlewares(app=app, origins=origins, **kwargs)
 
     async def logs() -> list[str]:
         with open(settings.get_log_config()["info_log_path"], "rb") as f:
