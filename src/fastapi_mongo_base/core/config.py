@@ -1,6 +1,7 @@
 """FastAPI server configuration."""
 
 import dataclasses
+import json
 import logging
 import logging.config
 import os
@@ -22,6 +23,12 @@ class Settings(metaclass=Singleton):
     base_path: str = "/api/v1"
     worker_update_time: int = int(os.getenv("WORKER_UPDATE_TIME", default=180))
     debug: bool = os.getenv("DEBUG", default="false").lower() == "true"
+
+    origins: list[str] = dataclasses.field(
+        default_factory=lambda: json.loads(
+            os.getenv("CORS_ORIGINS", default='["http://localhost:8000"]')
+        )
+    )
 
     page_max_limit: int = 100
     mongo_uri: str = os.getenv("MONGO_URI", default="mongodb://mongo:27017/")

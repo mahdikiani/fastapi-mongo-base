@@ -202,7 +202,7 @@ def configure_app(
     setup_middlewares(app=app, origins=origins, **kwargs)
 
     if origins is None:
-        origins = ["http://localhost:8000"]
+        origins = settings.origins
 
     async def logs() -> list[str]:
         with open(settings.get_log_config()["info_log_path"], "rb") as f:
