@@ -75,9 +75,17 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         action: str,
         user: UserData | None = None,
         filter_data: dict | None = None,
+        self_action: str = "owner",
     ) -> bool:
         if user is None:
             raise USSOException(401, "unauthorized")
+        if authorization.owner_authorization(
+            user_id=user.uid,
+            action=action,
+            self_action=self_action,
+            reuested_filter=filter_data,
+        ):
+            return True
         user_scopes = user.scopes or []
         if not authorization.check_access(
             user_scopes=user_scopes,
