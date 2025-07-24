@@ -40,6 +40,7 @@ BASE_USSO_URL = os.getenv("BASE_USSO_URL") or "https://usso.uln.me"
 
 class AbstractTenantUSSORouter(AbstractBaseRouter):
     resource: str | None = None
+    self_action: str = "owner"
 
     @property
     def resource_path(self) -> str:
@@ -75,14 +76,13 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         action: str,
         user: UserData | None = None,
         filter_data: dict | None = None,
-        self_action: str = "owner",
     ) -> bool:
         if user is None:
             raise USSOException(401, "unauthorized")
         if authorization.owner_authorization(
             requested_filter=filter_data,
             user_id=user.uid,
-            self_action=self_action,
+            self_action=self.self_action,
             action=action,
         ):
             return True
