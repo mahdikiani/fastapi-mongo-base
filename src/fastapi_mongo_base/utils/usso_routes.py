@@ -21,6 +21,8 @@ T = TypeVar("T", bound=BaseEntity)
 TS = TypeVar("TS", bound=BaseEntitySchema)
 TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
 
+BASE_USSO_URL = os.getenv("BASE_USSO_URL") or "https://usso.uln.me"
+
 
 class PermissionDenied(exceptions.BaseHTTPException):
     def __init__(
@@ -33,9 +35,6 @@ class PermissionDenied(exceptions.BaseHTTPException):
         super().__init__(
             403, error=error, message=message, detail=detail, **kwargs
         )
-
-
-BASE_USSO_URL = os.getenv("BASE_USSO_URL") or "https://usso.uln.me"
 
 
 class AbstractTenantUSSORouter(AbstractBaseRouter):

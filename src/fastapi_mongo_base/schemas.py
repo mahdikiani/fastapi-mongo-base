@@ -98,11 +98,11 @@ class TenantUserEntitySchema(TenantScopedEntitySchema, UserOwnedEntitySchema):
         )
 
 
-T = TypeVar("T", bound=BaseEntitySchema)
+TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
 
 
-class PaginatedResponse[T: BaseEntitySchema](BaseModel):
-    items: list[T]
+class PaginatedResponse[TSCHEMA: BaseModel](BaseModel):
+    items: list[TSCHEMA]
     total: int
     offset: int
     limit: int
