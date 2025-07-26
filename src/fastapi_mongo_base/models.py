@@ -47,6 +47,7 @@ class BaseEntity(BaseEntitySchema, Document):
     @before_event([Insert, Replace, Save, SaveChanges, Update])
     async def pre_save(self) -> None:
         self.updated_at = datetime.now(timezone.tz)
+        self.model_validate(**self.model_dump())
 
     @classmethod
     def _build_extra_filters(cls, **kwargs: dict[str, Any]) -> dict:

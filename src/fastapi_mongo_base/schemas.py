@@ -33,7 +33,7 @@ class BaseEntitySchema(BaseModel):
         description="Additional metadata for the entity",
     )
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, validate_assignment=True)
 
     def __hash__(self) -> int:
         return hash(self.model_dump_json())
