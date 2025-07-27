@@ -40,11 +40,12 @@ class BaseEntity:
         index=True,
     )
     created_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.tz),
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
         index=True,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.tz), onupdate=func.now()
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+        onupdate=func.now(),
     )
     is_deleted: Mapped[bool] = mapped_column(default=False)
     meta_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
