@@ -88,8 +88,8 @@ def get_app_kwargs(
         license_info = {
             "name": "MIT License",
             "url": (
-                "https://github.com/mahdikiani/"
-                "FastAPILaunchpad/blob/main/LICENSE"
+                "https://github.com/mahdikiani"
+                "/FastAPILaunchpad/blob/main/LICENSE"
             ),
         }
     if init_functions is None:
