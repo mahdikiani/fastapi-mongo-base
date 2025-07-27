@@ -156,7 +156,10 @@ class TaskMixin(BaseModel):
         return 0
 
     @field_validator("task_status", mode="before")
-    def validate_task_status(cls, value: object) -> "TaskStatusEnum":  # noqa: N805
+    def validate_task_status(
+        cls,  # noqa: N805
+        value: object,
+    ) -> "TaskStatusEnum":
         if isinstance(value, str):
             return TaskStatusEnum(value)
         return value
