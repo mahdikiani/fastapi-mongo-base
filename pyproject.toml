@@ -58,7 +58,35 @@ unsafe-fixes = true
 preview = true
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "T", "C", "A", "ANN"]
+select = [
+  "F",     # Pyflakes: critical errors and unused code
+  "E",
+  "W",     # PEP8: formatting issues
+  "I",     # isort: import sorting
+  "UP",    # pyupgrade: modern syntax
+  "B",     # bugbear: potential bugs
+  "T",     # debugger / print statement checks
+  "C",     # complexity: complexity checking
+  "A",     # avoids shadowing Python built-ins
+  "ASYNC", # async/await syntax
+  "SIM",   # simplify: cleaner code
+  "PERF",  # performance optimizations
+  "TRY",   # better try/excepts
+  "N",     # naming conventions
+  "S",     # security checks
+  "ANN",   # type annotation checks
+  "T20",   # no print()
+  "C4",    # comprehension: better loops
+  "COM",   # enforces trailing commas where needed.
+  "EXE",   # executable: executable checking
+  "ISC",   # implicit string concatenation
+  "G",     # misuse of logging string interpolation
+  # "D",     # docstrings: docstring checking
+  "ERA",   # remove commented code
+  "RUF",   # ruff-specific improvements
+]
+per-file-ignores = { "tests/*" = ["G004", "S101"], "server/db.py" = ["TRY"] }
+ignore = ["TRY003", "COM812"]
 
 [tool.ruff.format]
 quote-style = "double"

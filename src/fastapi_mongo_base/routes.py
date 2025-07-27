@@ -147,7 +147,6 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
                 self.delete_item,
                 methods=["DELETE"],
                 response_model=self.delete_response_schema,
-                # status_code=204,
             )
 
         if statistics_route:
@@ -372,7 +371,7 @@ class AbstractTaskRouter(AbstractBaseRouter):
     ) -> dict:
         import logging
 
-        logging.info(f"Webhook received for {uid} with data {data}")
+        logging.info("Webhook received for %s with data %s", uid, data)
         return {"message": f"Webhook received for {uid} with data", **data}
 
 

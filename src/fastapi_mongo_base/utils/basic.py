@@ -51,9 +51,7 @@ def get_base_field_name(field: str) -> str:
     """Extract the base field name by removing suffixes."""
     if field.endswith("_from"):
         return field[:-5]
-    elif field.endswith("_to"):
-        return field[:-3]
-    elif field.endswith("_in"):
+    elif field.endswith("_to") or field.endswith("_in"):
         return field[:-3]
     elif field.endswith("_nin"):
         return field[:-4]
@@ -78,15 +76,22 @@ def _exception_handler(
     import traceback
 
     func_name = func.__name__
-    if len(args) > 0:
-        if inspect.ismethod(func) or inspect.isfunction(func):
-            if hasattr(args[0], "__class__"):
-                class_name = args[0].__class__.__name__
-                func_name = f"{class_name}.{func_name}"
+    if (
+        len(args) > 0
+        and (inspect.ismethod(func) or inspect.isfunction(func))
+        and hasattr(args[0], "__class__")
+    ):
+        class_name = args[0].__class__.__name__
+        func_name = f"{class_name}.{func_name}"
     traceback_str = "".join(traceback.format_tb(e.__traceback__))
     logging.error(
-        f"An error occurred in {func_name} ({args=}, {kwargs=}):\n"
-        f"{traceback_str}\n{type(e)}: {e}"
+        "An error occurred in %s (%s=):\n%s\n%s: %s",
+        func_name,
+        args,
+        kwargs,
+        traceback_str,
+        type(e),
+        e,
     )
     return None
 
@@ -159,11 +164,14 @@ def _async_retry_wrapper(
             except Exception as e:
                 last_exception = e
                 logging.warning(
-                    f"Attempt {attempt + 1} failed for {func.__name__}: {e}"
+                    "Attempt %d failed for %s: %s",
+                    attempt + 1,
+                    func.__name__,
+                    e,
                 )
                 if delay > 0 and attempt < attempts - 1:
                     await asyncio.sleep(delay)
-        logging.error(f"All {attempts} attempts failed for {func.__name__}")
+        logging.error("All %d attempts failed for %s", attempts, func.__name__)
         raise last_exception
 
     return wrapper
@@ -179,11 +187,14 @@ def _sync_retry_wrapper(func: Callable, attempts: int, delay: int) -> Callable:
             except Exception as e:
                 last_exception = e
                 logging.warning(
-                    f"Attempt {attempt + 1} failed for {func.__name__}: {e}"
+                    "Attempt %d failed for %s: %s",
+                    attempt + 1,
+                    func.__name__,
+                    e,
                 )
                 if delay > 0 and attempt < attempts - 1:
                     time.sleep(delay)
-        logging.error(f"All {attempts} attempts failed for {func.__name__}")
+        logging.error("All %d attempts failed for %s", attempts, func.__name__)
         raise last_exception
 
     return wrapper

@@ -30,8 +30,8 @@ class BaseEntity:
     __abstract__ = True
 
     @declared_attr  # type: ignore
-    def __tablename__(cls) -> str:
-        return cls.__name__.lower()
+    def __tablename__(self) -> str:
+        return self.__name__.lower()
 
     uid: Mapped[str] = mapped_column(
         primary_key=True,
@@ -376,11 +376,11 @@ class UserOwnedEntity(BaseEntity):
 
     @classmethod
     def create_exclude_set(cls) -> list:
-        return super().create_exclude_set() + ["user_id"]
+        return [*super().create_exclude_set(), "user_id"]
 
     @classmethod
     def update_exclude_set(cls) -> list:
-        return super().update_exclude_set() + ["user_id"]
+        return [*super().update_exclude_set(), "user_id"]
 
 
 class TenantScopedEntity(BaseEntity):
@@ -390,11 +390,11 @@ class TenantScopedEntity(BaseEntity):
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:
-        return super().create_exclude_set() + ["tenant_id"]
+        return [*super().create_exclude_set(), "tenant_id"]
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
-        return super().update_exclude_set() + ["tenant_id"]
+        return [*super().update_exclude_set(), "tenant_id"]
 
 
 class TenantUserEntity(TenantScopedEntity, UserOwnedEntity):
@@ -403,13 +403,13 @@ class TenantUserEntity(TenantScopedEntity, UserOwnedEntity):
     @classmethod
     def create_exclude_set(cls) -> list[str]:
         return list(
-            set(super().create_exclude_set() + ["tenant_id", "user_id"])
+            {*super().create_exclude_set(), "tenant_id", "user_id"}
         )
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
         return list(
-            set(super().update_exclude_set() + ["tenant_id", "user_id"])
+            {*super().update_exclude_set(), "tenant_id", "user_id"}
         )
 
 

@@ -22,7 +22,7 @@ class Language(StrEnum):
     Hebrew = "Hebrew"
     Japanese = "Japanese"
     Korean = "Korean"
-    # Chinese = "Chinese"
+    # Chinese = "Chinese"  # noqa: ERA001
     Vietnamese = "Vietnamese"
     Indonesian = "Indonesian"
 
@@ -134,9 +134,9 @@ class Language(StrEnum):
                 "abbreviation": "ko",
             },
             # Language.Chinese: {
-            #     "fa": "چینی",
-            #     "en": "Chinese",
-            #     "abbreviation": "zh",
+            #     "fa": "چینی",  # noqa: ERA001
+            #     "en": "Chinese",  # noqa: ERA001
+            #     "abbreviation": "zh",  # noqa: ERA001
             # },
             Language.Vietnamese: {
                 "fa": "ویتنامی",

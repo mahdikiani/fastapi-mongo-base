@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from . import config, db, exceptions
 
 
-async def health(request: fastapi.Request) -> dict[str, str]:
+def health(request: fastapi.Request) -> dict[str, str]:
     return {"status": "up"}
 
 
@@ -87,7 +87,7 @@ def get_app_kwargs(
     if license_info is None:
         license_info = {
             "name": "MIT License",
-            "url": "https://github.com/mahdikiani/FastAPILaunchpad/blob/main/LICENSE",  # noqa: E501
+            "url": "https://github.com/mahdikiani/FastAPILaunchpad/blob/main/LICENSE",
         }
     if init_functions is None:
         init_functions = []
@@ -205,12 +205,14 @@ def configure_app(
     setup_middlewares(app=app, origins=origins, **kwargs)
 
     async def logs() -> list[str]:
-        with open(settings.get_log_config()["info_log_path"], "rb") as f:
-            last_100_lines = deque(f, maxlen=100)
+        def read_logs() -> list[str]:
+            with open(settings.get_log_config()["info_log_path"], "rb") as f:
+                last_100_lines = deque(f, maxlen=100)
+            return [line.decode("utf-8") for line in last_100_lines]
 
-        return [line.decode("utf-8") for line in last_100_lines]
+        return await asyncio.to_thread(read_logs)
 
-    async def index(request: fastapi.Request) -> RedirectResponse:
+    def index(request: fastapi.Request) -> RedirectResponse:
         return RedirectResponse(url=f"{base_path}/docs")
 
     if health_route:

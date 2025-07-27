@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Any, Optional, cast
+from typing import Any, ClassVar, Optional, cast
 
 from beanie import (
     Document,
@@ -32,7 +32,7 @@ class BaseEntity(BaseEntitySchema, Document):
         keep_nulls = False
         validate_on_save = True
 
-        indexes = [
+        indexes: ClassVar[list[IndexModel]] = [
             IndexModel([("uid", ASCENDING)], unique=True),
         ]
 
@@ -60,13 +60,13 @@ class BaseEntity(BaseEntitySchema, Document):
                 cls.search_field_set()
                 and base_field not in cls.search_field_set()
             ):
-                logging.warning(f"Key {key} is not in search_field_set")
+                logging.warning("Key %s is not in search_field_set", key)
                 continue
             if (
                 cls.search_exclude_set()
                 and base_field in cls.search_exclude_set()
             ):
-                logging.warning(f"Key {key} is in search_exclude_set")
+                logging.warning("Key %s is in search_exclude_set", key)
                 continue
             if not hasattr(cls, base_field):
                 continue
@@ -246,12 +246,12 @@ class BaseEntity(BaseEntitySchema, Document):
     @classmethod
     async def create_item(cls, data: dict) -> "BaseEntity":
         pop_keys = []
-        for key in data.keys():
+        for key in data:
             if cls.create_field_set() and key not in cls.create_field_set():
-                logging.warning(f"Key {key} is not in create_field_set")
+                logging.warning("Key %s is not in create_field_set", key)
                 pop_keys.append(key)
             elif cls.create_exclude_set() and key in cls.create_exclude_set():
-                logging.warning(f"Key {key} is in create_exclude_set")
+                logging.warning("Key %s is in create_exclude_set", key)
                 pop_keys.append(key)
 
         for key in pop_keys:
@@ -268,10 +268,10 @@ class BaseEntity(BaseEntitySchema, Document):
     async def update_item(cls, item: "BaseEntity", data: dict) -> "BaseEntity":
         for key, value in data.items():
             if cls.update_field_set() and key not in cls.update_field_set():
-                logging.warning(f"Key {key} is not in update_field_set")
+                logging.warning("Key %s is not in update_field_set", key)
                 continue
             if cls.update_exclude_set() and key in cls.update_exclude_set():
-                logging.warning(f"Key {key} is in update_exclude_set")
+                logging.warning("Key %s is in update_exclude_set", key)
                 continue
 
             if hasattr(item, key):
@@ -291,7 +291,8 @@ class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
     class Settings(BaseEntity.Settings):
         __abstract__ = True
 
-        indexes = BaseEntity.Settings.indexes + [
+        indexes: ClassVar[list[IndexModel]] = [
+            *BaseEntity.Settings.indexes,
             IndexModel([
                 ("user_id", ASCENDING),
                 ("uid", ASCENDING),
@@ -342,7 +343,8 @@ class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
     class Settings(BaseEntity.Settings):
         __abstract__ = True
 
-        indexes = BaseEntity.Settings.indexes + [
+        indexes: ClassVar[list[IndexModel]] = [
+            *BaseEntity.Settings.indexes,
             IndexModel([
                 ("tenant_id", ASCENDING),
                 ("uid", ASCENDING),
@@ -377,7 +379,8 @@ class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
     class Settings(TenantScopedEntity.Settings):
         __abstract__ = True
 
-        indexes = UserOwnedEntity.Settings.indexes + [
+        indexes: ClassVar[list[IndexModel]] = [
+            *UserOwnedEntity.Settings.indexes,
             IndexModel([
                 ("tenant_id", ASCENDING),
                 ("user_id", ASCENDING),

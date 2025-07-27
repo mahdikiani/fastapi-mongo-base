@@ -17,7 +17,7 @@ dotenv.load_dotenv()
 class Settings(metaclass=Singleton):
     """Server config settings."""
 
-    # base_dir: Path = Path(__file__).resolve().parent.parent
+    # base_dir: Path = Path(__file__).resolve().parent.parent  # noqa: ERA001
     root_url: str = os.getenv("DOMAIN", default="http://localhost:8000")
     project_name: str = os.getenv("PROJECT_NAME") or "PROJECT"
     base_path: str = "/api/v1"

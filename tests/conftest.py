@@ -1,6 +1,6 @@
 import logging
 import os
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
 
 import httpx
 import pytest
@@ -25,7 +25,7 @@ def setup_debugpy() -> None:
 
 
 @pytest_asyncio.fixture(scope="session")
-async def mongo_client() -> AsyncGenerator[AsyncMongoMockClient]:
+def mongo_client() -> Generator[AsyncMongoMockClient]:
     mongo_client = AsyncMongoMockClient()
     yield mongo_client
 

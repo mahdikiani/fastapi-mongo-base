@@ -79,7 +79,7 @@ class UserOwnedEntitySchema(BaseEntitySchema):
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
-        return super().update_exclude_set() + ["user_id"]
+        return [*super().update_exclude_set(), "user_id"]
 
 
 class TenantScopedEntitySchema(BaseEntitySchema):
@@ -87,14 +87,14 @@ class TenantScopedEntitySchema(BaseEntitySchema):
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
-        return super().update_exclude_set() + ["tenant_id"]
+        return [*super().update_exclude_set(), "tenant_id"]
 
 
 class TenantUserEntitySchema(TenantScopedEntitySchema, UserOwnedEntitySchema):
     @classmethod
     def update_exclude_set(cls) -> list[str]:
         return list(
-            set(super().update_exclude_set() + ["tenant_id", "user_id"])
+            {*super().update_exclude_set(), "tenant_id", "user_id"}
         )
 
 

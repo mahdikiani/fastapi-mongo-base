@@ -14,7 +14,7 @@ from pydantic import ValidationError
 
 try:
     from usso.integrations.fastapi import (
-        EXCEPTION_HANDLERS as usso_exception_handler,
+        EXCEPTION_HANDLERS as usso_exception_handler,  # noqa: N811
     )
 except ImportError:
     usso_exception_handler = {}
@@ -48,7 +48,7 @@ class BaseHTTPException(HTTPException):
         super().__init__(status_code, detail=detail)
 
 
-async def base_http_exception_handler(
+def base_http_exception_handler(
     request: Request, exc: BaseHTTPException
 ) -> JSONResponse:
     return JSONResponse(
@@ -62,7 +62,7 @@ async def base_http_exception_handler(
     )
 
 
-async def pydantic_exception_handler(
+def pydantic_exception_handler(
     request: Request, exc: ValidationError
 ) -> JSONResponse:
     return JSONResponse(
@@ -79,8 +79,10 @@ async def request_validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
     logging.error(
-        f"request_validation_exception: {request.url} {exc}\n"
-        f"{(await request.body())[:100]}"
+        "request_validation_exception: %s %s\n%s",
+        request.url,
+        exc,
+        (await request.body())[:100],
     )
     from fastapi.exception_handlers import (
         request_validation_exception_handler as default_handler,
@@ -89,12 +91,12 @@ async def request_validation_exception_handler(
     return await default_handler(request, exc)
 
 
-async def general_exception_handler(
+def general_exception_handler(
     request: Request, exc: Exception
 ) -> JSONResponse:
     traceback_str = "".join(traceback.format_tb(exc.__traceback__))
-    logging.error(f"Exception: {traceback_str} {exc}")
-    logging.error(f"Exception on request: {request.url}")
+    logging.error("Exception: %s %s", traceback_str, exc)
+    logging.error("Exception on request: %s", request.url)
     return JSONResponse(
         status_code=500,
         content={"message": str(exc), "error": "Exception"},

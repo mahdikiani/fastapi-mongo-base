@@ -21,8 +21,6 @@ T = TypeVar("T", bound=BaseEntity)
 TS = TypeVar("TS", bound=BaseEntitySchema)
 TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
 
-BASE_USSO_URL = os.getenv("BASE_USSO_URL") or "https://usso.uln.me"
-
 
 class PermissionDenied(exceptions.BaseHTTPException):
     def __init__(
@@ -49,27 +47,29 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
             or ""
         )
         service = (
-            getattr(self, "service", None) or os.getenv("USSO_SERVICE") or ""
+            getattr(self, "service", None)
+            or os.getenv("USSO_SERVICE")
+            or os.getenv("PROJECT_NAME")
+            or ""
         )
         resource = self.resource or self.model.__name__.lower() or ""
         return f"{namespace}/{service}/{resource}".lstrip("/")
 
     async def get_user(self, request: Request, **kwargs: object) -> UserData:
+        base_usso_url = os.getenv("BASE_USSO_URL") or "https://usso.uln.me"
+
         usso = USSOAuthentication(
             jwt_config=AuthConfig(
-                jwks_url=(
-                    f"{BASE_USSO_URL}/.well-known/jwks.json"
-                    # f"?domain={request.url.hostname}"
-                ),
+                jwks_url=(f"{base_usso_url}/.well-known/jwks.json"),
                 api_key_header=APIHeaderConfig(
                     type="CustomHeader",
                     name="x-api-key",
                     verify_endpoint=(
-                        f"{BASE_USSO_URL}/api/sso/v1/apikeys/verify"
+                        f"{base_usso_url}/api/sso/v1/apikeys/verify"
                     ),
                 ),
             ),
-            from_base_usso_url=BASE_USSO_URL,
+            from_base_usso_url=base_usso_url,
         )
         return usso(request)
 

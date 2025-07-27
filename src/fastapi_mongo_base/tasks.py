@@ -24,12 +24,12 @@ class TaskStatusEnum(StrEnum):
     error = "error"
 
     @classmethod
-    def Finishes(cls) -> list["TaskStatusEnum"]:
+    def finishes(cls) -> list["TaskStatusEnum"]:
         return [cls.done, cls.error, cls.completed]
 
     @property
     def is_done(self) -> bool:
-        return self in self.Finishes()
+        return self in self.finishes()
 
 
 class SignalRegistry(metaclass=Singleton):
@@ -50,15 +50,14 @@ class TaskLogRecord(BaseModel):
     task_status: TaskStatusEnum
     duration: int = 0
     log_type: str | None = None
-    # data: dict | None = None
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, TaskLogRecord):
             return (
                 self.reported_at == other.reported_at
-                and self.message == other.message  # noqa: W503
-                and self.task_status == other.task_status  # noqa: W503
-                and self.duration == other.duration  # noqa: W503
+                and self.message == other.message
+                and self.task_status == other.task_status
+                and self.duration == other.duration
                 # and self.data == other.data
             )
         return False
@@ -80,7 +79,7 @@ class TaskReference(BaseModel):
         if isinstance(other, TaskReference):
             return (
                 self.task_id == other.task_id
-                and self.task_type == other.task_type  # noqa: W503
+                and self.task_type == other.task_type
             )
         return False
 
@@ -93,7 +92,6 @@ class TaskReference(BaseModel):
             for subclass in basic.get_all_subclasses(TaskMixin)
             if issubclass(subclass, BaseEntitySchema)
         }
-        # task_classes = self._get_all_task_classes()
 
         task_class = task_classes.get(self.task_type)
         if not task_class:
@@ -158,7 +156,7 @@ class TaskMixin(BaseModel):
         return 0
 
     @field_validator("task_status", mode="before")
-    def validate_task_status(cls, value: object) -> "TaskStatusEnum":
+    def validate_task_status(cls, value: object) -> "TaskStatusEnum":  # noqa: N805
         if isinstance(value, str):
             return TaskStatusEnum(value)
         return value
@@ -208,11 +206,10 @@ class TaskMixin(BaseModel):
                     log_type="webhook_error",
                 )
                 await task_instance.save()  # type: ignore
-                logging.error(
+                logging.exception(
                     "\n".join([
                         "An error occurred in webhook_call:",
                         traceback_str,
-                        f"{type(e)}: {e}",
                     ])
                 )
 
@@ -310,7 +307,6 @@ class TaskMixin(BaseModel):
     ) -> None:
         self.task_logs.append(log_record)
         if emit:
-            # await self.emit_signals(self)
             await self.save_and_emit()
 
     async def start_processing(self, **kwargs: object) -> None:
@@ -351,7 +347,6 @@ class TaskMixin(BaseModel):
             TaskStatusEnum.completed,
         ]:
             kwargs["task_progress"] = kwargs.get("task_progress", 100)
-            # kwargs["task_report"] = kwargs.get("task_report")
         for key, value in kwargs.items():
             if hasattr(self, key):
                 setattr(self, key, value)
