@@ -114,7 +114,7 @@ class Settings(metaclass=Singleton):
 
     JWT_CONFIG: str = os.getenv(
         "USSO_JWT_CONFIG",
-        default='{"jwk_url": "https://sso.usso.io/website/jwks.json","type": "RS256","header": {"type": "Cookie", "name": "usso_access_token"} }',
+        default='{"jwk_url": "https://sso.usso.io/website/jwks.json","type": "RS256","header": {"type": "Cookie", "name": "usso-access-token"} }',
     )
 
     @classmethod

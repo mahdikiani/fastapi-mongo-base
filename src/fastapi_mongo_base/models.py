@@ -238,8 +238,13 @@ class BaseEntity(BaseEntitySchema, Document):
         return items, total
 
     @classmethod
-    async def get_by_uid(cls, uid: str) -> Optional["BaseEntity"]:
-        item = await cls.find_one({"uid": uid})
+    async def get_by_uid(
+        cls,
+        uid: str,
+        *,
+        is_deleted: bool = False,
+    ) -> Optional["BaseEntity"]:
+        item = await cls.find_one({"uid": uid, "is_deleted": is_deleted})
         return item
 
     @classmethod
