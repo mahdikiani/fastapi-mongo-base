@@ -115,9 +115,7 @@ class BaseEntity:
         ])
 
     @classmethod
-    def _range_filter(
-        cls, field: object, key: str, value: object
-    ) -> object:
+    def _range_filter(cls, field: object, key: str, value: object) -> object:
         if not basic.is_valid_range_value(value):
             return None
         if key.endswith("_from"):
@@ -402,15 +400,11 @@ class TenantUserEntity(TenantScopedEntity, UserOwnedEntity):
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:
-        return list(
-            {*super().create_exclude_set(), "tenant_id", "user_id"}
-        )
+        return list({*super().create_exclude_set(), "tenant_id", "user_id"})
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
-        return list(
-            {*super().update_exclude_set(), "tenant_id", "user_id"}
-        )
+        return list({*super().update_exclude_set(), "tenant_id", "user_id"})
 
 
 class ImmutableMixin(BaseEntity):

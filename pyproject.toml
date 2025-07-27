@@ -82,8 +82,8 @@ select = [
   "ISC",   # implicit string concatenation
   "G",     # misuse of logging string interpolation
   # "D",     # docstrings: docstring checking
-  "ERA",   # remove commented code
-  "RUF",   # ruff-specific improvements
+  "ERA", # remove commented code
+  "RUF", # ruff-specific improvements
 ]
 per-file-ignores = { "tests/*" = ["G004", "S101"], "server/db.py" = ["TRY"] }
 ignore = ["TRY003", "COM812"]

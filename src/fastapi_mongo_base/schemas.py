@@ -93,9 +93,7 @@ class TenantScopedEntitySchema(BaseEntitySchema):
 class TenantUserEntitySchema(TenantScopedEntitySchema, UserOwnedEntitySchema):
     @classmethod
     def update_exclude_set(cls) -> list[str]:
-        return list(
-            {*super().update_exclude_set(), "tenant_id", "user_id"}
-        )
+        return list({*super().update_exclude_set(), "tenant_id", "user_id"})
 
 
 TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
