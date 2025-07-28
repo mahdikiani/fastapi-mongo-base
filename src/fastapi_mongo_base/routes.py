@@ -24,6 +24,9 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
     model: type[T]  # type: ignore
     schema: type[TS] | None  # type: ignore
 
+    unique_per_user: bool = False
+    create_mine_if_not_found: bool = False
+
     def __init__(
         self,
         *,
@@ -100,6 +103,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         update_route: bool = True,
         delete_route: bool = True,
         statistics_route: bool = False,
+        mine_route: bool = False,
         **kwargs: object,
     ) -> None:
         prefix = prefix.strip("/")
@@ -156,6 +160,19 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
                 methods=["GET"],
             )
 
+        if mine_route:
+            self.router.add_api_route(
+                f"{prefix}/mine",
+                self.mine_items,
+                methods=["GET"],
+                response_model=(
+                    self.list_response_schema
+                    if self.unique_per_user
+                    else self.retrieve_response_schema
+                ),
+                status_code=200,
+            )
+
     async def get_item(
         self,
         uid: str,
@@ -194,20 +211,33 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         user_id = user.uid if user else None
         return user_id
 
-    async def statistics(
+    async def _statistics(
         self,
         request: Request,
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
+        **kwargs: object,
     ) -> dict:
         params: dict[str, Any] = dict(request.query_params)
         if "is_deleted" in params:
             params["is_deleted"] = params["is_deleted"].lower() == "true"
 
         return {
-            "total": await self.model.total_count(**params),
+            "total": await self.model.total_count(**params, **kwargs),
             **params,
         }
+
+    async def statistics(
+        self,
+        request: Request,
+        created_at_from: datetime | None = None,
+        created_at_to: datetime | None = None,
+    ) -> dict:
+        return await self._statistics(
+            request=request,
+            created_at_from=created_at_from,
+            created_at_to=created_at_to,
+        )
 
     async def _list_items(
         self,
@@ -295,6 +325,20 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
 
         item = await self.model.delete_item(item)
         return item
+
+    async def mine_items(
+        self,
+        request: Request,
+    ) -> PaginatedResponse[TS]:
+        user_id = await self.get_user_id(request)
+        if self.unique_per_user:
+            resp = await self._list_items(request=request, user_id=user_id)
+            if resp.items:
+                return resp.items[0]
+            if self.create_mine_if_not_found:
+                item = await self.model.create_item({"user_id": user_id})
+                return item
+        return await self._list_items(request=request, user_id=user_id)
 
 
 class AbstractTaskRouter(AbstractBaseRouter):

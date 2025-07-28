@@ -229,3 +229,23 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         )
         item = await self.model.delete_item(item)
         return item
+
+    async def mine_items(
+        self,
+        request: Request,
+    ) -> PaginatedResponse[TS]:
+        user = await self.get_user(request)
+        if self.unique_per_user:
+            resp = await self._list_items(
+                request=request,
+                user_id=user.uid,
+            )
+            if resp.items:
+                return resp.items[0]
+            if self.create_mine_if_not_found:
+                item = await self.model.create_item({
+                    "user_id": user.uid,
+                    "tenant_id": user.tenant_id,
+                })
+                return item
+        return await self._list_items(request=request, user_id=user.uid)
