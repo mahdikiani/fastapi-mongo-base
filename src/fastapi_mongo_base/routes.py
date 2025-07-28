@@ -118,6 +118,19 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
                 status_code=200,
             )
 
+        if mine_route:
+            self.router.add_api_route(
+                f"{prefix}/mine",
+                self.mine_items,
+                methods=["GET"],
+                response_model=(
+                    self.retrieve_response_schema
+                    if self.unique_per_user
+                    else self.list_response_schema
+                ),
+                status_code=200,
+            )
+
         if retrieve_route:
             self.router.add_api_route(
                 f"{prefix}/{{uid:str}}",
@@ -158,19 +171,6 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
                 f"{prefix}/statistics",
                 self.statistics,
                 methods=["GET"],
-            )
-
-        if mine_route:
-            self.router.add_api_route(
-                f"{prefix}/mine",
-                self.mine_items,
-                methods=["GET"],
-                response_model=(
-                    self.retrieve_response_schema
-                    if self.unique_per_user
-                    else self.list_response_schema
-                ),
-                status_code=200,
             )
 
     async def get_item(
