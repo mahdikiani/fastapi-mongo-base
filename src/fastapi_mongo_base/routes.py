@@ -166,9 +166,9 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
                 self.mine_items,
                 methods=["GET"],
                 response_model=(
-                    self.list_response_schema
+                    self.retrieve_response_schema
                     if self.unique_per_user
-                    else self.retrieve_response_schema
+                    else self.list_response_schema
                 ),
                 status_code=200,
             )
