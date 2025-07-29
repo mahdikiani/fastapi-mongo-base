@@ -331,14 +331,13 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         request: Request,
     ) -> PaginatedResponse[TS]:
         user_id = await self.get_user_id(request)
+        resp = await self._list_items(request=request, user_id=user_id)
+        if resp.total == 0 and self.create_mine_if_not_found:
+            resp.items = [await self.model.create_item({"user_id": user_id})]
+            resp.total = 1
         if self.unique_per_user:
-            resp = await self._list_items(request=request, user_id=user_id)
-            if resp.items:
-                return resp.items[0]
-            if self.create_mine_if_not_found:
-                item = await self.model.create_item({"user_id": user_id})
-                return item
-        return await self._list_items(request=request, user_id=user_id)
+            return resp.items[0]
+        return resp
 
 
 class AbstractTaskRouter(AbstractBaseRouter):

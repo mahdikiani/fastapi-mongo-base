@@ -235,17 +235,18 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         request: Request,
     ) -> PaginatedResponse[TS]:
         user = await self.get_user(request)
-        if self.unique_per_user:
-            resp = await self._list_items(
-                request=request,
-                user_id=user.uid,
-            )
-            if resp.items:
-                return resp.items[0]
-            if self.create_mine_if_not_found:
-                item = await self.model.create_item({
+        resp = await self._list_items(
+            request=request,
+            user_id=user.uid,
+        )
+        if resp.total == 0 and self.create_mine_if_not_found:
+            resp.items = [
+                await self.model.create_item({
                     "user_id": user.uid,
                     "tenant_id": user.tenant_id,
                 })
-                return item
-        return await self._list_items(request=request, user_id=user.uid)
+            ]
+            resp.total = 1
+        if self.unique_per_user:
+            return resp.items[0]
+        return resp
