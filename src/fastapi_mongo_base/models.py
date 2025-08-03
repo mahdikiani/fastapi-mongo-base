@@ -176,6 +176,8 @@ class BaseEntity(BaseEntitySchema, Document):
         tenant_id: str | None = None,
         offset: int = 0,
         limit: int = 10,
+        sort_field: str = "created_at",
+        sort_direction: int = -1,
         is_deleted: bool = False,
         **kwargs: object,
     ) -> list["BaseEntity"]:
@@ -188,7 +190,9 @@ class BaseEntity(BaseEntitySchema, Document):
             **kwargs,
         )
 
-        items_query = query.sort("-created_at").skip(offset).limit(limit)
+        items_query = (
+            query.sort(sort_field, sort_direction).skip(offset).limit(limit)
+        )
         items = await items_query.to_list()
         return items
 
@@ -220,19 +224,23 @@ class BaseEntity(BaseEntitySchema, Document):
         is_deleted: bool = False,
         **kwargs: object,
     ) -> tuple[list["BaseEntity"], int]:
-        items = await cls.list_items(
-            user_id=user_id,
-            tenant_id=tenant_id,
-            offset=offset,
-            limit=limit,
-            is_deleted=is_deleted,
-            **kwargs,
-        )
-        total = await cls.total_count(
-            user_id=user_id,
-            tenant_id=tenant_id,
-            is_deleted=is_deleted,
-            **kwargs,
+        import asyncio
+
+        items, total = await asyncio.gather(
+            cls.list_items(
+                user_id=user_id,
+                tenant_id=tenant_id,
+                offset=offset,
+                limit=limit,
+                is_deleted=is_deleted,
+                **kwargs,
+            ),
+            cls.total_count(
+                user_id=user_id,
+                tenant_id=tenant_id,
+                is_deleted=is_deleted,
+                **kwargs,
+            ),
         )
 
         return items, total
