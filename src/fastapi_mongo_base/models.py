@@ -191,7 +191,7 @@ class BaseEntity(BaseEntitySchema, Document):
         )
 
         items_query = (
-            query.sort(sort_field, sort_direction).skip(offset).limit(limit)
+            query.sort((sort_field, sort_direction)).skip(offset).limit(limit)
         )
         items = await items_query.to_list()
         return items
