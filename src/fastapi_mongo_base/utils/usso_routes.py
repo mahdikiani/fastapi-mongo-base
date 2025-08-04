@@ -12,7 +12,7 @@ from ..schemas import BaseEntitySchema, PaginatedResponse
 try:
     from usso import UserData, authorization
     from usso.config import APIHeaderConfig, AuthConfig
-    from usso.exceptions import USSOException
+    from usso.exceptions import PermissionDenied, USSOException
     from usso.integrations.fastapi import USSOAuthentication
 except ImportError as e:
     raise ImportError("USSO is not installed") from e
@@ -20,19 +20,6 @@ except ImportError as e:
 T = TypeVar("T", bound=BaseEntity)
 TS = TypeVar("TS", bound=BaseEntitySchema)
 TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
-
-
-class PermissionDenied(exceptions.BaseHTTPException):
-    def __init__(
-        self,
-        error: str = "permission_denied",
-        message: dict | None = None,
-        detail: str | None = None,
-        **kwargs: object,
-    ) -> None:
-        super().__init__(
-            403, error=error, message=message, detail=detail, **kwargs
-        )
 
 
 class AbstractTenantUSSORouter(AbstractBaseRouter):
