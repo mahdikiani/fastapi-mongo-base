@@ -131,6 +131,13 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
                 status_code=200,
             )
 
+        if statistics_route:
+            self.router.add_api_route(
+                f"{prefix}/statistics",
+                self.statistics,
+                methods=["GET"],
+            )
+
         if retrieve_route:
             self.router.add_api_route(
                 f"{prefix}/{{uid:str}}",
@@ -166,13 +173,6 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
                 response_model=self.delete_response_schema,
             )
 
-        if statistics_route:
-            self.router.add_api_route(
-                f"{prefix}/statistics",
-                self.statistics,
-                methods=["GET"],
-            )
-
     async def get_item(
         self,
         uid: str,
@@ -197,7 +197,9 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
             )
         return item
 
-    async def get_user(self, request: Request, **kwargs: object) -> object:
+    async def get_user(
+        self, request: Request, **kwargs: object
+    ) -> object | None:
         if self.user_dependency is None:
             return None
         if asyncio.iscoroutinefunction(self.user_dependency):
