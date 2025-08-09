@@ -66,9 +66,12 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         action: str,
         user: UserData | None = None,
         filter_data: dict | None = None,
+        raise_exception: bool = True,
     ) -> bool:
         if user is None:
-            raise USSOException(401, "unauthorized")
+            if raise_exception:
+                raise USSOException(401, "unauthorized")
+            return False
         if authorization.owner_authorization(
             requested_filter=filter_data,
             user_id=user.uid,
@@ -83,10 +86,12 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
             action=action,
             filters=filter_data,
         ):
-            raise PermissionDenied(
-                detail=f"User {user.uid} is not authorized to "
-                f"{action} {self.resource_path}"
-            )
+            if raise_exception:
+                raise PermissionDenied(
+                    detail=f"User {user.uid} is not authorized to "
+                    f"{action} {self.resource_path}"
+                )
+            return False
         return True
 
     def get_list_filter_queries(

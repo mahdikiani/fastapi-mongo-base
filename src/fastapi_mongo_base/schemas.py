@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import TypeVar
+from typing import Self, TypeVar
 
 import uuid6
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .core.config import Settings
 from .utils import timezone
@@ -100,11 +100,23 @@ TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
 
 
 class PaginatedResponse[TSCHEMA: BaseModel](BaseModel):
-    heads: dict[str, str] = Field(default_factory=dict)
+    heads: dict[str, dict[str, str]] = Field(default_factory=dict)
     items: list[TSCHEMA]
     total: int
     offset: int
     limit: int
+
+    @model_validator(mode="after")
+    def validate_heads(self) -> Self:
+        if self.heads:
+            return self
+        if not self.items:
+            return self
+        self.heads = {
+            field: {"en": field.replace("_", " ").title()}
+            for field in self.items[0].__class__.model_fields
+        }
+        return self
 
 
 class MultiLanguageString(BaseModel):
