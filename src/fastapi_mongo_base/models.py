@@ -79,6 +79,8 @@ class BaseEntity(BaseEntitySchema, Document):
                 value_list = basic.parse_array_parameter(value)
                 operator = "$in" if key.endswith("_in") else "$nin"
                 extra_filters.update({base_field: {operator: value_list}})
+            elif key.endswith("_like"):
+                extra_filters.update({base_field: {"$regex": value}})
             else:
                 extra_filters.update({key: value})
         return extra_filters

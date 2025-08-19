@@ -60,6 +60,7 @@ def get_base_field_name(field: str) -> str:
         "_gte",
         "_lt",
         "_lte",
+        "_like"
     ]
     if "." in field:
         field = field.split(".")[0]
