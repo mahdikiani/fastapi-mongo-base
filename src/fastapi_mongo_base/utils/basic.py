@@ -49,12 +49,24 @@ def parse_array_parameter(value: object) -> list:
 
 def get_base_field_name(field: str) -> str:
     """Extract the base field name by removing suffixes."""
-    if field.endswith("_from"):
-        return field[:-5]
-    elif field.endswith("_to") or field.endswith("_in"):
-        return field[:-3]
-    elif field.endswith("_nin"):
-        return field[:-4]
+    suffixes = [
+        "_from",
+        "_to",
+        "_in",
+        "_nin",
+        "_ne",
+        "_eq",
+        "_gt",
+        "_gte",
+        "_lt",
+        "_lte",
+    ]
+    if "." in field:
+        field = field.split(".")[0]
+    for suffix in suffixes:
+        if field.endswith(suffix):
+            return field[: -len(suffix)]
+
     return field
 
 
