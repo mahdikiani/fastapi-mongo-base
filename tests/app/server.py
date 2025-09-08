@@ -16,7 +16,8 @@ class TestEntitySchema(BaseEntitySchema):
     number: Decimal = Decimal(8)
 
     @field_validator("number", mode="before")
-    def validate_number(cls, v: object) -> Decimal:  # noqa: N805
+    @classmethod
+    def validate_number(cls, v: object) -> Decimal:
         return bsontools.decimal_amount(v)
 
 

@@ -167,7 +167,8 @@ class BaseEntity(BaseEntitySchema, Document):
             limit = limit.default
 
         offset = max(offset or 0, 0)
-        limit = max(1, min(limit or 10, Settings.page_max_limit))
+        if limit is None:
+            limit = max(1, min(limit or 10, Settings.page_max_limit))
         return offset, limit
 
     @classmethod
@@ -177,7 +178,7 @@ class BaseEntity(BaseEntitySchema, Document):
         user_id: str | None = None,
         tenant_id: str | None = None,
         offset: int = 0,
-        limit: int = 10,
+        limit: int | None = None,
         sort_field: str = "created_at",
         sort_direction: int = -1,
         is_deleted: bool = False,
@@ -192,9 +193,9 @@ class BaseEntity(BaseEntitySchema, Document):
             **kwargs,
         )
 
-        items_query = (
-            query.sort((sort_field, sort_direction)).skip(offset).limit(limit)
-        )
+        items_query = query.sort((sort_field, sort_direction)).skip(offset)
+        if limit:
+            items_query = items_query.limit(limit)
         items = await items_query.to_list()
         return items
 

@@ -10,6 +10,8 @@ def decimal_amount(value: object) -> Decimal:
         return value
     if isinstance(value, Decimal128):
         return Decimal(value.to_decimal())
+    if isinstance(value, (int, float, str)):
+        return Decimal(str(value))
     return Decimal(value)
 
 
