@@ -80,12 +80,31 @@ def pydantic_exception_handler(
 async def request_validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
+    # Try to get request body from different sources
+    body_preview = b"<no body available>"
+
+    # First try to get from request state (if BodyCaptureMiddleware is used)
+    if hasattr(request.state, "raw_body"):
+        body_preview = request.state.raw_body[:100]
+    else:
+        # Fallback: try to read from request (might fail if stream consumed)
+        try:
+            body_preview = (await request.body())[:100]
+        except RuntimeError:
+            # Stream already consumed, likely during validation
+            body_preview = b"<stream consumed>"
+
+    # Log detailed information about the validation error
     logging.error(
-        "request_validation_exception: %s %s\n%s",
+        "request_validation_exception: %s %s\n"
+        "Body preview: %s\nValidation errors: %s\nHeaders: %s",
         request.url,
         exc,
-        (await request.body())[:100],
+        body_preview,
+        exc.errors(),
+        dict(request.headers),
     )
+
     from fastapi.exception_handlers import (
         request_validation_exception_handler as default_handler,
     )
