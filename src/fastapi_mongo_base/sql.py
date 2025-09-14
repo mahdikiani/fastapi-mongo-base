@@ -1,7 +1,7 @@
 import json
 import uuid
 from datetime import datetime
-from typing import Never
+from typing import Never, Self
 
 try:
     from sqlalchemy import JSON, event, select
@@ -55,15 +55,15 @@ class BaseEntity:
         return ["uid", "created_at", "updated_at", "is_deleted"]
 
     @classmethod
-    def create_field_set(cls) -> list:
+    def create_field_set(cls) -> list[str]:
         return []
 
     @classmethod
-    def update_exclude_set(cls) -> list:
+    def update_exclude_set(cls) -> list[str]:
         return ["uid", "created_at", "updated_at"]
 
     @classmethod
-    def update_field_set(cls) -> list:
+    def update_field_set(cls) -> list[str]:
         return []
 
     @classmethod
@@ -71,7 +71,7 @@ class BaseEntity:
         return ["meta_data"]
 
     @classmethod
-    def search_field_set(cls) -> list:
+    def search_field_set(cls) -> list[str]:
         return []
 
     def expired(self, days: int = 3) -> bool:
@@ -81,7 +81,7 @@ class BaseEntity:
         self,
         include_fields: list[str] | None = None,
         exclude_fields: list[str] | None = None,
-    ) -> dict:
+    ) -> dict[str, object]:
         """
         Dump the object into a dictionary.
         It includes all the fields of the object.
@@ -179,7 +179,7 @@ class BaseEntity:
         is_deleted: bool = False,
         uid: str | None = None,
         **kwargs: object,
-    ) -> list:
+    ) -> list[object]:
         """Build SQLAlchemy query filters based on provided parameters."""
         base_query = []
         base_query.append(cls.is_deleted == is_deleted)
@@ -225,7 +225,7 @@ class BaseEntity:
         tenant_id: str | None = None,
         is_deleted: bool = False,
         **kwargs: object,
-    ) -> "BaseEntity":
+    ) -> Self | None:
         base_query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -250,7 +250,7 @@ class BaseEntity:
         offset: int = 0,
         limit: int = 10,
         **kwargs: object,
-    ) -> list:
+    ) -> list[Self]:
         base_query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -308,7 +308,7 @@ class BaseEntity:
         limit: int = 10,
         is_deleted: bool = False,
         **kwargs: object,
-    ) -> tuple[list["BaseEntity"], int]:
+    ) -> tuple[list[Self], int]:
         items = await cls.list_items(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -326,7 +326,7 @@ class BaseEntity:
         return items, total
 
     @classmethod
-    async def get_by_uid(cls, uid: str) -> "BaseEntity":
+    async def get_by_uid(cls, uid: str) -> Self | None:
         async with async_session() as session:
             query = select(cls).filter(cls.uid == uid)
             result = await session.execute(query)
@@ -334,7 +334,7 @@ class BaseEntity:
         return item
 
     @classmethod
-    async def create_item(cls, data: dict) -> "BaseEntity":
+    async def create_item(cls, data: dict) -> Self:
         item = cls(**data)
         async with async_session() as session:
             session.add(item)
@@ -343,7 +343,7 @@ class BaseEntity:
         return item
 
     @classmethod
-    async def update_item(cls, item: "BaseEntity", data: dict) -> "BaseEntity":
+    async def update_item(cls, item: Self, data: dict) -> Self:
         for key, value in data.items():
             if cls.update_field_set() and key not in cls.update_field_set():
                 continue
@@ -359,7 +359,7 @@ class BaseEntity:
         return item
 
     @classmethod
-    async def delete_item(cls, item: "BaseEntity") -> "BaseEntity":
+    async def delete_item(cls, item: Self) -> Self:
         item.is_deleted = True
         async with async_session() as session:
             session.add(item)
@@ -374,11 +374,11 @@ class UserOwnedEntity(BaseEntity):
     user_id: Mapped[str] = mapped_column(index=True)
 
     @classmethod
-    def create_exclude_set(cls) -> list:
+    def create_exclude_set(cls) -> list[str]:
         return [*super().create_exclude_set(), "user_id"]
 
     @classmethod
-    def update_exclude_set(cls) -> list:
+    def update_exclude_set(cls) -> list[str]:
         return [*super().update_exclude_set(), "user_id"]
 
 
@@ -423,9 +423,9 @@ class ImmutableMixin(BaseEntity):
         event.listen(cls, "before_update", cls.prevent_update)
 
     @classmethod
-    async def update_item(cls, item: "BaseEntity", data: dict) -> Never:
+    async def update_item(cls, item: Self, data: dict) -> Never:
         raise ValueError("Immutable items cannot be updated")
 
     @classmethod
-    async def delete_item(cls, item: "BaseEntity") -> Never:
+    async def delete_item(cls, item: Self) -> Never:
         raise ValueError("Immutable items cannot be deleted")

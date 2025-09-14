@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Any, ClassVar, Optional, cast
+from typing import Any, ClassVar, Self, cast
 
 from beanie import (
     Document,
@@ -142,7 +142,7 @@ class BaseEntity(BaseEntitySchema, Document):
         tenant_id: str | None = None,
         is_deleted: bool = False,
         **kwargs: object,
-    ) -> Optional["BaseEntity"]:
+    ) -> Self | None:
         query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -254,12 +254,12 @@ class BaseEntity(BaseEntitySchema, Document):
         uid: str,
         *,
         is_deleted: bool = False,
-    ) -> Optional["BaseEntity"]:
+    ) -> Self | None:
         item = await cls.find_one({"uid": uid, "is_deleted": is_deleted})
         return item
 
     @classmethod
-    async def create_item(cls, data: dict) -> "BaseEntity":
+    async def create_item(cls, data: dict) -> Self:
         pop_keys = []
         for key in data:
             if cls.create_field_set() and key not in cls.create_field_set():
@@ -280,7 +280,7 @@ class BaseEntity(BaseEntitySchema, Document):
         return item
 
     @classmethod
-    async def update_item(cls, item: "BaseEntity", data: dict) -> "BaseEntity":
+    async def update_item(cls, item: Self, data: dict) -> Self:
         for key, value in data.items():
             if cls.update_field_set() and key not in cls.update_field_set():
                 logging.warning("Key %s is not in update_field_set", key)
@@ -296,7 +296,7 @@ class BaseEntity(BaseEntitySchema, Document):
         return item
 
     @classmethod
-    async def delete_item(cls, item: "BaseEntity") -> "BaseEntity":
+    async def delete_item(cls, item: Self) -> Self:
         item.is_deleted = True
         await item.save()
         return item
@@ -323,7 +323,7 @@ class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
         user_id: str | None = None,
         ignore_user_id: bool = False,
         **kwargs: object,
-    ) -> Optional["UserOwnedEntity"]:
+    ) -> Self | None:
         """Get an item by its UID and user ID.
 
         Args:
@@ -345,7 +345,7 @@ class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
         if user_id is None and not ignore_user_id:
             raise ValueError("user_id is required")
         return cast(
-            "UserOwnedEntity | None",
+            Self | None,
             await super().get_item(
                 uid=uid,
                 user_id=user_id,
@@ -374,11 +374,11 @@ class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
         *,
         tenant_id: str,
         **kwargs: object,
-    ) -> Optional["TenantScopedEntity"]:
+    ) -> Self | None:
         if tenant_id is None:
             raise ValueError("tenant_id is required")
         return cast(
-            "TenantScopedEntity | None",
+            Self | None,
             await super().get_item(
                 uid=uid,
                 tenant_id=tenant_id,
@@ -386,7 +386,7 @@ class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
             ),
         )
 
-    async def get_tenant(self) -> "TenantScopedEntity":
+    async def get_tenant(self) -> Self:
         raise NotImplementedError
 
 
@@ -413,13 +413,13 @@ class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
         user_id: str | None = None,
         ignore_user_id: bool = False,
         **kwargs: object,
-    ) -> Optional["TenantUserEntity"]:
+    ) -> Self | None:
         if tenant_id is None:
             raise ValueError("tenant_id is required")
         if user_id is None and not ignore_user_id:
             raise ValueError("user_id is required")
         return cast(
-            "TenantUserEntity | None",
+            Self | None,
             await super().get_item(
                 uid=uid,
                 tenant_id=tenant_id,
@@ -436,9 +436,9 @@ class ImmutableMixin(BaseEntity):
         __abstract__ = True
 
     @classmethod
-    async def update_item(cls, item: "BaseEntity", data: dict) -> "BaseEntity":
+    async def update_item(cls, item: Self, data: dict) -> Self:
         raise ValueError("Immutable items cannot be updated")
 
     @classmethod
-    async def delete_item(cls, item: "BaseEntity") -> "BaseEntity":
+    async def delete_item(cls, item: Self) -> Self:
         raise ValueError("Immutable items cannot be deleted")

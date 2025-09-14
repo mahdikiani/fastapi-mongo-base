@@ -3,7 +3,7 @@ import logging
 from collections.abc import Callable, Coroutine
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Literal, Union
+from typing import Any, Literal, Self, Union
 
 import json_advanced as json
 from pydantic import BaseModel, Field, field_serializer, field_validator
@@ -24,7 +24,7 @@ class TaskStatusEnum(StrEnum):
     error = "error"
 
     @classmethod
-    def finishes(cls) -> list["TaskStatusEnum"]:
+    def finishes(cls) -> list[Self]:
         return [cls.done, cls.error, cls.completed]
 
     @property
@@ -160,7 +160,7 @@ class TaskMixin(BaseModel):
     def validate_task_status(
         cls,
         value: object,
-    ) -> "TaskStatusEnum":
+    ) -> Self:
         if isinstance(value, str):
             return TaskStatusEnum(value)
         return value
@@ -190,7 +190,7 @@ class TaskMixin(BaseModel):
     @classmethod
     async def emit_signals(
         cls,
-        task_instance: "TaskMixin",
+        task_instance: Self,
         *,
         sync: bool = False,
         **kwargs: object,
