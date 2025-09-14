@@ -183,7 +183,7 @@ class BaseEntity(BaseEntitySchema, Document):
         sort_direction: int = -1,
         is_deleted: bool = False,
         **kwargs: object,
-    ) -> list["BaseEntity"]:
+    ) -> list[Self]:
         offset, limit = cls.adjust_pagination(offset, limit)
 
         query = cls.get_query(
