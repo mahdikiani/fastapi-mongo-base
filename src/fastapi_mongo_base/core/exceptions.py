@@ -51,7 +51,7 @@ class BaseHTTPException(HTTPException):
 def base_http_exception_handler(
     request: Request, exc: BaseHTTPException
 ) -> JSONResponse:
-    logging.debug("base_http_exception_handler: %s %s\n%s", request.url, exc)
+    logging.debug("base_http_exception_handler: %s\n%s", request.url, exc)
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -66,7 +66,7 @@ def base_http_exception_handler(
 def pydantic_exception_handler(
     request: Request, exc: ValidationError
 ) -> JSONResponse:
-    logging.debug("pydantic_exception_handler: %s %s\n%s", request.url, exc)
+    logging.debug("pydantic_exception_handler: %s\n%s", request.url, exc)
     return JSONResponse(
         status_code=500,
         content={
