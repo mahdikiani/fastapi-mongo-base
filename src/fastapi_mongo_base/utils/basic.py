@@ -60,7 +60,7 @@ def get_base_field_name(field: str) -> str:
         "_gte",
         "_lt",
         "_lte",
-        "_like"
+        "_like",
     ]
     if "." in field:
         field = field.split(".")[0]
@@ -98,7 +98,7 @@ def _exception_handler(
         func_name = f"{class_name}.{func_name}"
     traceback_str = "".join(traceback.format_tb(e.__traceback__))
     logging.error(
-        "An error occurred in %s (%s=):\n%s\n%s: %s",
+        "An error occurred in %s (%s=, %s):\n%s\n%s: %s",
         func_name,
         args,
         kwargs,
