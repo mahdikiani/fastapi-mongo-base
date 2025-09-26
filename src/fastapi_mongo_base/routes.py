@@ -346,9 +346,9 @@ class AbstractTaskRouter(AbstractBaseRouter):
     def __init__(
         self,
         *,
-        model: type[T],
+        model: type[T] | None = None,
+        schema: type[TS] | None = None,
         user_dependency: Callable[[Request], Any] | None = None,
-        schema: type[TS],
         draftable: bool = True,
         **kwargs: object,
     ) -> None:
