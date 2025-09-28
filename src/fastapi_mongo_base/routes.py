@@ -389,7 +389,11 @@ class AbstractTaskRouter(AbstractBaseRouter):
         return await super().statistics(request)
 
     async def create_item(
-        self, request: Request, data: dict, background_tasks: BackgroundTasks
+        self,
+        request: Request,
+        data: dict,
+        background_tasks: BackgroundTasks,
+        blocking: bool = False,
     ) -> T:
         if not self.draftable:
             data["task_status"] = "init"
@@ -397,7 +401,10 @@ class AbstractTaskRouter(AbstractBaseRouter):
         item = await super().create_item(request, data)
 
         if item.task_status == "init" or not self.draftable:
-            background_tasks.add_task(item.start_processing)
+            if blocking:
+                await item.start_processing()
+            else:
+                background_tasks.add_task(item.start_processing)
         return item
 
     async def start_item(
