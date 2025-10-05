@@ -100,7 +100,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         matched_scopes: list[dict] = authorization.get_scope_filters(
             action="read",
             resource=self.resource_path,
-            user_scopes=user.scopes or [],
+            user_scopes=user.scopes if user else [],
         )
         if self_access:
             matched_scopes.append({"user_id": user.uid})
