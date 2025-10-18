@@ -24,20 +24,19 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
-  "pydantic>=2.0.0",
-  "httpx>=0.24.0",
-  "singleton_package",
-  "json-advanced",
-  "uuid6",
-  "pytz",
-  "beanie",
-  "fastapi>=0.65.0",
-  "uvicorn[standard]>=0.13.0",
+  "pydantic>=2.12.3",
+  "httpx>=0.28.1",
+  "singleton_package>=0.8.2",
+  "json-advanced>=0.12.11",
+  "pytz>=2025.2",
+  "beanie>=1.36.0",
+  "fastapi>=0.119.0",
+  "uvicorn[standard]>=0.74.0",
 ]
 
 [project.optional-dependencies]
-usso = ["usso>=0.28.26"]
-sql = ["sqlalchemy>=2.0.0"]
+usso = ["usso>=0.28.47"]
+sql = ["sqlalchemy>=2.0.43"]
 test = ["pytest", "pytest-cov", "pytest-asyncio", "mongomock_motor", "coverage"]
 
 [project.urls]
