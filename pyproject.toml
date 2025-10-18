@@ -31,7 +31,7 @@ dependencies = [
   "pytz>=2025.2",
   "beanie>=1.36.0",
   "fastapi>=0.119.0",
-  "uvicorn[standard]>=0.74.0",
+  "uvicorn[standard]>=0.38.0",
 ]
 
 [project.optional-dependencies]
