@@ -29,7 +29,7 @@ dependencies = [
   "singleton_package>=0.8.2",
   "json-advanced>=0.12.11",
   "pytz>=2025.2",
-  "beanie>=1.36.0",
+  "beanie>=1.30.0",
   "fastapi>=0.119.0",
   "uvicorn[standard]>=0.38.0",
 ]
