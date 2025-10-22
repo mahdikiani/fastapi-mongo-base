@@ -99,7 +99,7 @@ class TenantUserEntitySchema(TenantScopedEntitySchema, UserOwnedEntitySchema):
 TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
 
 
-class PaginatedResponse(BaseModel):
+class PaginatedResponse[TSCHEMA: BaseModel](BaseModel):
     heads: dict[str, dict[str, str]] = Field(default_factory=dict)
     items: list[TSCHEMA]
     total: int
