@@ -7,7 +7,7 @@ name = "fastapi-mongo-base"
 version = "1.0.39"
 description = "A simple boilerplate application, including models and schemas and abstract router, for FastAPI with MongoDB"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE.txt"]
 keywords = ["fastapi", "mongodb", "beanie"]
@@ -32,6 +32,7 @@ dependencies = [
   "beanie>=1.30.0",
   "fastapi>=0.119.0",
   "uvicorn[standard]>=0.38.0",
+  "uuid6>=2025.0.1",
 ]
 
 [project.optional-dependencies]
