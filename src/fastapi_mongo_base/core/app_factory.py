@@ -202,7 +202,7 @@ def configure_app(
 ) -> fastapi.FastAPI:
     base_path: str = settings.base_path
     if origins is None:
-        origins = settings.origins
+        origins = settings.cors_origins
 
     setup_exception_handlers(app=app, handlers=exception_handlers, **kwargs)
     setup_middlewares(app=app, origins=origins, **kwargs)
