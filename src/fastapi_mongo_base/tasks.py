@@ -235,7 +235,6 @@ class TaskMixin(BaseModel):
                 continue
             signals.append(
                 webhook_call(
-                    method="post",
                     url=webhook_url,
                     headers={
                         "Content-Type": "application/json",

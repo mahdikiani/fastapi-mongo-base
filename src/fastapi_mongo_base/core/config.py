@@ -29,10 +29,10 @@ class Settings(metaclass=Singleton):
 
     @property
     def cors_origins(self) -> list[str]:
-        if self._cors_origins_str and '[' in self._cors_origins_str:
+        if self._cors_origins_str and "[" in self._cors_origins_str:
             return json.loads(self._cors_origins_str)
         elif self._cors_origins_str:
-            return self._cors_origins_str.split(',')
+            return [s.strip() for s in self._cors_origins_str.split(",")]
         return ["http://localhost:8000"]
 
     page_max_limit: int = 100
