@@ -26,7 +26,7 @@ jobs:
       with:
         python-version: '3.x'
     - name: Install build dependencies
-      run: uv pip install -U setuptools wheel build
+      run: uv venv && uv pip install -U setuptools wheel build
     - name: Install test dependencies
       run: |
         uv pip install -e ".[test]"
