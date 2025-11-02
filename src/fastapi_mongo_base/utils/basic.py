@@ -3,9 +3,13 @@ import functools
 import json
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 
 import json_advanced
+
+FunctionOrCoroutine = (
+    Callable[..., None] | Callable[..., Coroutine[object, object, None]]
+)
 
 
 def get_all_subclasses(cls: type) -> list[type]:
@@ -222,3 +226,13 @@ def retry_execution(
         return _sync_retry_wrapper(func, attempts, delay)
 
     return decorator
+
+
+async def gather_sync(
+    coroutines: list[Callable[..., Coroutine[object, object, object]]],
+    /,
+    sync: bool = False,
+) -> list[object]:
+    if sync:
+        return [await coroutine for coroutine in coroutines]
+    return await asyncio.gather(*coroutines)

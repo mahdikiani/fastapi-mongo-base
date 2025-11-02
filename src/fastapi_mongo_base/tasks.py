@@ -1,9 +1,9 @@
 import asyncio
 import logging
-from collections.abc import Callable, Coroutine
+from collections.abc import Coroutine
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Literal, Self, Union
+from typing import Literal, Self, Union
 
 import json_advanced as json
 from pydantic import BaseModel, Field, field_serializer, field_validator
@@ -34,12 +34,7 @@ class TaskStatusEnum(StrEnum):
 
 class SignalRegistry(metaclass=Singleton):
     def __init__(self) -> None:
-        self.signal_map: dict[
-            str,
-            list[
-                Callable[..., None] | Callable[..., Coroutine[Any, Any, None]]
-            ],
-        ] = {}
+        self.signal_map: dict[str, list[basic.FunctionOrCoroutine]] = {}
 
 
 class TaskLogRecord(BaseModel):
@@ -108,7 +103,9 @@ class TaskReference(BaseModel):
 
 
 class TaskReferenceList(BaseModel):
-    tasks: list[Union[TaskReference, "TaskReferenceList"]] = []
+    tasks: list[Union[TaskReference, "TaskReferenceList"]] = Field(
+        default_factory=list
+    )
     mode: Literal["serial", "parallel"] = "serial"
 
     async def get_task_item(self) -> list[BaseEntitySchema]:
@@ -131,13 +128,21 @@ class TaskMixin(BaseModel):
     task_status: TaskStatusEnum = TaskStatusEnum.draft
     task_report: str | None = None
     task_progress: int = -1
-    task_logs: list[TaskLogRecord] = []
+    task_logs: list[TaskLogRecord] = Field(default_factory=list)
     task_references: TaskReferenceList | None = None
     task_start_at: datetime | None = None
     task_end_at: datetime | None = None
     task_order_score: int = 0
     webhook_custom_headers: dict | None = None
     webhook_url: str | None = None
+
+    @property
+    def webhook_exclude_fields(self) -> set[str] | None:
+        return None
+
+    @property
+    def webhook_include_fields(self) -> set[str] | None:
+        return None
 
     @classmethod
     def get_queue_name(cls) -> str:
@@ -172,57 +177,57 @@ class TaskMixin(BaseModel):
         return value
 
     @classmethod
-    def signals(
-        cls,
-    ) -> list[Callable[..., None] | Callable[..., Coroutine[Any, Any, None]]]:
+    def signals(cls) -> list[basic.FunctionOrCoroutine]:
         registry = SignalRegistry()
         if cls.__name__ not in registry.signal_map:
             registry.signal_map[cls.__name__] = []
         return registry.signal_map[cls.__name__]
 
     @classmethod
-    def add_signal(
-        cls,
-        signal: Callable[..., None] | Callable[..., Coroutine[Any, Any, None]],
-    ) -> None:
+    def add_signal(cls, signal: basic.FunctionOrCoroutine) -> None:
         cls.signals().append(signal)
 
     @classmethod
     async def emit_signals(
-        cls,
-        task_instance: Self,
-        *,
-        sync: bool = False,
-        **kwargs: object,
+        cls, task_instance: Self, *, sync: bool = False, **kwargs: object
     ) -> None:
-        async def webhook_call(*args: object, **kwargs: object) -> None:
+        async def webhook_call(
+            *args: object, **kwargs: object
+        ) -> dict[str, object]:
             import httpx
 
             try:
-                await httpx.AsyncClient().post(*args, **kwargs)
+                response = await httpx.AsyncClient().post(*args, **kwargs)
+                response.raise_for_status()
+                return response.json()
+            except httpx.HTTPStatusError as e:
+                await task_instance.save_report(
+                    "\n".join([
+                        "An error occurred in webhook_call:",
+                        f"{type(e)}: {e}",
+                        f"{response.status_code}",
+                        f"{response.text}",
+                    ]),
+                    emit=False,
+                    log_type="webhook_error",
+                )
+                await task_instance.save()  # type: ignore
+                logging.exception("An error occurred in webhook_call")
             except Exception as e:
-                import traceback
-
-                traceback_str = "".join(traceback.format_tb(e.__traceback__))
                 await task_instance.save_report(
                     f"An error occurred in webhook_call: {type(e)}: {e}",
                     emit=False,
                     log_type="webhook_error",
                 )
                 await task_instance.save()  # type: ignore
-                logging.exception(
-                    "\n".join([
-                        "An error occurred in webhook_call:",
-                        traceback_str,
-                    ])
-                )
+                logging.exception("An error occurred in webhook_call")
 
-        def webhook_task(webhook_url: str) -> None:
-            return
-
-        signals = []
+        signals: list[Coroutine[object, object, None]] = []
         meta_data = getattr(task_instance, "meta_data", {}) or {}
-        task_dict = task_instance.model_dump()
+        task_dict = task_instance.model_dump(
+            exclude=task_instance.webhook_exclude_fields,
+            include=task_instance.webhook_include_fields,
+        )
         task_dict.update({"task_type": task_instance.__class__.__name__})
         task_dict.update(kwargs)
 
@@ -253,17 +258,10 @@ class TaskMixin(BaseModel):
             for signal in cls.signals()
         ]
 
-        if not sync:
-            await asyncio.gather(*signals)
-            return
-
-        for signal in signals:
-            await signal
+        await basic.gather_sync(signals, sync=sync)
 
     async def save_status(
-        self,
-        status: TaskStatusEnum,
-        **kwargs: object,
+        self, status: TaskStatusEnum, **kwargs: object
     ) -> None:
         self.task_status = status
         await self.add_log(
@@ -302,11 +300,7 @@ class TaskMixin(BaseModel):
         )
 
     async def add_log(
-        self,
-        log_record: TaskLogRecord,
-        *,
-        emit: bool = True,
-        **kwargs: object,
+        self, log_record: TaskLogRecord, *, emit: bool = True, **kwargs: object
     ) -> None:
         self.task_logs.append(log_record)
         if emit:
