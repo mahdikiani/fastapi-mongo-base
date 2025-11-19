@@ -224,6 +224,7 @@ def configure_app(
         app.get(f"{base_path}/logs", include_in_schema=False)(logs)
     if index_route:
         app.get("/", include_in_schema=False)(index)
+        app.get(base_path, include_in_schema=False)(index)
 
     if serve_coverage:
         app.mount(
