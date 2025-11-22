@@ -25,6 +25,7 @@ TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
 class AbstractTenantUSSORouter(AbstractBaseRouter):
     resource: str | None = None
     self_action: str = "owner"
+    self_access: bool = True
 
     @property
     def resource_path(self) -> str:
@@ -94,15 +95,13 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
             return False
         return True
 
-    def get_list_filter_queries(
-        self, *, user: UserData, self_access: bool = True
-    ) -> dict:
+    def get_list_filter_queries(self, *, user: UserData) -> dict:
         matched_scopes: list[dict] = authorization.get_scope_filters(
             action="read",
             resource=self.resource_path,
             user_scopes=user.scopes if user else [],
         )
-        if self_access:
+        if self.self_access and hasattr(self.model, "user_id"):
             matched_scopes.append({"user_id": user.uid})
         elif not matched_scopes:
             return {"__deny__": True}  # no access to any resource
@@ -145,6 +144,13 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
 
         filters = self.get_list_filter_queries(user=user)
         if filters.get("__deny__"):
+            raise exceptions.BaseHTTPException(
+                status_code=403,
+                error="forbidden",
+                message={
+                    "en": "You are not authorized to access this resource"
+                },
+            )
             return PaginatedResponse(
                 items=[],
                 total=0,
