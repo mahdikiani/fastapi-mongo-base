@@ -23,6 +23,20 @@ TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
 
 
 class AbstractTenantUSSORouter(AbstractBaseRouter):
+    """
+    Abstract base class for USSO routes.
+
+    Attributes:
+        namespace: The namespace of the resource.
+        service: The service of the resource.
+        resource: The resource name.
+        self_action: The action to authorize the user to do action on the
+                     owned resource. (user_id == resource.user_id).
+                     Default is "owner".
+        self_access: Whether to allow access to the resource by the user itself
+                     in list queries. (user_id == resource.user_id).
+    """
+
     resource: str | None = None
     self_action: str = "owner"
     self_access: bool = True

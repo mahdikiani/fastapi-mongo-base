@@ -226,7 +226,7 @@ class BaseEntity(BaseEntitySchema, Document):
         limit: int = 10,
         is_deleted: bool = False,
         **kwargs: object,
-    ) -> tuple[list["BaseEntity"], int]:
+    ) -> tuple[list[Self], int]:
         import asyncio
 
         items, total = await asyncio.gather(
