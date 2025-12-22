@@ -1,3 +1,5 @@
+"""Exception handlers and custom HTTP exceptions for FastAPI."""
+
 import json
 import logging
 import traceback
@@ -23,6 +25,18 @@ error_messages = {}
 
 
 class BaseHTTPException(HTTPException):
+    """
+    Base HTTP exception with multi-language message support.
+
+    Attributes:
+        status_code: HTTP status code.
+        error: Error code string.
+        message: Dictionary of language-specific error messages.
+        detail: Error detail string.
+        data: Additional error data.
+
+    """
+
     def __init__(
         self,
         status_code: int,
@@ -31,6 +45,17 @@ class BaseHTTPException(HTTPException):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """
+        Initialize base HTTP exception.
+
+        Args:
+            status_code: HTTP status code.
+            error: Error code string.
+            detail: Optional error detail message.
+            message: Optional dictionary of language-specific messages.
+            **kwargs: Additional error data.
+
+        """
         self.status_code = status_code
         self.error = error
         msg: dict = {}
@@ -51,6 +76,17 @@ class BaseHTTPException(HTTPException):
 def base_http_exception_handler(
     request: Request, exc: BaseHTTPException
 ) -> JSONResponse:
+    """
+    Handle BaseHTTPException and return JSON response.
+
+    Args:
+        request: FastAPI request object.
+        exc: BaseHTTPException instance.
+
+    Returns:
+        JSONResponse with error details.
+
+    """
     logging.debug("base_http_exception_handler: %s\n%s", request.url, exc)
     return JSONResponse(
         status_code=exc.status_code,
@@ -66,6 +102,17 @@ def base_http_exception_handler(
 def pydantic_exception_handler(
     request: Request, exc: ValidationError
 ) -> JSONResponse:
+    """
+    Handle Pydantic validation errors and return JSON response.
+
+    Args:
+        request: FastAPI request object.
+        exc: ValidationError instance.
+
+    Returns:
+        JSONResponse with validation error details.
+
+    """
     logging.debug("pydantic_exception_handler: %s\n%s", request.url, exc)
     return JSONResponse(
         status_code=500,
@@ -80,6 +127,17 @@ def pydantic_exception_handler(
 async def request_validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
+    """
+    Handle FastAPI request validation errors with body preview.
+
+    Args:
+        request: FastAPI request object.
+        exc: RequestValidationError instance.
+
+    Returns:
+        JSONResponse with validation error details.
+
+    """
     # Try to get request body from different sources
     body_preview = b"<no body available>"
 
@@ -115,6 +173,17 @@ async def request_validation_exception_handler(
 def general_exception_handler(
     request: Request, exc: Exception
 ) -> JSONResponse:
+    """
+    Handle general exceptions and return JSON response.
+
+    Args:
+        request: FastAPI request object.
+        exc: Exception instance.
+
+    Returns:
+        JSONResponse with error message.
+
+    """
     traceback_str = "".join(traceback.format_tb(exc.__traceback__))
     logging.error("Exception: %s %s", traceback_str, exc)
     logging.error("Exception on request: %s", request.url)

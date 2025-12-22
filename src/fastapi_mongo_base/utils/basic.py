@@ -1,3 +1,9 @@
+"""
+Basic utility functions for async operations, retries, and error handling.
+
+This module provides decorators and helpers for common async patterns.
+"""
+
 import asyncio
 import functools
 import json
@@ -13,6 +19,16 @@ FunctionOrCoroutine = (
 
 
 def get_all_subclasses(cls: type) -> list[type]:
+    """
+    Recursively get all subclasses of a class.
+
+    Args:
+        cls: Base class to find subclasses for.
+
+    Returns:
+        List of all subclasses (including nested subclasses).
+
+    """
     subclasses = cls.__subclasses__()
     return subclasses + [
         sub for subclass in subclasses for sub in get_all_subclasses(subclass)
@@ -20,7 +36,8 @@ def get_all_subclasses(cls: type) -> list[type]:
 
 
 def parse_array_parameter(value: object) -> list:
-    """Parse input value into a list, handling various input formats.
+    """
+    Parse input value into a list, handling various input formats.
 
     Args:
         value: Input value that could be a JSON string, comma-separated string,
@@ -28,8 +45,8 @@ def parse_array_parameter(value: object) -> list:
 
     Returns:
         list: Parsed list of values
-    """
 
+    """
     if isinstance(value, (list, tuple)):
         return list(set(value))
 
@@ -52,7 +69,16 @@ def parse_array_parameter(value: object) -> list:
 
 
 def get_base_field_name(field: str) -> str:
-    """Extract the base field name by removing suffixes."""
+    """
+    Extract the base field name by removing query suffixes.
+
+    Args:
+        field: Field name with optional suffix (e.g., "created_at_from").
+
+    Returns:
+        Base field name without suffix (e.g., "created_at").
+
+    """
     suffixes = [
         "_from",
         "_to",
@@ -76,7 +102,16 @@ def get_base_field_name(field: str) -> str:
 
 
 def is_valid_range_value(value: object) -> bool:
-    """Check if value is valid for range comparison."""
+    """
+    Check if value is valid for range comparison operations.
+
+    Args:
+        value: Value to check.
+
+    Returns:
+        True if value can be used in range queries, False otherwise.
+
+    """
     from datetime import date, datetime
     from decimal import Decimal
 
@@ -141,12 +176,35 @@ def try_except_wrapper(
     func: Callable,
     sync_to_thread: bool = False,
 ) -> Callable:
+    """
+    Wrap a function with try-except error handling.
+
+    Args:
+        func: Function to wrap.
+        sync_to_thread: Whether to run sync functions in thread pool.
+
+    Returns:
+        Wrapped function with error handling.
+
+    """
     if sync_to_thread or asyncio.iscoroutinefunction(func):
         return _async_try_except_wrapper(func)
     return _sync_try_except_wrapper(func)
 
 
 def delay_execution(seconds: int, sync_to_thread: bool = False) -> Callable:
+    """
+    Delay function execution by specified seconds.
+
+    Args:
+        seconds: Number of seconds to delay.
+        sync_to_thread: Whether to run sync functions in thread pool.
+
+    Returns:
+        Decorator function.
+
+    """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def awrapped_func(*args: object, **kwargs: object) -> object:
@@ -220,6 +278,19 @@ def _sync_retry_wrapper(func: Callable, attempts: int, delay: int) -> Callable:
 def retry_execution(
     attempts: int, delay: int = 0, sync_to_thread: bool = False
 ) -> Callable[[Callable], Callable]:
+    """
+    Retry function execution on failure.
+
+    Args:
+        attempts: Number of retry attempts.
+        delay: Delay in seconds between attempts.
+        sync_to_thread: Whether to run sync functions in thread pool.
+
+    Returns:
+        Decorator function.
+
+    """
+
     def decorator(func: Callable) -> Callable:
         if sync_to_thread or asyncio.iscoroutinefunction(func):
             return _async_retry_wrapper(func, attempts, delay)
@@ -233,6 +304,17 @@ async def gather_sync(
     /,
     sync: bool = False,
 ) -> list[object]:
+    """
+    Execute coroutines in parallel or sequentially.
+
+    Args:
+        coroutines: List of coroutines to execute.
+        sync: If True, execute sequentially; if False, execute in parallel.
+
+    Returns:
+        List of results from coroutines.
+
+    """
     if sync:
         return [await coroutine for coroutine in coroutines]
     return await asyncio.gather(*coroutines)

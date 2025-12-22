@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastapi-mongo-base"
-version = "1.0.44"
+version = "1.0.45"
 description = "A simple boilerplate application, including models and schemas and abstract router, for FastAPI with MongoDB"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -81,12 +81,12 @@ select = [
   "EXE",   # executable: executable checking
   "ISC",   # implicit string concatenation
   "G",     # misuse of logging string interpolation
-  # "D",     # docstrings: docstring checking
+  "D",     # docstrings: docstring checking
   "ERA", # remove commented code
   "RUF", # ruff-specific improvements
 ]
 per-file-ignores = { "tests/*" = ["G004", "S101"], "server/db.py" = ["TRY"] }
-ignore = ["TRY003", "COM812"]
+ignore = ["TRY003", "COM812", "B008", "D202", "D203", "D209", "D212", "D413"]
 
 [tool.ruff.format]
 quote-style = "double"

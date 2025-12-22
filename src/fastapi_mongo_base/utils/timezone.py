@@ -1,3 +1,5 @@
+"""Timezone utilities for the application."""
+
 import os
 
 import pytz

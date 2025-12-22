@@ -1,3 +1,5 @@
+"""Database initialization for MongoDB and Redis."""
+
 import logging
 
 from beanie import init_beanie
@@ -9,6 +11,20 @@ from .config import Settings
 
 
 async def init_mongo_db(settings: Settings | None = None) -> object:
+    """
+    Initialize MongoDB connection and Beanie ODM.
+
+    Args:
+        settings: Optional settings instance. If None, creates a new instance.
+
+    Returns:
+        MongoDB database instance.
+
+    Raises:
+        ImportError: If MongoDB client libraries are not installed.
+        Exception: If MongoDB connection fails.
+
+    """
     try:
         from pymongo import AsyncMongoClient
     except ImportError:
@@ -45,6 +61,17 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
 
 
 def init_redis(settings: Settings | None = None) -> tuple:
+    """
+    Initialize Redis connections (sync and async).
+
+    Args:
+        settings: Optional settings instance. If None, creates a new instance.
+
+    Returns:
+        Tuple of (sync_redis_client, async_redis_client).
+        Returns (None, None) if Redis is not configured or unavailable.
+
+    """
     try:
         from redis import Redis as RedisSync
         from redis.asyncio.client import Redis

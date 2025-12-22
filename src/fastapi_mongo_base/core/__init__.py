@@ -1,0 +1,1 @@
+"""Core FastAPI application components."""

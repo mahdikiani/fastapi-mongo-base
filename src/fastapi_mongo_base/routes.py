@@ -1,8 +1,10 @@
+"""Abstract routers for CRUD operations with FastAPI."""
+
 import asyncio
 from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
-from typing import Any, TypeVar, cast
+from typing import cast
 
 import singleton
 from fastapi import APIRouter, BackgroundTasks, Query, Request
@@ -14,15 +16,16 @@ from .models import BaseEntity
 from .schemas import BaseEntitySchema, PaginatedResponse
 from .tasks import TaskStatusEnum
 
-# Define a type variable
-T = TypeVar("T", bound=BaseEntity)
-TS = TypeVar("TS", bound=BaseEntitySchema)
-TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
-
 
 class AbstractBaseRouter(metaclass=singleton.Singleton):
-    model: type[T]  # type: ignore
-    schema: type[TS] | None  # type: ignore
+    """
+    Abstract base router for CRUD operations with FastAPI.
+
+    Provides standard REST endpoints: list, retrieve, create, update, delete.
+    """
+
+    model: type[BaseEntity]
+    schema: type[BaseEntitySchema] | None
 
     unique_per_user: bool = False
     create_mine_if_not_found: bool = False
@@ -30,13 +33,24 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
     def __init__(
         self,
         *,
-        model: type[T] | None = None,
-        schema: type[TS] | None = None,
-        user_dependency: Callable[[Request], Any] | None = None,
+        model: type[BaseEntity] | None = None,
+        schema: type[BaseEntitySchema] | None = None,
+        user_dependency: Callable[[Request], object] | None = None,
         prefix: str | None = None,
         tags: list[str] | None = None,
         **kwargs: object,
     ) -> None:
+        """
+        Initialize abstract base router.
+
+        Args:
+            model: Entity model class.
+            schema: Pydantic schema class.
+            user_dependency: Optional user dependency function.
+            prefix: URL prefix for routes.
+            tags: OpenAPI tags for routes.
+            **kwargs: Additional keyword arguments.
+        """
         if model is None:
             if self.model is None:
                 raise ValueError(
@@ -67,29 +81,44 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         self.config_schemas(self.schema, **kwargs)
         self.config_routes(**kwargs)
 
-    def config_schemas(self, schema: TS, **kwargs: object) -> None:
+    def config_schemas(
+        self, schema: BaseEntitySchema, **kwargs: object
+    ) -> None:
+        """
+        Configure Pydantic schemas for request/response validation.
+
+        Args:
+            schema: Base schema class.
+            **kwargs: Optional schema overrides for specific operations.
+
+        """
         self.schema = schema
-        self.list_item_schema = kwargs.get("list_item_schema", schema)
-        self.list_response_schema = kwargs.get(
-            "list_response_schema", PaginatedResponse[self.list_item_schema]
+        self.list_item_schema: type[BaseModel] = kwargs.get(
+            "list_item_schema", schema
         )
-        self.retrieve_response_schema = kwargs.get(
+        self.list_response_schema: type[PaginatedResponse[type[BaseModel]]] = (
+            kwargs.get(
+                "list_response_schema",
+                PaginatedResponse[self.list_item_schema],
+            )
+        )
+        self.retrieve_response_schema: type[BaseModel] = kwargs.get(
             "retrieve_response_schema", schema
         )
-        self.create_response_schema = kwargs.get(
+        self.create_response_schema: type[BaseModel] = kwargs.get(
             "create_response_schema", schema
         )
-        self.update_response_schema = kwargs.get(
+        self.update_response_schema: type[BaseModel] = kwargs.get(
             "update_response_schema", schema
         )
-        self.delete_response_schema = kwargs.get(
+        self.delete_response_schema: type[BaseModel] = kwargs.get(
             "delete_response_schema", schema
         )
 
-        self.create_request_schema = kwargs.get(
+        self.create_request_schema: type[BaseModel] = kwargs.get(
             "create_request_schema", schema
         )
-        self.update_request_schema = kwargs.get(
+        self.update_request_schema: type[BaseModel] = kwargs.get(
             "update_request_schema", schema
         )
 
@@ -106,6 +135,21 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         mine_route: bool = False,
         **kwargs: object,
     ) -> None:
+        """
+        Configure FastAPI routes for CRUD operations.
+
+        Args:
+            prefix: URL prefix for routes.
+            list_route: Enable GET / endpoint for listing.
+            retrieve_route: Enable GET /{uid} endpoint.
+            create_route: Enable POST / endpoint.
+            update_route: Enable PATCH /{uid} endpoint.
+            delete_route: Enable DELETE /{uid} endpoint.
+            statistics_route: Enable GET /statistics endpoint.
+            mine_route: Enable GET /mine endpoint.
+            **kwargs: Additional keyword arguments.
+
+        """
         prefix = prefix.strip("/")
         prefix = f"/{prefix}" if prefix else ""
 
@@ -180,7 +224,23 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         user_id: str | None = None,
         tenant_id: str | None = None,
         **kwargs: object,
-    ) -> T:
+    ) -> BaseEntity:
+        """
+        Get an item by UID, raising exception if not found.
+
+        Args:
+            uid: Unique identifier.
+            user_id: Optional user ID filter.
+            tenant_id: Optional tenant ID filter.
+            **kwargs: Additional filter parameters.
+
+        Returns:
+            Entity instance.
+
+        Raises:
+            BaseHTTPException: If item is not found (404).
+
+        """
         item = await self.model.get_item(
             uid=uid,
             user_id=user_id,
@@ -200,6 +260,17 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
     async def get_user(
         self, request: Request, **kwargs: object
     ) -> object | None:
+        """
+        Get user from request using user_dependency.
+
+        Args:
+            request: FastAPI request object.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            User object or None if no user_dependency is configured.
+
+        """
         if self.user_dependency is None:
             return None
         if asyncio.iscoroutinefunction(self.user_dependency):
@@ -209,6 +280,17 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
     async def get_user_id(
         self, request: Request, **kwargs: object
     ) -> str | None:
+        """
+        Get user ID from request.
+
+        Args:
+            request: FastAPI request object.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            User ID string or None.
+
+        """
         user = await self.get_user(request)
         user_id = user.uid if user else None
         return user_id
@@ -220,7 +302,20 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         created_at_to: datetime | None = None,
         **kwargs: object,
     ) -> dict:
-        params: dict[str, Any] = dict(request.query_params)
+        """
+        Get statistics about items matching filters.
+
+        Args:
+            request: FastAPI request object.
+            created_at_from: Optional start date filter.
+            created_at_to: Optional end date filter.
+            **kwargs: Additional filter parameters.
+
+        Returns:
+            Dictionary with total count and filter parameters.
+
+        """
+        params: dict[str, object] = dict(request.query_params)
         if "is_deleted" in params:
             params["is_deleted"] = params["is_deleted"].lower() == "true"
 
@@ -235,6 +330,18 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
     ) -> dict:
+        """
+        Public statistics endpoint handler.
+
+        Args:
+            request: FastAPI request object.
+            created_at_from: Optional start date filter.
+            created_at_to: Optional end date filter.
+
+        Returns:
+            Dictionary with statistics.
+
+        """
         return await self._statistics(
             request=request,
             created_at_from=created_at_from,
@@ -247,7 +354,20 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         offset: int = 0,
         limit: int = 10,
         **kwargs: object,
-    ) -> PaginatedResponse[TS]:
+    ) -> PaginatedResponse[BaseModel]:
+        """
+        List items with pagination (internal helper).
+
+        Args:
+            request: FastAPI request object.
+            offset: Starting offset.
+            limit: Maximum number of items.
+            **kwargs: Additional filter parameters.
+
+        Returns:
+            PaginatedResponse with items and metadata.
+
+        """
         user_id = kwargs.pop("user_id", await self.get_user_id(request))
         limit = max(1, min(limit, Settings.page_max_limit))
 
@@ -275,7 +395,21 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         limit: int = Query(10, ge=1, le=Settings.page_max_limit),
         created_at_from: datetime | None = None,
         created_at_to: datetime | None = None,
-    ) -> PaginatedResponse[TS]:
+    ) -> PaginatedResponse[BaseEntitySchema]:
+        """
+        List items endpoint handler.
+
+        Args:
+            request: FastAPI request object.
+            offset: Starting offset for pagination.
+            limit: Maximum number of items to return.
+            created_at_from: Optional start date filter.
+            created_at_to: Optional end date filter.
+
+        Returns:
+            PaginatedResponse with items and metadata.
+
+        """
         return await self._list_items(
             request=request,
             offset=offset,
@@ -288,7 +422,18 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         self,
         request: Request,
         uid: str,
-    ) -> T:
+    ) -> BaseEntity:
+        """
+        Retrieve a single item by UID.
+
+        Args:
+            request: FastAPI request object.
+            uid: Unique identifier.
+
+        Returns:
+            Entity instance.
+
+        """
         user_id = await self.get_user_id(request)
         item = await self.get_item(uid=uid, user_id=user_id)
         return item
@@ -297,7 +442,18 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         self,
         request: Request,
         data: dict,
-    ) -> T:
+    ) -> BaseEntity:
+        """
+        Create a new item.
+
+        Args:
+            request: FastAPI request object.
+            data: Item data dictionary or Pydantic model.
+
+        Returns:
+            Created entity instance.
+
+        """
         user_id = await self.get_user_id(request)
         if isinstance(data, BaseModel):
             data = data.model_dump()
@@ -309,7 +465,19 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         request: Request,
         uid: str,
         data: dict,
-    ) -> T:
+    ) -> BaseEntity:
+        """
+        Update an existing item.
+
+        Args:
+            request: FastAPI request object.
+            uid: Unique identifier.
+            data: Update data dictionary or Pydantic model.
+
+        Returns:
+            Updated entity instance.
+
+        """
         user_id = await self.get_user_id(request)
         if isinstance(data, BaseModel):
             data = data.model_dump(exclude_unset=True)
@@ -321,7 +489,18 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         self,
         request: Request,
         uid: str,
-    ) -> T:
+    ) -> BaseEntity:
+        """
+        Delete an item (soft delete).
+
+        Args:
+            request: FastAPI request object.
+            uid: Unique identifier.
+
+        Returns:
+            Deleted entity instance.
+
+        """
         user_id = await self.get_user_id(request)
         item = await self.get_item(uid=uid, user_id=user_id)
 
@@ -331,7 +510,18 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
     async def mine_items(
         self,
         request: Request,
-    ) -> PaginatedResponse[TS]:
+    ) -> PaginatedResponse[BaseModel] | BaseModel:
+        """
+        Get items owned by the current user.
+
+        Args:
+            request: FastAPI request object.
+
+        Returns:
+            PaginatedResponse with user's items, or single item if
+            unique_per_user.
+
+        """
         user_id = await self.get_user_id(request)
         resp = await self._list_items(request=request, user_id=user_id)
         if resp.total == 0 and self.create_mine_if_not_found:
@@ -343,15 +533,28 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
 
 
 class AbstractTaskRouter(AbstractBaseRouter):
+    """Abstract router for task-based entities with processing capabilities."""
+
     def __init__(
         self,
         *,
-        model: type[T] | None = None,
-        schema: type[TS] | None = None,
-        user_dependency: Callable[[Request], Any] | None = None,
+        model: type[BaseEntity] | None = None,
+        schema: type[BaseEntitySchema] | None = None,
+        user_dependency: Callable[[Request], object] | None = None,
         draftable: bool = True,
         **kwargs: object,
     ) -> None:
+        """
+        Initialize task router.
+
+        Args:
+            model: Entity model class.
+            schema: Pydantic schema class.
+            user_dependency: Optional user dependency function.
+            draftable: Whether tasks can be created in draft status.
+            **kwargs: Additional keyword arguments.
+
+        """
         self.draftable = draftable
         super().__init__(
             model=model,
@@ -361,6 +564,12 @@ class AbstractTaskRouter(AbstractBaseRouter):
         )
 
     def config_routes(self, **kwargs: object) -> None:
+        """
+        Configure routes for task router with additional endpoints.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+        """
         super().config_routes(**kwargs)
 
         if self.draftable and kwargs.get("start_route", True):
@@ -386,6 +595,18 @@ class AbstractTaskRouter(AbstractBaseRouter):
         created_at_to: datetime | None = None,
         task_status: TaskStatusEnum | None = None,
     ) -> dict:
+        """
+        Get statistics for task items.
+
+        Args:
+            request: FastAPI request object.
+            created_at_from: Optional start date filter.
+            created_at_to: Optional end date filter.
+            task_status: Optional task status filter.
+
+        Returns:
+            Dictionary with statistics.
+        """
         return await super().statistics(request)
 
     async def create_item(
@@ -394,7 +615,19 @@ class AbstractTaskRouter(AbstractBaseRouter):
         data: dict,
         background_tasks: BackgroundTasks,
         blocking: bool = False,
-    ) -> T:
+    ) -> BaseEntity:
+        """
+        Create a new task item and optionally start processing.
+
+        Args:
+            request: FastAPI request object.
+            data: Item data dictionary or Pydantic model.
+            background_tasks: FastAPI background tasks.
+            blocking: Whether to process synchronously.
+
+        Returns:
+            Created task entity instance.
+        """
         if not self.draftable:
             data["task_status"] = "init"
 
@@ -410,6 +643,18 @@ class AbstractTaskRouter(AbstractBaseRouter):
     async def start_item(
         self, request: Request, uid: str, background_tasks: BackgroundTasks
     ) -> dict:
+        """
+        Start processing a task item.
+
+        Args:
+            request: FastAPI request object.
+            uid: Task unique identifier.
+            background_tasks: FastAPI background tasks.
+
+        Returns:
+            Task item as dictionary.
+
+        """
         user_id = await self.get_user_id(request)
         item = await self.get_item(uid=uid, user_id=user_id)
         background_tasks.add_task(item.start_processing)
@@ -421,6 +666,18 @@ class AbstractTaskRouter(AbstractBaseRouter):
         uid: str,
         data: dict,
     ) -> dict:
+        """
+        Handle webhook callbacks for task items.
+
+        Args:
+            request: FastAPI request object.
+            uid: Task unique identifier.
+            data: Webhook data dictionary.
+
+        Returns:
+            Response dictionary with webhook confirmation.
+
+        """
         import logging
 
         logging.info("Webhook received for %s with data %s", uid, data)
@@ -428,6 +685,17 @@ class AbstractTaskRouter(AbstractBaseRouter):
 
 
 def copy_router(router: APIRouter, new_prefix: str) -> APIRouter:
+    """
+    Create a copy of a router with a new prefix.
+
+    Args:
+        router: Source APIRouter instance.
+        new_prefix: New URL prefix for the copied router.
+
+    Returns:
+        New APIRouter instance with updated prefix.
+
+    """
     new_router = APIRouter(prefix=new_prefix)
     for route in router.routes:
         route_data = route.__dict__

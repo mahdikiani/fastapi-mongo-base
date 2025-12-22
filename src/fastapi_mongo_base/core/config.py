@@ -29,6 +29,13 @@ class Settings(metaclass=Singleton):
 
     @property
     def cors_origins(self) -> list[str]:
+        """
+        Get CORS allowed origins as a list.
+
+        Returns:
+            List of allowed origin URLs.
+
+        """
         if self._cors_origins_str and "[" in self._cors_origins_str:
             return json.loads(self._cors_origins_str)
         elif self._cors_origins_str:
@@ -40,12 +47,29 @@ class Settings(metaclass=Singleton):
 
     @classmethod
     def get_coverage_dir(cls) -> str:
+        """
+        Get the directory path for coverage reports.
+
+        Returns:
+            Path string to coverage directory.
+
+        """
         return getattr(cls, "base_dir", Path(".")) / "htmlcov"
 
     @classmethod
     def get_log_config(
         cls, console_level: str = "INFO", **kwargs: object
     ) -> dict[str, object]:
+        """
+        Get logging configuration dictionary.
+
+        Args:
+            console_level: Logging level for console handler.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Dictionary with logging configuration.
+        """
         log_config = {
             "formatters": {
                 "standard": {
@@ -73,6 +97,7 @@ class Settings(metaclass=Singleton):
 
     @classmethod
     def config_logger(cls) -> None:
+        """Configure Python logging with settings from get_log_config."""
         log_config = cls.get_log_config()
         if log_config["handlers"].get("file"):
             (getattr(cls, "base_dir", Path(".")) / "logs").mkdir(

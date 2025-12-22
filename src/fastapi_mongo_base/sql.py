@@ -1,3 +1,5 @@
+"""SQLAlchemy base entity classes and utilities."""
+
 import json
 import uuid
 from datetime import datetime
@@ -25,12 +27,15 @@ async_session: sessionmaker[AsyncSession] = None  # type: ignore
 
 @as_declarative()
 class BaseEntity:
+    """Base SQLAlchemy entity class with common fields and methods."""
+
     id: object
     __name__: str
     __abstract__ = True
 
     @declared_attr  # type: ignore
     def __tablename__(self) -> str:
+        """Generate table name from class name."""
         return self.__name__.lower()
 
     uid: Mapped[str] = mapped_column(
@@ -52,29 +57,45 @@ class BaseEntity:
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:
+        """Get list of fields to exclude during creation."""
         return ["uid", "created_at", "updated_at", "is_deleted"]
 
     @classmethod
     def create_field_set(cls) -> list[str]:
+        """Get list of fields to include during creation."""
         return []
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
+        """Get list of fields to exclude during update."""
         return ["uid", "created_at", "updated_at"]
 
     @classmethod
     def update_field_set(cls) -> list[str]:
+        """Get list of fields to include during update."""
         return []
 
     @classmethod
     def search_exclude_set(cls) -> list[str]:
+        """Get list of fields to exclude from search."""
         return ["meta_data"]
 
     @classmethod
     def search_field_set(cls) -> list[str]:
+        """Get list of fields to include in search."""
         return []
 
     def expired(self, days: int = 3) -> bool:
+        """
+        Check if entity has not been updated for specified days.
+
+        Args:
+            days: Number of days to check (default: 3).
+
+        Returns:
+            True if entity is expired, False otherwise.
+
+        """
         return (datetime.now(timezone.tz) - self.updated_at).days > days
 
     def dump(
@@ -84,6 +105,7 @@ class BaseEntity:
     ) -> dict[str, object]:
         """
         Dump the object into a dictionary.
+
         It includes all the fields of the object.
         """
         result = {}
@@ -104,11 +126,13 @@ class BaseEntity:
         return result
 
     def __hash__(self) -> int:
+        """Generate hash from object's dictionary representation."""
         json_str = json.dumps(self.dump())
         return hash(json_str)
 
     @property
     def item_url(self) -> str:
+        """Get the URL for this item."""
         return "/".join([
             f"https://{Settings.root_url}{Settings.base_path}",
             f"{self.__class__.__name__.lower()}s",
@@ -140,6 +164,16 @@ class BaseEntity:
 
     @classmethod
     def _build_extra_filters(cls, **kwargs: dict[str, object]) -> list:
+        """
+        Build SQLAlchemy filter expressions from keyword arguments.
+
+        Args:
+            **kwargs: Filter parameters with special suffixes.
+
+        Returns:
+            List of SQLAlchemy filter expressions.
+
+        """
         extra_filters = []
         for key, value in kwargs.items():
             if value is None:
@@ -205,6 +239,7 @@ class BaseEntity:
         created_at_to: datetime | None = None,
         **kwargs: object,
     ) -> list:
+        """Build query filters for database queries."""
         base_query = cls.get_queryset(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -226,6 +261,7 @@ class BaseEntity:
         is_deleted: bool = False,
         **kwargs: object,
     ) -> Self | None:
+        """Retrieve a single item by UID."""
         base_query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -251,6 +287,7 @@ class BaseEntity:
         limit: int = 10,
         **kwargs: object,
     ) -> list[Self]:
+        """List items with pagination."""
         base_query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -280,6 +317,7 @@ class BaseEntity:
         is_deleted: bool = False,
         **kwargs: object,
     ) -> int:
+        """Get total count of items matching filters."""
         base_query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -309,6 +347,7 @@ class BaseEntity:
         is_deleted: bool = False,
         **kwargs: object,
     ) -> tuple[list[Self], int]:
+        """List items with pagination and return total count."""
         items = await cls.list_items(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -327,6 +366,7 @@ class BaseEntity:
 
     @classmethod
     async def get_by_uid(cls, uid: str) -> Self | None:
+        """Get item by UID."""
         async with async_session() as session:
             query = select(cls).filter(cls.uid == uid)
             result = await session.execute(query)
@@ -335,6 +375,7 @@ class BaseEntity:
 
     @classmethod
     async def create_item(cls, data: dict) -> Self:
+        """Create a new item."""
         item = cls(**data)
         async with async_session() as session:
             session.add(item)
@@ -344,6 +385,7 @@ class BaseEntity:
 
     @classmethod
     async def update_item(cls, item: Self, data: dict) -> Self:
+        """Update an existing item."""
         for key, value in data.items():
             if cls.update_field_set() and key not in cls.update_field_set():
                 continue
@@ -360,6 +402,7 @@ class BaseEntity:
 
     @classmethod
     async def delete_item(cls, item: Self) -> Self:
+        """Soft delete an item by setting is_deleted to True."""
         item.is_deleted = True
         async with async_session() as session:
             session.add(item)
@@ -369,63 +412,96 @@ class BaseEntity:
 
 
 class UserOwnedEntity(BaseEntity):
+    """Base entity class for user-owned SQL resources."""
+
     __abstract__ = True
 
     user_id: Mapped[str] = mapped_column(index=True)
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:
+        """Get list of fields to exclude during creation, including user_id."""
         return [*super().create_exclude_set(), "user_id"]
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
+        """Get list of fields to exclude during update, including user_id."""
         return [*super().update_exclude_set(), "user_id"]
 
 
 class TenantScopedEntity(BaseEntity):
+    """Base entity class for tenant-scoped SQL resources."""
+
     __abstract__ = True
 
     tenant_id: Mapped[str] = mapped_column(index=True)
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:
+        """
+        Get list of fields to exclude during creation, including tenant_id.
+
+        Returns:
+            List of field names to exclude, including tenant_id.
+        """
         return [*super().create_exclude_set(), "tenant_id"]
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
+        """Get list of fields to exclude during update, including tenant_id."""
         return [*super().update_exclude_set(), "tenant_id"]
 
 
 class TenantUserEntity(TenantScopedEntity, UserOwnedEntity):
+    """Base entity class for tenant and user scoped SQL resources."""
+
     __abstract__ = True
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:
+        """
+        Get list of fields to exclude during creation.
+
+        Returns:
+            List of field names to exclude, including tenant_id and user_id.
+        """
         return list({*super().create_exclude_set(), "tenant_id", "user_id"})
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
+        """
+        Get list of fields to exclude during update.
+
+        Returns:
+            List of field names to exclude, including tenant_id and user_id.
+        """
         return list({*super().update_exclude_set(), "tenant_id", "user_id"})
 
 
 class ImmutableMixin(BaseEntity):
+    """Mixin for immutable SQL entities (cannot be updated or deleted)."""
+
     __abstract__ = True
 
     @staticmethod
     def prevent_update(
         mapper: object, connection: object, target: object
     ) -> None:
+        """Prevent updates to immutable items."""
         if connection.in_transaction() and target.id is not None:
             raise ValueError("Immutable items cannot be updated")
 
     @classmethod
     def __declare_last__(cls) -> None:
+        """Register event listener to prevent updates."""
         event.listen(cls, "before_update", cls.prevent_update)
 
     @classmethod
     async def update_item(cls, item: Self, data: dict) -> Never:
+        """Raise error as immutable items cannot be updated."""
         raise ValueError("Immutable items cannot be updated")
 
     @classmethod
     async def delete_item(cls, item: Self) -> Never:
+        """Raise error as immutable items cannot be deleted."""
         raise ValueError("Immutable items cannot be deleted")

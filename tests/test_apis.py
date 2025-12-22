@@ -1,3 +1,5 @@
+"""Test API endpoints."""
+
 import logging
 
 import httpx
@@ -6,6 +8,15 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_empty(client: httpx.AsyncClient) -> None:
+    """
+    Test empty endpoint.
+
+    Args:
+        client: Async client.
+
+    Returns:
+        None.
+    """
     response = await client.get("/test")
     assert response.status_code == 200
     logging.info(response.json())
@@ -13,6 +24,15 @@ async def test_empty(client: httpx.AsyncClient) -> None:
 
 @pytest.mark.asyncio
 async def test_create(client: httpx.AsyncClient) -> None:
+    """
+    Test create endpoint.
+
+    Args:
+        client: Async client.
+
+    Returns:
+        None.
+    """
     response = await client.post("/test", json={"name": "test"})
     logging.info(response.json())
     assert response.status_code == 201
@@ -20,6 +40,15 @@ async def test_create(client: httpx.AsyncClient) -> None:
 
 @pytest.mark.asyncio
 async def test_list(client: httpx.AsyncClient) -> None:
+    """
+    Test list endpoint.
+
+    Args:
+        client: Async client.
+
+    Returns:
+        None.
+    """
     response = await client.get("/test")
     assert response.status_code == 200
     logging.info(response.json())
@@ -32,6 +61,15 @@ async def test_list(client: httpx.AsyncClient) -> None:
 
 @pytest.mark.asyncio
 async def test_update(client: httpx.AsyncClient) -> None:
+    """
+    Test update endpoint.
+
+    Args:
+        client: Async client.
+
+    Returns:
+        None.
+    """
     response = await client.get("/test")
     assert response.status_code == 200
     logging.info(response.json())
@@ -44,6 +82,15 @@ async def test_update(client: httpx.AsyncClient) -> None:
 
 @pytest.mark.asyncio
 async def test_delete(client: httpx.AsyncClient) -> None:
+    """
+    Test delete endpoint.
+
+    Args:
+        client: Async client.
+
+    Returns:
+        None.
+    """
     response = await client.get("/test")
     assert response.status_code == 200
     logging.info(response.json())

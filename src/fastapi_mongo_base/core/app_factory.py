@@ -1,3 +1,5 @@
+"""FastAPI application factory and configuration."""
+
 import asyncio
 import logging
 from collections import deque
@@ -13,6 +15,16 @@ from . import config, db, exceptions
 
 
 def health(request: fastapi.Request) -> dict[str, str]:
+    """
+    Health check endpoint handler.
+
+    Args:
+        request: FastAPI request object.
+
+    Returns:
+        Dictionary with status "up".
+
+    """
     return {"status": "up"}
 
 
@@ -24,7 +36,19 @@ async def lifespan(
     init_functions: list | None = None,
     settings: config.Settings | None = None,
 ) -> AsyncGenerator[None]:
-    """Initialize application services."""
+    """
+    Initialize application services and manage application lifecycle.
+
+    Args:
+        app: FastAPI application instance.
+        worker: Optional worker coroutine to run in background.
+        init_functions: Optional list of initialization functions to run.
+        settings: Optional settings instance.
+
+    Yields:
+        None: Control is yielded to the application runtime.
+
+    """
     if init_functions is None:
         init_functions = []
     await db.init_mongo_db(settings)
@@ -48,6 +72,15 @@ async def lifespan(
 def setup_exception_handlers(
     *, app: fastapi.FastAPI, handlers: dict | None = None, **kwargs: object
 ) -> None:
+    """
+    Configure exception handlers for the FastAPI application.
+
+    Args:
+        app: FastAPI application instance.
+        handlers: Optional dictionary of custom exception handlers.
+        **kwargs: Additional keyword arguments.
+
+    """
     exception_handlers = exceptions.EXCEPTION_HANDLERS
     if handlers:
         exception_handlers.update(handlers)
@@ -59,6 +92,15 @@ def setup_exception_handlers(
 def setup_middlewares(
     *, app: fastapi.FastAPI, origins: list | None = None, **kwargs: object
 ) -> None:
+    """
+    Configure CORS middleware for the FastAPI application.
+
+    Args:
+        app: FastAPI application instance.
+        origins: Optional list of allowed CORS origins.
+        **kwargs: Additional keyword arguments.
+
+    """
     from fastapi.middleware.cors import CORSMiddleware
 
     if origins:
@@ -84,6 +126,25 @@ def get_app_kwargs(
     license_info: dict[str, str] | None = None,
     **kwargs: object,
 ) -> dict[str, Any]:
+    """
+    Generate keyword arguments for FastAPI app creation.
+
+    Args:
+        settings: Application settings instance.
+        title: Optional application title.
+        description: Optional application description.
+        version: Application version string.
+        lifespan_func: Optional lifespan function.
+        worker: Optional worker coroutine.
+        init_functions: Optional list of initialization functions.
+        contact: Optional contact information dictionary.
+        license_info: Optional license information dictionary.
+        **kwargs: Additional keyword arguments.
+
+    Returns:
+        Dictionary of keyword arguments for FastAPI app creation.
+
+    """
     if license_info is None:
         license_info = {
             "name": "MIT License",
@@ -97,7 +158,6 @@ def get_app_kwargs(
 
     settings.config_logger()
 
-    """Create a FastAPI app with shared configurations."""
     if settings is None:
         settings = config.Settings()
     if title is None:
@@ -156,6 +216,31 @@ def create_app(
     index_route: bool = True,
     **kwargs: object,
 ) -> fastapi.FastAPI:
+    """
+    Create and configure a FastAPI application instance.
+
+    Args:
+        settings: Application settings instance.
+        title: Optional application title.
+        description: Optional application description.
+        version: Application version string.
+        serve_coverage: Whether to serve coverage reports.
+        origins: Optional list of allowed CORS origins.
+        lifespan_func: Optional lifespan function.
+        worker: Optional worker coroutine.
+        init_functions: Optional list of initialization functions.
+        contact: Optional contact information dictionary.
+        license_info: Optional license information dictionary.
+        exception_handlers: Optional exception handlers dictionary.
+        log_route: Whether to enable log viewing route.
+        health_route: Whether to enable health check route.
+        index_route: Whether to enable index redirect route.
+        **kwargs: Additional keyword arguments.
+
+    Returns:
+        Configured FastAPI application instance.
+
+    """
     if init_functions is None:
         init_functions = []
     data = get_app_kwargs(
@@ -200,6 +285,24 @@ def configure_app(
     index_route: bool = True,
     **kwargs: object,
 ) -> fastapi.FastAPI:
+    """
+    Configure routes and middleware for a FastAPI application.
+
+    Args:
+        app: FastAPI application instance to configure.
+        settings: Application settings instance.
+        serve_coverage: Whether to serve coverage reports.
+        origins: Optional list of allowed CORS origins.
+        exception_handlers: Optional exception handlers dictionary.
+        log_route: Whether to enable log viewing route.
+        health_route: Whether to enable health check route.
+        index_route: Whether to enable index redirect route.
+        **kwargs: Additional keyword arguments.
+
+    Returns:
+        Configured FastAPI application instance.
+
+    """
     base_path: str = settings.base_path
     if origins is None:
         origins = settings.cors_origins
@@ -208,6 +311,13 @@ def configure_app(
     setup_middlewares(app=app, origins=origins, **kwargs)
 
     async def logs() -> list[str]:
+        """
+        Read the last 100 lines from the log file.
+
+        Returns:
+            List of log lines as strings.
+
+        """
         def read_logs() -> list[str]:
             with open(settings.get_log_config()["info_log_path"], "rb") as f:
                 last_100_lines = deque(f, maxlen=100)
@@ -216,6 +326,16 @@ def configure_app(
         return await asyncio.to_thread(read_logs)
 
     def index(request: fastapi.Request) -> RedirectResponse:
+        """
+        Redirect root path to API documentation.
+
+        Args:
+            request: FastAPI request object.
+
+        Returns:
+            Redirect response to /docs endpoint.
+
+        """
         return RedirectResponse(url=f"{base_path}/docs")
 
     if health_route:

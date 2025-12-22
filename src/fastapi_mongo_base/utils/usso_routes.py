@@ -1,5 +1,6 @@
+"""Authenticated router using USSO for FastAPI MongoDB base package."""
+
 import os
-from typing import TypeVar
 
 from fastapi import Request
 from pydantic import BaseModel
@@ -7,7 +8,7 @@ from pydantic import BaseModel
 from ..core import config, exceptions
 from ..models import BaseEntity
 from ..routes import AbstractBaseRouter
-from ..schemas import BaseEntitySchema, PaginatedResponse
+from ..schemas import PaginatedResponse
 
 try:
     from usso import UserData, authorization
@@ -16,10 +17,6 @@ try:
     from usso.integrations.fastapi import USSOAuthentication
 except ImportError as e:
     raise ImportError("USSO is not installed") from e
-
-T = TypeVar("T", bound=BaseEntity)
-TS = TypeVar("TS", bound=BaseEntitySchema)
-TSCHEMA = TypeVar("TSCHEMA", bound=BaseModel)
 
 
 class AbstractTenantUSSORouter(AbstractBaseRouter):
@@ -35,6 +32,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
                      Default is "owner".
         self_access: Whether to allow access to the resource by the user itself
                      in list queries. (user_id == resource.user_id).
+
     """
 
     resource: str | None = None
@@ -43,6 +41,12 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
 
     @property
     def resource_path(self) -> str:
+        """
+        Get the resource path for the USSO routes.
+
+        Returns:
+            Resource path.
+        """
         namespace = (
             getattr(self, "namespace", None)
             or os.getenv("USSO_NAMESPACE")
@@ -58,17 +62,26 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         return f"{namespace}/{service}/{resource}".lstrip("/")
 
     async def get_user(self, request: Request, **kwargs: object) -> UserData:
+        """
+        Get the user for the USSO routes.
+
+        Args:
+            request: The request.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            User.
+        """
         usso_base_url = os.getenv("USSO_BASE_URL") or "https://usso.uln.me"
 
         usso = USSOAuthentication(
             jwt_config=AuthConfig(
                 jwks_url=(f"{usso_base_url}/.well-known/jwks.json"),
                 api_key_header=APIHeaderConfig(
-                    type="CustomHeader",
-                    name="x-api-key",
+                    header_name="x-api-key",
                     verify_endpoint=(
                         f"{usso_base_url}/api/sso/v1/apikeys/verify"
-                    ),
+                    )
                 ),
             ),
             from_usso_base_url=usso_base_url,
@@ -83,6 +96,20 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         filter_data: dict | None = None,
         raise_exception: bool = True,
     ) -> bool:
+        """
+        Authorize the user to perform the action on the resource.
+
+        Args:
+            action: The action to authorize the user to do.
+            user: The user to authorize.
+            filter_data: The filter data to authorize the user to do.
+            raise_exception: Whether to raise an exception if the user
+            is not authorized.
+
+        Returns:
+            True if the user is authorized to perform the action on
+            the resource, False otherwise.
+        """
         if user is None:
             if raise_exception:
                 raise USSOException(401, "unauthorized")
@@ -110,6 +137,15 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         return True
 
     def get_list_filter_queries(self, *, user: UserData) -> dict:
+        """
+        Get the list filter queries for the USSO routes.
+
+        Args:
+            user: The user to get the list filter queries for.
+
+        Returns:
+            List filter queries.
+        """
         matched_scopes: list[dict] = authorization.get_scope_filters(
             action="read",
             resource=self.resource_path,
@@ -127,13 +163,28 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         uid: str,
         user_id: str | None = None,
         tenant_id: str | None = None,
+        is_deleted: bool = False,
         **kwargs: object,
-    ) -> T:
+    ) -> BaseEntity:
+        """
+        Get the item for the USSO routes.
+
+        Args:
+            uid: The UID of the item.
+            user_id: The user ID of the item.
+            tenant_id: The tenant ID of the item.
+            is_deleted: The deletion status of the item.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Item.
+        """
         item = await self.model.get_item(
             uid=uid,
             user_id=user_id,
             tenant_id=tenant_id,
-            ignore_user_id=True,
+            is_deleted=is_deleted,
+            ignore_user_id=kwargs.pop("ignore_user_id", True),
             **kwargs,
         )
         if item is None:
@@ -152,7 +203,19 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         offset: int = 0,
         limit: int = 10,
         **kwargs: object,
-    ) -> PaginatedResponse[TS]:
+    ) -> PaginatedResponse[BaseModel]:
+        """
+        Get the list items for the USSO routes.
+
+        Args:
+            request: The request.
+            offset: The offset of the items.
+            limit: The limit of the items.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List items.
+        """
         user = await self.get_user(request)
         limit = max(1, min(limit, config.Settings.page_max_limit))
 
@@ -189,7 +252,17 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
             limit=limit,
         )
 
-    async def retrieve_item(self, request: Request, uid: str) -> T:
+    async def retrieve_item(self, request: Request, uid: str) -> BaseEntity:
+        """
+        Retrieve the item for the USSO routes.
+
+        Args:
+            request: The request.
+            uid: The UID of the item.
+
+        Returns:
+            Item.
+        """
         user = await self.get_user(request)
         item = await self.get_item(
             uid=uid, user_id=None, tenant_id=user.tenant_id
@@ -201,7 +274,17 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         )
         return item
 
-    async def create_item(self, request: Request, data: dict) -> T:
+    async def create_item(self, request: Request, data: dict) -> BaseEntity:
+        """
+        Create the item for the USSO routes.
+
+        Args:
+            request: The request.
+            data: The data to create the item.
+
+        Returns:
+            Item.
+        """
         user = await self.get_user(request)
         if isinstance(data, BaseModel):
             data = data.model_dump()
@@ -213,7 +296,20 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         })
         return item
 
-    async def update_item(self, request: Request, uid: str, data: dict) -> T:
+    async def update_item(
+        self, request: Request, uid: str, data: dict
+    ) -> BaseEntity:
+        """
+        Update the item for the USSO routes.
+
+        Args:
+            request: The request.
+            uid: The UID of the item.
+            data: The data to update the item.
+
+        Returns:
+            Item.
+        """
         user = await self.get_user(request)
         if isinstance(data, BaseModel):
             data = data.model_dump(exclude_unset=True)
@@ -228,7 +324,17 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         item = await self.model.update_item(item, data)
         return item
 
-    async def delete_item(self, request: Request, uid: str) -> T:
+    async def delete_item(self, request: Request, uid: str) -> BaseEntity:
+        """
+        Delete the item for the USSO routes.
+
+        Args:
+            request: The request.
+            uid: The UID of the item.
+
+        Returns:
+            Item.
+        """
         user = await self.get_user(request)
         item = await self.get_item(
             uid=uid, user_id=None, tenant_id=user.tenant_id
@@ -245,7 +351,16 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
     async def mine_items(
         self,
         request: Request,
-    ) -> PaginatedResponse[TS]:
+    ) -> PaginatedResponse[BaseModel] | BaseModel:
+        """
+        Get the items for the USSO routes.
+
+        Args:
+            request: The request.
+
+        Returns:
+            Items.
+        """
         user = await self.get_user(request)
         resp = await self._list_items(
             request=request,

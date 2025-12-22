@@ -1,3 +1,5 @@
+"""Task utilities and mixins for background processing."""
+
 import asyncio
 import logging
 from collections.abc import Coroutine
@@ -14,6 +16,8 @@ from .utils import basic, timezone
 
 
 class TaskStatusEnum(StrEnum):
+    """Enumeration of task status values."""
+
     none = "null"
     draft = "draft"
     init = "init"
@@ -25,19 +29,32 @@ class TaskStatusEnum(StrEnum):
 
     @classmethod
     def finishes(cls) -> list[Self]:
+        """
+        Get list of statuses that indicate task completion.
+
+        Returns:
+            List of finished status enums (done, error, completed).
+
+        """
         return [cls.done, cls.error, cls.completed]
 
     @property
     def is_done(self) -> bool:
+        """Check if task status indicates completion."""
         return self in self.finishes()
 
 
 class SignalRegistry(metaclass=Singleton):
+    """Singleton registry for task signal handlers."""
+
     def __init__(self) -> None:
+        """Initialize the signal registry."""
         self.signal_map: dict[str, list[basic.FunctionOrCoroutine]] = {}
 
 
 class TaskLogRecord(BaseModel):
+    """Record of a task log entry."""
+
     reported_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.tz)
     )
@@ -47,6 +64,7 @@ class TaskLogRecord(BaseModel):
     log_type: str | None = None
 
     def __eq__(self, other: object) -> bool:
+        """Check equality with another TaskLogRecord."""
         if isinstance(other, TaskLogRecord):
             return (
                 self.reported_at == other.reported_at
@@ -58,6 +76,7 @@ class TaskLogRecord(BaseModel):
         return False
 
     def __hash__(self) -> int:
+        """Generate hash from task log record fields."""
         return hash((
             self.reported_at,
             self.message,
@@ -67,10 +86,13 @@ class TaskLogRecord(BaseModel):
 
 
 class TaskReference(BaseModel):
+    """Reference to another task."""
+
     task_id: str
     task_type: str
 
     def __eq__(self, other: object) -> bool:
+        """Check equality with another TaskReference."""
         if isinstance(other, TaskReference):
             return (
                 self.task_id == other.task_id
@@ -79,9 +101,11 @@ class TaskReference(BaseModel):
         return False
 
     def __hash__(self) -> int:
+        """Generate hash from task reference fields."""
         return hash((self.task_id, self.task_type))
 
     async def get_task_item(self) -> BaseEntitySchema | None:
+        """Retrieve the referenced task item."""
         task_classes = {
             subclass.__name__: subclass
             for subclass in basic.get_all_subclasses(TaskMixin)
@@ -103,15 +127,23 @@ class TaskReference(BaseModel):
 
 
 class TaskReferenceList(BaseModel):
+    """List of task references with processing mode."""
+
     tasks: list[Union[TaskReference, "TaskReferenceList"]] = Field(
         default_factory=list
     )
     mode: Literal["serial", "parallel"] = "serial"
 
     async def get_task_item(self) -> list[BaseEntitySchema]:
+        """Retrieve all referenced task items."""
         return [await task.get_task_item() for task in self.tasks]
 
     async def list_processing(self) -> None:
+        """
+        Process all tasks in the list according to mode.
+
+        Mode can be 'serial' or 'parallel'.
+        """
         task_items = [await task.get_task_item() for task in self.tasks]
         match self.mode:
             case "serial":
@@ -125,6 +157,8 @@ class TaskReferenceList(BaseModel):
 
 
 class TaskMixin(BaseModel):
+    """Mixin class for entities with task processing capabilities."""
+
     task_status: TaskStatusEnum = TaskStatusEnum.draft
     task_report: str | None = None
     task_progress: int = -1
@@ -138,22 +172,27 @@ class TaskMixin(BaseModel):
 
     @property
     def webhook_exclude_fields(self) -> set[str] | None:
+        """Get fields to exclude from webhook payload."""
         return None
 
     @property
     def webhook_include_fields(self) -> set[str] | None:
+        """Get fields to include in webhook payload."""
         return None
 
     @classmethod
     def get_queue_name(cls) -> str:
+        """Get the queue name for this task class."""
         return f"{cls.__name__.lower()}_queue"
 
     @property
     def item_webhook_url(self) -> str:
+        """Get the webhook URL for this task item."""
         return f"{self.item_url}/webhook"  # type: ignore
 
     @property
     def task_duration(self) -> int:
+        """Calculate task duration in seconds."""
         if self.task_start_at:
             if self.task_end_at:
                 return self.task_end_at - self.task_start_at
@@ -166,18 +205,21 @@ class TaskMixin(BaseModel):
         cls,
         value: object,
     ) -> Self:
+        """Validate and convert task status value."""
         if isinstance(value, str):
             return TaskStatusEnum(value)
         return value
 
     @field_serializer("task_status")
     def serialize_task_status(self, value: object) -> str:
+        """Serialize task status to string."""
         if isinstance(value, TaskStatusEnum):
             return value.value
         return value
 
     @classmethod
     def signals(cls) -> list[basic.FunctionOrCoroutine]:
+        """Get list of signal handlers for this task class."""
         registry = SignalRegistry()
         if cls.__name__ not in registry.signal_map:
             registry.signal_map[cls.__name__] = []
@@ -185,12 +227,15 @@ class TaskMixin(BaseModel):
 
     @classmethod
     def add_signal(cls, signal: basic.FunctionOrCoroutine) -> None:
+        """Add a signal handler to this task class."""
         cls.signals().append(signal)
 
     @classmethod
     async def emit_signals(
         cls, task_instance: Self, *, sync: bool = False, **kwargs: object
     ) -> None:
+        """Emit all registered signals for the task instance."""
+
         async def webhook_call(
             *args: object, **kwargs: object
         ) -> dict[str, object]:
@@ -263,6 +308,7 @@ class TaskMixin(BaseModel):
     async def save_status(
         self, status: TaskStatusEnum, **kwargs: object
     ) -> None:
+        """Save task status and log the change."""
         self.task_status = status
         await self.add_log(
             TaskLogRecord(
@@ -274,6 +320,7 @@ class TaskMixin(BaseModel):
         )
 
     async def add_reference(self, task_id: str, **kwargs: object) -> None:
+        """Add a reference to another task."""
         if self.task_references is None:
             self.task_references = TaskReferenceList()
         self.task_references.tasks.append(
@@ -289,6 +336,7 @@ class TaskMixin(BaseModel):
         )
 
     async def save_report(self, report: str, **kwargs: object) -> None:
+        """Save a task report and log it."""
         self.task_report = report
         await self.add_log(
             TaskLogRecord(
@@ -302,11 +350,13 @@ class TaskMixin(BaseModel):
     async def add_log(
         self, log_record: TaskLogRecord, *, emit: bool = True, **kwargs: object
     ) -> None:
+        """Add a log record to the task."""
         self.task_logs.append(log_record)
         if emit:
             await self.save_and_emit()
 
     async def start_processing(self, **kwargs: object) -> None:
+        """Start processing task references."""
         if self.task_references is None:
             raise NotImplementedError(
                 "Subclasses should implement this method"
@@ -317,7 +367,14 @@ class TaskMixin(BaseModel):
     async def push_to_queue(
         self, redis_client: object, **kwargs: object
     ) -> None:
-        """Add the task to Redis queue"""
+        """
+        Add the task to Redis queue for background processing.
+
+        Args:
+            redis_client: Redis client instance.
+            **kwargs: Additional task parameters.
+
+        """
         import json
 
         queue_name = f"{self.__class__.__name__.lower()}_queue"
@@ -328,6 +385,7 @@ class TaskMixin(BaseModel):
 
     @basic.try_except_wrapper
     async def save_and_emit(self, **kwargs: object) -> None:
+        """Save task and emit signals."""
         if kwargs.get("sync"):
             await self.save()  # type: ignore
             await self.emit_signals(self, **kwargs)
@@ -338,6 +396,14 @@ class TaskMixin(BaseModel):
             )
 
     async def update_and_emit(self, **kwargs: object) -> None:
+        """
+        Update task fields and emit signals.
+
+        Args:
+            **kwargs: Field updates (task_status, task_progress,
+                task_report, etc.).
+
+        """
         if kwargs.get("task_status") in [
             TaskStatusEnum.done,
             TaskStatusEnum.error,

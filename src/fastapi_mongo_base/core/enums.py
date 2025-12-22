@@ -1,7 +1,11 @@
+"""Language enumeration with metadata."""
+
 from enum import StrEnum
 
 
 class Language(StrEnum):
+    """Enumeration of supported languages with metadata."""
+
     English = "English"
     Persian = "Persian"
     Arabic = "Arabic"
@@ -28,10 +32,27 @@ class Language(StrEnum):
 
     @classmethod
     def has_value(cls, value: str) -> bool:
+        """
+        Check if a value exists in the Language enum.
+
+        Args:
+            value: String value to check.
+
+        Returns:
+            True if value exists, False otherwise.
+
+        """
         return value in cls._value2member_map_
 
     @property
     def _info(self) -> dict[str, str]:
+        """
+        Get language information dictionary.
+
+        Returns:
+            Dictionary containing Persian name, English name, and abbreviation.
+
+        """
         return {
             Language.English: {
                 "fa": "انگلیسی",
@@ -152,19 +173,54 @@ class Language(StrEnum):
 
     @property
     def fa(self) -> str:
+        """
+        Get Persian name of the language.
+
+        Returns:
+            Persian name string.
+
+        """
         return self._info["fa"]
 
     @property
     def en(self) -> str:
+        """
+        Get English name of the language.
+
+        Returns:
+            English name string.
+
+        """
         return self._info["en"]
 
     @property
     def abbreviation(self) -> str:
+        """
+        Get language abbreviation code.
+
+        Returns:
+            Two-letter language code (e.g., "en", "fa").
+
+        """
         return self._info["abbreviation"]
 
     def get_dict(self) -> dict[str, str]:
+        """
+        Get complete language information as dictionary.
+
+        Returns:
+            Dictionary with fa, en, abbreviation, and value keys.
+
+        """
         return self._info | {"value": self.value}
 
     @classmethod
     def get_choices(cls) -> list[dict[str, str]]:
+        """
+        Get list of all language choices as dictionaries.
+
+        Returns:
+            List of dictionaries, each containing language information.
+
+        """
         return [item.get_dict() for item in cls]

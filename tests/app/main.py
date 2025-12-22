@@ -1,6 +1,8 @@
+"""Main module for the test server."""
+
 from pathlib import Path
 
-from server import app
+from .server import app
 
 __all__ = ["app"]
 
