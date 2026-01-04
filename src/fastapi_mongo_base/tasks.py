@@ -1,6 +1,7 @@
 """Task utilities and mixins for background processing."""
 
 import asyncio
+import inspect
 import logging
 from collections.abc import Coroutine
 from datetime import datetime
@@ -297,7 +298,7 @@ class TaskMixin(BaseModel):
         signals += [
             (
                 signal(task_instance)
-                if asyncio.iscoroutinefunction(signal)
+                if inspect.iscoroutinefunction(signal)
                 else asyncio.to_thread(signal, task_instance)
             )
             for signal in cls.signals()

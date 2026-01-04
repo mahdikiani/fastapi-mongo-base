@@ -1,6 +1,7 @@
 """FastAPI application factory and configuration."""
 
 import asyncio
+import inspect
 import logging
 from collections import deque
 from collections.abc import AsyncGenerator, Callable
@@ -57,7 +58,7 @@ async def lifespan(
         app.state.worker = asyncio.create_task(worker())
 
     for function in init_functions:
-        if asyncio.iscoroutinefunction(function):
+        if inspect.iscoroutinefunction(function):
             await function()
         else:
             function()

@@ -6,6 +6,7 @@ This module provides decorators and helpers for common async patterns.
 
 import asyncio
 import functools
+import inspect
 import json
 import logging
 import time
@@ -152,7 +153,7 @@ def _async_try_except_wrapper(func: Callable) -> Callable:
     @functools.wraps(func)
     async def wrapper(*args: object, **kwargs: object) -> object:
         try:
-            if asyncio.iscoroutinefunction(func):
+            if inspect.iscoroutinefunction(func):
                 return await func(*args, **kwargs)
             return await asyncio.to_thread(func, *args, **kwargs)
         except Exception as e:
@@ -187,7 +188,7 @@ def try_except_wrapper(
         Wrapped function with error handling.
 
     """
-    if sync_to_thread or asyncio.iscoroutinefunction(func):
+    if sync_to_thread or inspect.iscoroutinefunction(func):
         return _async_try_except_wrapper(func)
     return _sync_try_except_wrapper(func)
 
@@ -209,7 +210,7 @@ def delay_execution(seconds: int, sync_to_thread: bool = False) -> Callable:
         @functools.wraps(func)
         async def awrapped_func(*args: object, **kwargs: object) -> object:
             await asyncio.sleep(seconds)
-            if asyncio.iscoroutinefunction(func):
+            if inspect.iscoroutinefunction(func):
                 return await func(*args, **kwargs)
             return await asyncio.to_thread(func, *args, **kwargs)
 
@@ -218,7 +219,7 @@ def delay_execution(seconds: int, sync_to_thread: bool = False) -> Callable:
             time.sleep(seconds)
             return func(*args, **kwargs)
 
-        if sync_to_thread or asyncio.iscoroutinefunction(func):
+        if sync_to_thread or inspect.iscoroutinefunction(func):
             return awrapped_func
         return wrapped_func
 
@@ -233,7 +234,7 @@ def _async_retry_wrapper(
         last_exception = None
         for attempt in range(attempts):
             try:
-                if asyncio.iscoroutinefunction(func):
+                if inspect.iscoroutinefunction(func):
                     return await func(*args, **kwargs)
                 return await asyncio.to_thread(func, *args, **kwargs)
             except Exception as e:
@@ -292,7 +293,7 @@ def retry_execution(
     """
 
     def decorator(func: Callable) -> Callable:
-        if sync_to_thread or asyncio.iscoroutinefunction(func):
+        if sync_to_thread or inspect.iscoroutinefunction(func):
             return _async_retry_wrapper(func, attempts, delay)
         return _sync_retry_wrapper(func, attempts, delay)
 

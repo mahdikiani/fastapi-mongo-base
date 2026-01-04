@@ -1,6 +1,6 @@
 """Abstract routers for CRUD operations with FastAPI."""
 
-import asyncio
+import inspect
 from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
@@ -273,7 +273,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         """
         if self.user_dependency is None:
             return None
-        if asyncio.iscoroutinefunction(self.user_dependency):
+        if inspect.iscoroutinefunction(self.user_dependency):
             return await self.user_dependency(request)
         return self.user_dependency(request)
 
