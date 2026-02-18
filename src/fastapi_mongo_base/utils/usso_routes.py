@@ -1,6 +1,7 @@
 """Authenticated router using USSO for FastAPI MongoDB base package."""
 
 import os
+from collections.abc import Callable
 
 from fastapi import Request
 from pydantic import BaseModel
@@ -19,34 +20,48 @@ except ImportError as e:
     raise ImportError("USSO is not installed") from e
 
 
-class AbstractTenantUSSORouter(AbstractBaseRouter):
+class AbstractUSSORouterBase(AbstractBaseRouter):
     """
-    Abstract base class for USSO routes.
+    Abstract base for USSO-authenticated routes with configurable ownership.
 
-    Attributes:
-        namespace: The namespace of the resource.
-        service: The service of the resource.
-        resource: The resource name.
-        self_action: The action to authorize the user to do action on the
-                     owned resource. (user_id == resource.user_id).
-                     Default is "owner".
-        self_access: Whether to allow access to the resource by the user itself
-                     in list queries. (user_id == resource.user_id).
-
+    Subclasses configure ownership via:
+    - owner_attr: model field used for ownership ("user_id" or "owner_id").
+    - get_owner_id: (user) -> str used for authorization and list filters.
+    - get_owner_id_for_create: (user) -> str for create
+      (default: get_owner_id).
     """
 
     resource: str | None = None
     self_action: str = "owner"
     self_access: bool = True
 
-    @property
-    def resource_path(self) -> str:
+    # Override in subclasses: "user_id" or "owner_id"
+    owner_attr: str = "user_id"
+
+    get_owner_id: Callable[[UserData], str] = lambda u: getattr(
+        u, "uid", u.user_id
+    )
+    get_owner_id_for_create: Callable[[UserData], str] | None = (
+        None  # same as get_owner_id
+    )
+
+    def _owner_id_for_create(self, user: UserData) -> str:
         """
-        Get the resource path for the USSO routes.
+        Return owner id to set on new items (may differ from auth owner id).
+
+        Args:
+            user: The user data.
 
         Returns:
-            Resource path.
+            The owner id to set on new items.
         """
+        if self.get_owner_id_for_create is not None:
+            return self.get_owner_id_for_create(user)
+        return self.get_owner_id(user)
+
+    @property
+    def resource_path(self) -> str:
+        """Resource path for USSO (namespace/service/resource)."""
         namespace = (
             getattr(self, "namespace", None)
             or os.getenv("USSO_NAMESPACE")
@@ -62,26 +77,16 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         return f"{namespace}/{service}/{resource}".lstrip("/")
 
     async def get_user(self, request: Request, **kwargs: object) -> UserData:
-        """
-        Get the user for the USSO routes.
-
-        Args:
-            request: The request.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            User.
-        """
+        """Resolve authenticated user from request."""
         usso_base_url = os.getenv("USSO_BASE_URL") or "https://usso.uln.me"
-
         usso = USSOAuthentication(
             jwt_config=AuthConfig(
-                jwks_url=(f"{usso_base_url}/.well-known/jwks.json"),
+                jwks_url=f"{usso_base_url}/.well-known/jwks.json",
                 api_key_header=APIHeaderConfig(
                     header_name="x-api-key",
                     verify_endpoint=(
                         f"{usso_base_url}/api/sso/v1/apikeys/verify"
-                    )
+                    ),
                 ),
             ),
             from_usso_base_url=usso_base_url,
@@ -97,28 +102,34 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         raise_exception: bool = True,
     ) -> bool:
         """
-        Authorize the user to perform the action on the resource.
+        Authorize the user for the given action.
 
         Args:
-            action: The action to authorize the user to do.
+            action: The action to authorize.
             user: The user to authorize.
-            filter_data: The filter data to authorize the user to do.
+            filter_data: The filter data to authorize.
             raise_exception: Whether to raise an exception if the user
-            is not authorized.
+                             is not authorized (default: True).
 
         Returns:
-            True if the user is authorized to perform the action on
-            the resource, False otherwise.
+            True if the user is authorized, False otherwise.
+
+        Raises:
+            USSOException: If the user is not authorized and
+                           raise_exception is True.
+            PermissionDenied: If the user is not authorized and
+                              raise_exception is False.
         """
         if user is None:
             if raise_exception:
                 raise USSOException(401, "unauthorized")
             return False
+        owner_id = self.get_owner_id(user)
         if authorization.owner_authorization(
             requested_filter=filter_data,
-            user_id=user.uid,
             self_action=self.self_action,
             action=action,
+            **{self.owner_attr: owner_id},
         ):
             return True
         user_scopes = user.scopes or []
@@ -137,54 +148,35 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         return True
 
     def get_list_filter_queries(self, *, user: UserData) -> dict:
-        """
-        Get the list filter queries for the USSO routes.
-
-        Args:
-            user: The user to get the list filter queries for.
-
-        Returns:
-            List filter queries.
-        """
+        """Build list query filters from user and scopes."""
         matched_scopes: list[dict] = authorization.get_scope_filters(
             action="read",
             resource=self.resource_path,
             user_scopes=user.scopes if user else [],
         )
-        if self.self_access and hasattr(self.model, "user_id"):
-            matched_scopes.append({"user_id": user.uid})
+        if self.self_access and hasattr(self.model, self.owner_attr):
+            matched_scopes.append({self.owner_attr: self.get_owner_id(user)})
         elif not matched_scopes:
-            return {"__deny__": True}  # no access to any resource
-
+            return {"__deny__": True}
         return authorization.broadest_scope_filter(matched_scopes)
 
     async def get_item(
         self,
         uid: str,
-        user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
         **kwargs: object,
     ) -> BaseEntity:
-        """
-        Get the item for the USSO routes.
-
-        Args:
-            uid: The UID of the item.
-            user_id: The user ID of the item.
-            tenant_id: The tenant ID of the item.
-            is_deleted: The deletion status of the item.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Item.
-        """
+        """Fetch one item by uid; raise if not found."""
+        ignore_attr = f"ignore_{self.owner_attr}"
+        owner_value = kwargs.pop(self.owner_attr, None)
+        ignore_val = kwargs.pop(ignore_attr, True)
+        item_kw = {self.owner_attr: owner_value, ignore_attr: ignore_val}
         item = await self.model.get_item(
             uid=uid,
-            user_id=user_id,
             tenant_id=tenant_id,
             is_deleted=is_deleted,
-            ignore_user_id=kwargs.pop("ignore_user_id", True),
+            **item_kw,
             **kwargs,
         )
         if item is None:
@@ -205,20 +197,22 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         **kwargs: object,
     ) -> PaginatedResponse[BaseModel]:
         """
-        Get the list items for the USSO routes.
+        List items with pagination.
 
         Args:
-            request: The request.
-            offset: The offset of the items.
-            limit: The limit of the items.
+            request: The request object.
+            offset: The offset of the items to list.
+            limit: The limit of the items to list.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            List items.
+            The paginated response.
+
+        Raises:
+            BaseHTTPException: If the user is not authorized to list the items.
         """
         user = await self.get_user(request)
         limit = max(1, min(limit, config.Settings.page_max_limit))
-
         filters = self.get_list_filter_queries(user=user)
         if filters.get("__deny__"):
             raise exceptions.BaseHTTPException(
@@ -229,10 +223,7 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
                 },
             )
             return PaginatedResponse(
-                items=[],
-                total=0,
-                offset=offset,
-                limit=limit,
+                items=[], total=0, offset=offset, limit=limit
             )
 
         items, total = await self.model.list_total_combined(
@@ -244,7 +235,6 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         items_in_schema = [
             self.list_item_schema.model_validate(item) for item in items
         ]
-
         return PaginatedResponse(
             items=items_in_schema,
             total=total,
@@ -254,18 +244,23 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
 
     async def retrieve_item(self, request: Request, uid: str) -> BaseEntity:
         """
-        Retrieve the item for the USSO routes.
+        Retrieve an item by uid.
 
         Args:
-            request: The request.
-            uid: The UID of the item.
+            request: The request object.
+            uid: The uid of the item to retrieve.
 
         Returns:
-            Item.
+            The item.
+
+        Raises:
+            BaseHTTPException: If the object is not found.
+            PermissionDenied: If the user is not authorized
+                              to retrieve the item.
         """
         user = await self.get_user(request)
         item = await self.get_item(
-            uid=uid, user_id=None, tenant_id=user.tenant_id
+            uid=uid, tenant_id=user.tenant_id, **{self.owner_attr: None}
         )
         await self.authorize(
             action="read",
@@ -276,100 +271,108 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
 
     async def create_item(self, request: Request, data: dict) -> BaseEntity:
         """
-        Create the item for the USSO routes.
+        Create an item.
 
         Args:
-            request: The request.
-            data: The data to create the item.
+            request: The request object.
+            data: The data of the item to create.
 
         Returns:
-            Item.
+            The item.
+
+        Raises:
+            USSOException: If the user is not authorized to create the item.
         """
         user = await self.get_user(request)
         if isinstance(data, BaseModel):
             data = data.model_dump()
         await self.authorize(action="create", user=user, filter_data=data)
-        item = await self.model.create_item({
+        return await self.model.create_item({
             **data,
-            "user_id": user.user_id,
+            self.owner_attr: self._owner_id_for_create(user),
             "tenant_id": user.tenant_id,
         })
-        return item
 
     async def update_item(
         self, request: Request, uid: str, data: dict
     ) -> BaseEntity:
         """
-        Update the item for the USSO routes.
+        Update an item.
 
         Args:
-            request: The request.
-            uid: The UID of the item.
-            data: The data to update the item.
+            request: The request object.
+            uid: The uid of the item to update.
+            data: The data of the item to update.
 
         Returns:
-            Item.
+            The item.
+
+        Raises:
+            BaseHTTPException: If the object is not found.
+            USSOException: If the user is not authorized to update the item.
         """
         user = await self.get_user(request)
         if isinstance(data, BaseModel):
             data = data.model_dump(exclude_unset=True)
         item = await self.get_item(
-            uid=uid, user_id=None, tenant_id=user.tenant_id
+            uid=uid, tenant_id=user.tenant_id, **{self.owner_attr: None}
         )
         await self.authorize(
             action="update",
             user=user,
             filter_data=item.model_dump(),
         )
-        item = await self.model.update_item(item, data)
-        return item
+        return await self.model.update_item(item, data)
 
     async def delete_item(self, request: Request, uid: str) -> BaseEntity:
         """
-        Delete the item for the USSO routes.
+        Delete an item.
 
         Args:
-            request: The request.
-            uid: The UID of the item.
+            request: The request object.
+            uid: The uid of the item to delete.
 
         Returns:
-            Item.
+            The item.
+
+        Raises:
+            BaseHTTPException: If the object is not found.
+            USSOException: If the user is not authorized to delete the item.
         """
         user = await self.get_user(request)
         item = await self.get_item(
-            uid=uid, user_id=None, tenant_id=user.tenant_id
+            uid=uid, tenant_id=user.tenant_id, **{self.owner_attr: None}
         )
-
         await self.authorize(
             action="delete",
             user=user,
             filter_data=item.model_dump(),
         )
-        item = await self.model.delete_item(item)
-        return item
+        return await self.model.delete_item(item)
 
     async def mine_items(
         self,
         request: Request,
     ) -> PaginatedResponse[BaseModel] | BaseModel:
         """
-        Get the items for the USSO routes.
+        Get items owned by the current user.
 
         Args:
-            request: The request.
+            request: The request object.
 
         Returns:
-            Items.
+            The items.
         """
         user = await self.get_user(request)
+        owner_id = self.get_owner_id(user)
         resp = await self._list_items(
             request=request,
-            user_id=user.uid,
+            **{self.owner_attr: owner_id},
         )
         if resp.total == 0 and self.create_mine_if_not_found:
             resp.items = [
                 await self.model.create_item({
-                    "user_id": user.uid,
+                    self.owner_attr: self._owner_id_for_create(user),
                     "tenant_id": user.tenant_id,
                 })
             ]
@@ -377,3 +380,43 @@ class AbstractTenantUSSORouter(AbstractBaseRouter):
         if self.unique_per_user:
             return resp.items[0]
         return resp
+
+
+class AbstractTenantUSSORouter(AbstractUSSORouterBase):
+    """
+    USSO router where ownership is by user_id (user_id == resource.user_id).
+
+    Attributes:
+        namespace: The namespace of the resource.
+        service: The service of the resource.
+        resource: The resource name.
+        self_action: The action for owned resource (default "owner").
+        self_access: Allow list access to own resources (default True).
+    """
+
+    owner_attr: str = "user_id"
+    get_owner_id: Callable[[UserData], str] = lambda u: getattr(
+        u, "uid", u.user_id
+    )
+    get_owner_id_for_create: Callable[[UserData], str] = lambda u: u.user_id
+
+
+class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
+    """
+    USSO router where ownership is by owner_id (owner_id == resource.owner_id).
+
+    Attributes:
+        namespace: The namespace of the resource.
+        service: The service of the resource.
+        resource: The resource name.
+        self_action: The action for owned resource (default "owner").
+        self_access: Allow list access to own resources (default True).
+    """
+
+    owner_attr: str = "owner_id"
+    get_owner_id: Callable[[UserData], str] = lambda u: (
+        u.workspace_id or u.user_id
+    )
+    get_owner_id_for_create: Callable[[UserData], str] | None = (
+        None  # same as get_owner_id
+    )

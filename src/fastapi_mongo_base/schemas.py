@@ -113,6 +113,17 @@ class UserOwnedEntitySchema(BaseEntitySchema):
         return [*super().update_exclude_set(), "user_id"]
 
 
+class OwnedEntitySchema(BaseEntitySchema):
+    """Schema for entities owned by an entity."""
+
+    owner_id: str
+
+    @classmethod
+    def update_exclude_set(cls) -> list[str]:
+        """Fields excluded on update for owned entities."""
+        return [*super().update_exclude_set(), "owner_id"]
+
+
 class TenantScopedEntitySchema(BaseEntitySchema):
     """Schema for entities scoped to a tenant."""
 
@@ -131,6 +142,15 @@ class TenantUserEntitySchema(TenantScopedEntitySchema, UserOwnedEntitySchema):
     def update_exclude_set(cls) -> list[str]:
         """Fields excluded on update for tenant-user entities."""
         return list({*super().update_exclude_set(), "tenant_id", "user_id"})
+
+
+class TenantOwnedEntitySchema(TenantScopedEntitySchema, OwnedEntitySchema):
+    """Schema for entities scoped to both tenant and owned by an entity."""
+
+    @classmethod
+    def update_exclude_set(cls) -> list[str]:
+        """Fields excluded on update for tenant-owned entities."""
+        return list({*super().update_exclude_set(), "tenant_id", "owner_id"})
 
 
 class PaginatedResponse[TSCHEMA: BaseModel](BaseModel):

@@ -20,6 +20,8 @@ from pymongo import ASCENDING, IndexModel
 from .core.config import Settings
 from .schemas import (
     BaseEntitySchema,
+    OwnedEntitySchema,
+    TenantOwnedEntitySchema,
     TenantScopedEntitySchema,
     TenantUserEntitySchema,
     UserOwnedEntitySchema,
@@ -524,6 +526,62 @@ class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
         )
 
 
+class OwnedEntity(OwnedEntitySchema, BaseEntity):
+    """
+    Base entity class for owned resources.
+
+    Automatically filters queries by owner_id.
+    """
+
+    class Settings(BaseEntity.Settings):
+        """Beanie document settings with owner_id index."""
+
+        __abstract__ = True
+
+        indexes: ClassVar[list[IndexModel]] = [
+            *BaseEntity.Settings.indexes,
+            IndexModel([
+                ("owner_id", ASCENDING),
+                ("uid", ASCENDING),
+                ("is_deleted", ASCENDING),
+            ]),
+        ]
+
+    @classmethod
+    async def get_item(
+        cls,
+        uid: str,
+        *,
+        owner_id: str,
+        **kwargs: object,
+    ) -> Self | None:
+        """
+        Get an item by its UID and owner ID.
+
+        Args:
+            uid: Unique identifier of the item.
+            owner_id: Owner ID (required).
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Entity instance if found, None otherwise.
+
+        Raises:
+            ValueError: If owner_id is not provided.
+
+        """
+        if owner_id is None:
+            raise ValueError("owner_id is required")
+        return cast(
+            Self | None,
+            await super().get_item(
+                uid=uid,
+                owner_id=owner_id,
+                **kwargs,
+            ),
+        )
+
+
 class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
     """
     Base entity class for tenant-scoped resources.
@@ -652,6 +710,70 @@ class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
                 uid=uid,
                 tenant_id=tenant_id,
                 user_id=user_id,
+                **kwargs,
+            ),
+        )
+
+
+class TenantOwnedEntity(TenantOwnedEntitySchema, BaseEntity):
+    """
+    Base entity class for tenant-owned resources.
+
+    Automatically filters queries by both tenant_id and owner_id.
+    """
+
+    class Settings(TenantScopedEntity.Settings):
+        """Beanie document settings with tenant_id and owner_id indexes."""
+
+        __abstract__ = True
+
+        indexes: ClassVar[list[IndexModel]] = [
+            *OwnedEntity.Settings.indexes,
+            IndexModel([
+                ("tenant_id", ASCENDING),
+                ("owner_id", ASCENDING),
+                ("uid", ASCENDING),
+                ("is_deleted", ASCENDING),
+            ]),
+        ]
+
+    @classmethod
+    async def get_item(
+        cls,
+        uid: str,
+        *,
+        tenant_id: str,
+        owner_id: str,
+        ignore_owner_id: bool = False,
+        **kwargs: object,
+    ) -> Self | None:
+        """
+        Get an item by UID, tenant ID, and owner ID.
+
+        Args:
+            uid: Unique identifier of the item.
+            tenant_id: Tenant ID (required).
+            owner_id: Owner ID (required).
+            ignore_owner_id: Whether to ignore the owner_id filter.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Entity instance if found, None otherwise.
+
+        Raises:
+            ValueError: If tenant_id or owner_id is not provided.
+
+        """
+        if tenant_id is None:
+            raise ValueError("tenant_id is required")
+        if owner_id is None and not ignore_owner_id:
+            raise ValueError("owner_id is required")
+        return cast(
+            Self | None,
+            await super().get_item(
+                uid=uid,
+                tenant_id=tenant_id,
+                owner_id=owner_id,
                 **kwargs,
             ),
         )
