@@ -26,8 +26,8 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
 
     Subclasses configure ownership via:
     - owner_attr: model field used for ownership ("user_id" or "owner_id").
-    - get_owner_id: (user) -> str used for authorization and list filters.
-    - get_owner_id_for_create: (user) -> str for create
+    - get_owner_id: (self, user) -> str used for authorization and filters.
+    - get_owner_id_for_create: (self, user) -> str for create
       (default: get_owner_id).
     """
 
@@ -38,12 +38,12 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
     # Override in subclasses: "user_id" or "owner_id"
     owner_attr: str = "user_id"
 
-    get_owner_id: Callable[[UserData], str] = lambda u: getattr(
-        u, "uid", u.user_id
+    get_owner_id: Callable[[type["AbstractUSSORouterBase"], UserData], str] = (
+        lambda self, u: getattr(u, "uid", u.user_id)
     )
-    get_owner_id_for_create: Callable[[UserData], str] | None = (
-        None  # same as get_owner_id
-    )
+    get_owner_id_for_create: (
+        Callable[[type["AbstractUSSORouterBase"], UserData], str] | None
+    ) = None  # same as get_owner_id
 
     def _owner_id_for_create(self, user: UserData) -> str:
         """
@@ -395,10 +395,12 @@ class AbstractTenantUSSORouter(AbstractUSSORouterBase):
     """
 
     owner_attr: str = "user_id"
-    get_owner_id: Callable[[UserData], str] = lambda u: getattr(
-        u, "uid", u.user_id
-    )
-    get_owner_id_for_create: Callable[[UserData], str] = lambda u: u.user_id
+    get_owner_id: Callable[
+        [type["AbstractTenantUSSORouter"], UserData], str
+    ] = lambda self, u: getattr(u, "uid", u.user_id)
+    get_owner_id_for_create: Callable[
+        [type["AbstractTenantUSSORouter"], UserData], str
+    ] = lambda self, u: u.user_id
 
 
 class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
@@ -414,9 +416,9 @@ class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
     """
 
     owner_attr: str = "owner_id"
-    get_owner_id: Callable[[UserData], str] = lambda u: (
-        u.workspace_id or u.user_id
-    )
-    get_owner_id_for_create: Callable[[UserData], str] | None = (
-        None  # same as get_owner_id
-    )
+    get_owner_id: Callable[
+        [type["AbstractOwnedUSSORouter"], UserData], str
+    ] = lambda self, u: u.workspace_id or u.user_id
+    get_owner_id_for_create: (
+        Callable[[type["AbstractOwnedUSSORouter"], UserData], str] | None
+    ) = None  # same as get_owner_id
