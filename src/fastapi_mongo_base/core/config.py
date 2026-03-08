@@ -23,7 +23,11 @@ class Settings(metaclass=Singleton):
     worker_update_time: int = (
         int(os.getenv("WORKER_UPDATE_TIME", default=180)) or 180
     )
-    debug: bool = os.getenv("DEBUG", default="false").lower() == "true"
+    debug: bool = os.getenv("DEBUG", default="false").lower() in [
+        "true",
+        "on",
+        "1",
+    ]
 
     _cors_origins_str: str | None = os.getenv("CORS_ORIGINS")
 
