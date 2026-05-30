@@ -60,6 +60,15 @@ async def init_db(mongo_client: object) -> None:
     if get_database is None:
         raise ValueError("MongoDB client does not have a get_database method")
     database = get_database("test_db")
+    # Patch list_collection_names on the underlying mongomock database
+    # to accept authorizedCollections and nameOnly kwargs that newer
+    # pymongo/Beanie versions pass but mongomock does not support.
+    orig_list_collection_names = database.delegate.list_collection_names
+
+    def _patched_list_collection_names(filter=None, session=None, **kwargs):
+        return orig_list_collection_names(filter=filter, session=session)
+
+    database.delegate.list_collection_names = _patched_list_collection_names
     await init_beanie(
         database=database,
         document_models=basic.get_all_subclasses(base_mongo_models.BaseEntity),
