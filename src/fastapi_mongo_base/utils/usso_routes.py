@@ -31,6 +31,10 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
       (default: get_owner_id).
     """
 
+    def _resolve_owner_id(self, user: UserData) -> str:
+        """Resolve owner id. Override in subclasses for custom validation."""
+        return self.get_owner_id(user)
+
     resource: str | None = None
     self_action: str = "owner"
     self_access: bool = True
@@ -57,7 +61,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
         """
         if self.get_owner_id_for_create is not None:
             return self.get_owner_id_for_create(user)
-        return self.get_owner_id(user)
+        return self._resolve_owner_id(user)
 
     @property
     def resource_path(self) -> str:
@@ -124,7 +128,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             if raise_exception:
                 raise USSOException(401, "unauthorized")
             return False
-        owner_id = self.get_owner_id(user)
+        owner_id = self._resolve_owner_id(user)
         if authorization.owner_authorization(
             requested_filter=filter_data,
             self_action=self.self_action,
@@ -155,7 +159,9 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             user_scopes=user.scopes if user else [],
         )
         if self.self_access and hasattr(self.model, self.owner_attr):
-            matched_scopes.append({self.owner_attr: self.get_owner_id(user)})
+            matched_scopes.append(
+                {self.owner_attr: self._resolve_owner_id(user)}
+            )
         elif not matched_scopes:
             return {"__deny__": True}
         return authorization.broadest_scope_filter(matched_scopes)
@@ -364,7 +370,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             The items.
         """
         user = await self.get_user(request)
-        owner_id = self.get_owner_id(user)
+        owner_id = self._resolve_owner_id(user)
         resp = await self._list_items(
             request=request,
             **{self.owner_attr: owner_id},
@@ -413,12 +419,34 @@ class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
         resource: The resource name.
         self_action: The action for owned resource (default "owner").
         self_access: Allow list access to own resources (default True).
+        workspace_only: When True, owner_id must be a workspace_id;
+                        raises 400 if user has no workspace (default False).
     """
 
     owner_attr: str = "owner_id"
+    workspace_only: bool = False
+
     get_owner_id: Callable[
         [type["AbstractOwnedUSSORouter"], UserData], str
-    ] = lambda self, u: u.workspace_id or u.user_id
+    ] = lambda self, u: (
+        u.workspace_id
+        if self.workspace_only
+        else (u.workspace_id or u.user_id)
+    )
+
     get_owner_id_for_create: (
         Callable[[type["AbstractOwnedUSSORouter"], UserData], str] | None
     ) = None  # same as get_owner_id
+
+    def _resolve_owner_id(self, user: UserData) -> str:
+        """Resolve owner_id, raising a clear error if workspace is missing."""
+        owner_id = self.get_owner_id(user)
+        if self.workspace_only and not owner_id:
+            raise exceptions.BaseHTTPException(
+                status_code=400,
+                error="workspace_required",
+                message={
+                    "en": "User must belong to a workspace for this resource"
+                },
+            )
+        return owner_id
