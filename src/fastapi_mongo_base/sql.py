@@ -210,6 +210,7 @@ class BaseEntity:
         *,
         user_id: str | None = None,
         tenant_id: str | None = None,
+        owner_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
         **kwargs: object,
@@ -221,6 +222,8 @@ class BaseEntity:
             base_query.append(cls.user_id == user_id)  # type: ignore
         if hasattr(cls, "tenant_id") and tenant_id:
             base_query.append(cls.tenant_id == tenant_id)  # type: ignore
+        if hasattr(cls, "owner_id") and owner_id:
+            base_query.append(cls.owner_id == owner_id)  # type: ignore
         if uid:
             base_query.append(cls.uid == uid)
         # Extract extra filters from kwargs
@@ -233,6 +236,7 @@ class BaseEntity:
         cls,
         user_id: str | None = None,
         tenant_id: str | None = None,
+        owner_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
         created_at_from: datetime | None = None,
@@ -243,6 +247,7 @@ class BaseEntity:
         base_query = cls.get_queryset(
             user_id=user_id,
             tenant_id=tenant_id,
+            owner_id=owner_id,
             is_deleted=is_deleted,
             uid=uid,
             created_at_from=created_at_from,
@@ -258,6 +263,7 @@ class BaseEntity:
         *,
         user_id: str | None = None,
         tenant_id: str | None = None,
+        owner_id: str | None = None,
         is_deleted: bool = False,
         **kwargs: object,
     ) -> Self | None:
@@ -265,6 +271,7 @@ class BaseEntity:
         base_query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
+            owner_id=owner_id,
             is_deleted=is_deleted,
             **kwargs,
         )
@@ -476,6 +483,50 @@ class TenantUserEntity(TenantScopedEntity, UserOwnedEntity):
             List of field names to exclude, including tenant_id and user_id.
         """
         return list({*super().update_exclude_set(), "tenant_id", "user_id"})
+
+
+class OwnedEntity(BaseEntity):
+    """Base entity class for owned SQL resources."""
+
+    __abstract__ = True
+
+    owner_id: Mapped[str] = mapped_column(index=True)
+
+    @classmethod
+    def create_exclude_set(cls) -> list[str]:
+        """Get list of fields to exclude during creation, including owner_id."""
+        return [*super().create_exclude_set(), "owner_id"]
+
+    @classmethod
+    def update_exclude_set(cls) -> list[str]:
+        """Get list of fields to exclude during update, including owner_id."""
+        return [*super().update_exclude_set(), "owner_id"]
+
+
+class TenantOwnedEntity(TenantScopedEntity, OwnedEntity):
+    """Base entity class for tenant-owned SQL resources."""
+
+    __abstract__ = True
+
+    @classmethod
+    def create_exclude_set(cls) -> list[str]:
+        """
+        Get list of fields to exclude during creation.
+
+        Returns:
+            List of field names to exclude, including tenant_id and owner_id.
+        """
+        return list({*super().create_exclude_set(), "tenant_id", "owner_id"})
+
+    @classmethod
+    def update_exclude_set(cls) -> list[str]:
+        """
+        Get list of fields to exclude during update.
+
+        Returns:
+            List of field names to exclude, including tenant_id and owner_id.
+        """
+        return list({*super().update_exclude_set(), "tenant_id", "owner_id"})
 
 
 class ImmutableMixin(BaseEntity):
