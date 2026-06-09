@@ -124,6 +124,7 @@ class BaseEntity(BaseEntitySchema, Document):
         *,
         user_id: str | None = None,
         tenant_id: str | None = None,
+        owner_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
         **kwargs: object,
@@ -135,6 +136,8 @@ class BaseEntity(BaseEntitySchema, Document):
             base_query.update({"tenant_id": tenant_id})
         if hasattr(cls, "user_id") and user_id:
             base_query.update({"user_id": user_id})
+        if hasattr(cls, "owner_id") and owner_id:
+            base_query.update({"owner_id": owner_id})
         if uid:
             base_query.update({"uid": uid})
         # Extract extra filters from kwargs
@@ -148,6 +151,7 @@ class BaseEntity(BaseEntitySchema, Document):
         *,
         user_id: str | None = None,
         tenant_id: str | None = None,
+        owner_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
         created_at_from: datetime | None = None,
@@ -160,6 +164,7 @@ class BaseEntity(BaseEntitySchema, Document):
         Args:
             user_id: Optional user ID filter.
             tenant_id: Optional tenant ID filter.
+            owner_id: Optional owner ID filter.
             is_deleted: Filter by deletion status.
             uid: Optional unique identifier filter.
             created_at_from: Optional start date filter.
@@ -173,6 +178,7 @@ class BaseEntity(BaseEntitySchema, Document):
         base_query = cls.get_queryset(
             user_id=user_id,
             tenant_id=tenant_id,
+            owner_id=owner_id,
             is_deleted=is_deleted,
             uid=uid,
             created_at_from=created_at_from,
@@ -189,6 +195,7 @@ class BaseEntity(BaseEntitySchema, Document):
         *,
         user_id: str | None = None,
         tenant_id: str | None = None,
+        owner_id: str | None = None,
         is_deleted: bool = False,
         **kwargs: object,
     ) -> Self | None:
@@ -199,6 +206,7 @@ class BaseEntity(BaseEntitySchema, Document):
             uid: Unique identifier of the item.
             user_id: Optional user ID filter.
             tenant_id: Optional tenant ID filter.
+            owner_id: Optional owner ID filter.
             is_deleted: Filter by deletion status.
             **kwargs: Additional filter parameters.
 
@@ -212,6 +220,7 @@ class BaseEntity(BaseEntitySchema, Document):
         query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
+            owner_id=owner_id,
             is_deleted=is_deleted,
             uid=uid,
             **kwargs,
@@ -552,7 +561,8 @@ class OwnedEntity(OwnedEntitySchema, BaseEntity):
         cls,
         uid: str,
         *,
-        owner_id: str,
+        owner_id: str | None = None,
+        ignore_owner_id: bool = False,
         **kwargs: object,
     ) -> Self | None:
         """
@@ -560,17 +570,19 @@ class OwnedEntity(OwnedEntitySchema, BaseEntity):
 
         Args:
             uid: Unique identifier of the item.
-            owner_id: Owner ID (required).
+            owner_id: Owner ID to filter by (required unless
+                      ignore_owner_id is True).
+            ignore_owner_id: Whether to ignore the owner_id filter.
             **kwargs: Additional keyword arguments.
 
         Returns:
             Entity instance if found, None otherwise.
 
         Raises:
-            ValueError: If owner_id is not provided.
+            ValueError: If owner_id is required but not provided.
 
         """
-        if owner_id is None:
+        if owner_id is None and not ignore_owner_id:
             raise ValueError("owner_id is required")
         return cast(
             Self | None,
