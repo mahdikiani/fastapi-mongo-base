@@ -494,12 +494,12 @@ class OwnedEntity(BaseEntity):
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:
-        """Get list of fields to exclude during creation, including owner_id."""
+        """Get fields to exclude during creation, including owner_id."""
         return [*super().create_exclude_set(), "owner_id"]
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
-        """Get list of fields to exclude during update, including owner_id."""
+        """Get fields to exclude during update, including owner_id."""
         return [*super().update_exclude_set(), "owner_id"]
 
 
