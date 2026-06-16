@@ -17,6 +17,22 @@ from .schemas import BaseEntitySchema, PaginatedResponse
 from .tasks import TaskStatusEnum
 
 
+def as_page(
+    items: list,
+    total_count: int | None = None,
+    offset: int = 0,
+    limit: int = Settings.page_max_limit,
+) -> PaginatedResponse:
+    """Convert a list of items into a paginated response."""
+
+    return PaginatedResponse(
+        items=items,
+        total_count=total_count or len(items),
+        offset=offset,
+        limit=limit,
+    )
+
+
 class AbstractBaseRouter(metaclass=singleton.Singleton):
     """
     Abstract base router for CRUD operations with FastAPI.

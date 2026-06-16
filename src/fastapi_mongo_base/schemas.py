@@ -159,8 +159,16 @@ class PaginatedResponse[TSCHEMA: BaseModel](BaseModel):
     heads: dict[str, dict[str, str]] = Field(default_factory=dict)
     items: list[TSCHEMA]
     total: int
-    offset: int
-    limit: int
+    offset: int = Field(default=0)
+    limit: int = Field(default=Settings.page_max_limit)
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_total(cls, values: dict[str, object]) -> dict[str, object]:
+        """Validate the total value."""
+        if values.get("total") is None:
+            values["total"] = len(values.get("items", []))
+        return values
 
     @model_validator(mode="after")
     def validate_heads(self) -> Self:
