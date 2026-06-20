@@ -159,9 +159,9 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             user_scopes=user.scopes if user else [],
         )
         if self.self_access and hasattr(self.model, self.owner_attr):
-            matched_scopes.append(
-                {self.owner_attr: self._resolve_owner_id(user)}
-            )
+            matched_scopes.append({
+                self.owner_attr: self._resolve_owner_id(user)
+            })
         elif not matched_scopes:
             return {"__deny__": True}
         return authorization.broadest_scope_filter(matched_scopes)
@@ -430,7 +430,7 @@ class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
         [type["AbstractOwnedUSSORouter"], UserData], str
     ] = lambda self, u: (
         u.workspace_id
-        if self.workspace_only
+        if self.workspace_only and u.claims.get("sub_type") != "agent"
         else (u.workspace_id or u.user_id)
     )
 
@@ -441,7 +441,11 @@ class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
     def _resolve_owner_id(self, user: UserData) -> str:
         """Resolve owner_id, raising a clear error if workspace is missing."""
         owner_id = self.get_owner_id(user)
-        if self.workspace_only and not owner_id:
+        if (
+            self.workspace_only
+            and user.claims.get("sub_type") != "agent"
+            and not owner_id
+        ):
             raise exceptions.BaseHTTPException(
                 status_code=400,
                 error="workspace_required",
