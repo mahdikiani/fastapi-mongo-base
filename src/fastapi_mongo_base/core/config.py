@@ -48,6 +48,12 @@ class Settings(metaclass=Singleton):
 
     page_max_limit: int = 100
     mongo_uri: str = os.getenv("MONGO_URI", default="mongodb://mongo:27017/")
+    mongo_server_selection_timeout_ms: int = int(
+        os.getenv("MONGO_SERVER_SELECTION_TIMEOUT_MS", default="5000")
+    )
+    mongo_connect_timeout_ms: int = int(
+        os.getenv("MONGO_CONNECT_TIMEOUT_MS", default="5000")
+    )
 
     @classmethod
     def get_coverage_dir(cls) -> str:

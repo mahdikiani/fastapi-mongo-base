@@ -10,9 +10,16 @@ from fastapi_mongo_base.utils import basic
 from .config import Settings
 
 
+class MongoDBConnectionError(RuntimeError):
+    """Raised when MongoDB connection or Beanie initialization fails."""
+
+
 async def init_mongo_db(settings: Settings | None = None) -> object:
     """
     Initialize MongoDB connection and Beanie ODM.
+
+    Fails fast on connection errors (unreachable host, timeout, etc.) so the
+    application does not start in a degraded state.
 
     Args:
         settings: Optional settings instance. If None, creates a new instance.
@@ -22,7 +29,7 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
 
     Raises:
         ImportError: If MongoDB client libraries are not installed.
-        Exception: If MongoDB connection fails.
+        MongoDBConnectionError: If MongoDB connection or initialization fails.
 
     """
     try:
@@ -38,25 +45,37 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
     if settings is None:
         settings = Settings()
 
-    client = AsyncMongoClient(settings.mongo_uri)
+    client = AsyncMongoClient(
+        settings.mongo_uri,
+        serverSelectionTimeoutMS=settings.mongo_server_selection_timeout_ms,
+        connectTimeoutMS=settings.mongo_connect_timeout_ms,
+    )
     try:
         await client.server_info()
-    except Exception:
-        logging.exception("Error initializing MongoDB: %s")
+        db = client.get_database(settings.project_name)
+        await init_beanie(
+            database=db,
+            document_models=[
+                cls
+                for cls in basic.get_all_subclasses(BaseEntity)
+                if not (
+                    "Settings" in cls.__dict__
+                    and getattr(cls.Settings, "__abstract__", False)
+                )
+            ],
+        )
+    except MongoDBConnectionError:
         raise
+    except Exception as exc:
+        logging.exception(
+            "Failed to initialize MongoDB at %s",
+            settings.mongo_uri,
+        )
+        raise MongoDBConnectionError(
+            "Failed to connect to MongoDB. "
+            "Check that the database is running and MONGO_URI is correct."
+        ) from exc
 
-    db = client.get_database(settings.project_name)
-    await init_beanie(
-        database=db,
-        document_models=[
-            cls
-            for cls in basic.get_all_subclasses(BaseEntity)
-            if not (
-                "Settings" in cls.__dict__
-                and getattr(cls.Settings, "__abstract__", False)
-            )
-        ],
-    )
     return db
 
 
