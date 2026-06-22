@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import traceback
 
 import json_advanced
@@ -193,11 +194,11 @@ def general_exception_handler(
 
         if isinstance(exc, ServerSelectionTimeoutError):
             logging.error("MongoDB connection timeout")
-            raise SystemExit(1) from exc
+            os._exit(1)
 
         if isinstance(exc, PyMongoError):
             logging.error("MongoDB error")
-            raise SystemExit(1) from exc
+            os._exit(1)
     except ImportError:
         pass
 
@@ -206,7 +207,7 @@ def general_exception_handler(
 
         if isinstance(exc, RedisError):
             logging.error("Redis error")
-            raise SystemExit(1) from exc
+            os._exit(1)
     except ImportError:
         pass
 
