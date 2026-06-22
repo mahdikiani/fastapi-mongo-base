@@ -10,10 +10,6 @@ from fastapi_mongo_base.utils import basic
 from .config import Settings
 
 
-class MongoDBConnectionError(RuntimeError):
-    """Raised when MongoDB connection or Beanie initialization fails."""
-
-
 async def init_mongo_db(settings: Settings | None = None) -> object:
     """
     Initialize MongoDB connection and Beanie ODM.
@@ -34,6 +30,7 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
     """
     try:
         from pymongo import AsyncMongoClient
+        from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
     except ImportError:
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
@@ -64,17 +61,19 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
                 )
             ],
         )
-    except MongoDBConnectionError:
-        raise
-    except Exception as exc:
+    except ServerSelectionTimeoutError as e:
         logging.exception(
-            "Failed to initialize MongoDB at %s",
-            settings.mongo_uri,
+            "MongoDB connection timeout at %s", settings.mongo_uri
         )
-        raise MongoDBConnectionError(
-            "Failed to connect to MongoDB. "
-            "Check that the database is running and MONGO_URI is correct."
-        ) from exc
+        raise SystemExit(1) from e
+
+    except PyMongoError as e:
+        logging.exception("MongoDB error at %s", settings.mongo_uri)
+        raise SystemExit(1) from e
+
+    except Exception as e:
+        logging.exception("Unexpected failure initializing MongoDB")
+        raise SystemExit(1) from e
 
     return db
 
@@ -94,16 +93,29 @@ def init_redis(settings: Settings | None = None) -> tuple:
     try:
         from redis import Redis as RedisSync
         from redis.asyncio.client import Redis
+        from redis.exceptions import RedisError
 
         if settings is None:
             settings = Settings()
 
         redis_uri = getattr(settings, "redis_uri", None)
         if redis_uri:
-            redis_sync: RedisSync = RedisSync.from_url(redis_uri)
-            redis: Redis = Redis.from_url(redis_uri)
+            redis_sync: RedisSync = RedisSync.from_url(
+                redis_uri,
+                socket_connect_timeout=1,
+                socket_timeout=1,
+            )
+            redis: Redis = Redis.from_url(
+                redis_uri,
+                socket_connect_timeout=1,
+                socket_timeout=1,
+            )
+            redis_sync.ping()
 
             return redis_sync, redis
+    except RedisError as e:
+        logging.exception("Redis connection error")
+        raise SystemExit(1) from e
     except (ImportError, AttributeError, Exception):
         logging.exception("Error initializing Redis")
 

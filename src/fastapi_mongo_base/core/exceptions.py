@@ -187,6 +187,29 @@ def general_exception_handler(
     traceback_str = "".join(traceback.format_tb(exc.__traceback__))
     logging.error("Exception: %s %s", traceback_str, exc)
     logging.error("Exception on request: %s", request.url)
+
+    try:
+        from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
+
+        if isinstance(exc, ServerSelectionTimeoutError):
+            logging.error("MongoDB connection timeout")
+            raise SystemExit(1) from exc
+
+        if isinstance(exc, PyMongoError):
+            logging.error("MongoDB error")
+            raise SystemExit(1) from exc
+    except ImportError:
+        pass
+
+    try:
+        from redis.exceptions import RedisError
+
+        if isinstance(exc, RedisError):
+            logging.error("Redis error")
+            raise SystemExit(1) from exc
+    except ImportError:
+        pass
+
     return JSONResponse(
         status_code=500,
         content={"message": str(exc), "error": "Exception"},
