@@ -490,7 +490,10 @@ class MongoDBIndexError(MongoDBError):
                         f"Failed to manage index '{index}' on "
                         f"collection '{collection}'"
                     ),
-                    f"به‌روزرسانی فهرست «{index}» در «{collection}» انجام نشد.",
+                    (
+                        f"به‌روزرسانی فهرست «{index}» در "
+                        f"«{collection}» انجام نشد."
+                    ),
                 )
             elif index:
                 message = build_messages(
