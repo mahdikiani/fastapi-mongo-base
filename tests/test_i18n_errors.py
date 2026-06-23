@@ -23,9 +23,9 @@ from fastapi_mongo_base.core.exceptions import (
 )
 
 
-def test_build_messages_always_includes_en() -> None:
-    """Build messages always includes en."""
-    assert build_messages("Hello") == {"en": "Hello"}
+def test_build_messages_always_includes_en_and_fa() -> None:
+    """Build messages always includes en and fa."""
+    assert build_messages("Hello") == {"en": "Hello", "fa": "Hello"}
     assert build_messages("Hello", "سلام") == {"en": "Hello", "fa": "سلام"}
 
 
@@ -33,6 +33,7 @@ def test_normalize_messages_backward_compatible_string() -> None:
     """Normalize messages backward compatible string."""
     assert normalize_messages("Legacy text", fallback="fb") == {
         "en": "Legacy text",
+        "fa": "Legacy text",
     }
 
 
@@ -77,7 +78,7 @@ def test_base_http_exception_legacy_error_messages_string() -> None:
     """Base http exception legacy error messages string."""
     error_messages["legacy_code"] = "Legacy English"
     exc = BaseHTTPException(status_code=400, error="legacy_code")
-    assert exc.message == {"en": "Legacy English"}
+    assert exc.message == {"en": "Legacy English", "fa": "Legacy English"}
     assert exc.detail == "Legacy English"
     error_messages.pop("legacy_code")
 
