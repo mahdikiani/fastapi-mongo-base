@@ -34,10 +34,10 @@ def test_build_messages_includes_fa_only_when_provided() -> None:
 def test_class_messages_inherits_missing_parent_defaults() -> None:
     """Missing en or fa on a subclass falls back to the parent values."""
 
-    class CustomNotFound(ResourceNotFoundError):
+    class CustomNotFoundError(ResourceNotFoundError):
         default_message = "Order not found"
 
-    assert class_messages(CustomNotFound) == {
+    assert class_messages(CustomNotFoundError) == {
         "en": "Order not found",
         "fa": ResourceNotFoundError.default_message_fa,
     }
@@ -46,11 +46,11 @@ def test_class_messages_inherits_missing_parent_defaults() -> None:
 def test_class_messages_skips_explicit_none_fa() -> None:
     """Explicit None fa on a subclass uses the parent fa message."""
 
-    class CustomNotFound(ResourceNotFoundError):
+    class CustomNotFoundError(ResourceNotFoundError):
         default_message = "Order not found"
         default_message_fa = None
 
-    assert class_messages(CustomNotFound)["fa"] == (
+    assert class_messages(CustomNotFoundError)["fa"] == (
         ResourceNotFoundError.default_message_fa
     )
 
@@ -58,10 +58,10 @@ def test_class_messages_skips_explicit_none_fa() -> None:
 def test_class_messages_uses_parent_fa_for_en_only_dict() -> None:
     """Passing only en uses the parent fa translation."""
 
-    class CustomNotFound(ResourceNotFoundError):
+    class CustomNotFoundError(ResourceNotFoundError):
         default_message = "Order not found"
 
-    assert class_messages(CustomNotFound, {"en": "Order missing"}) == {
+    assert class_messages(CustomNotFoundError, {"en": "Order missing"}) == {
         "en": "Order missing",
         "fa": ResourceNotFoundError.default_message_fa,
     }
@@ -70,11 +70,11 @@ def test_class_messages_uses_parent_fa_for_en_only_dict() -> None:
 def test_custom_subclass_keeps_parent_fa() -> None:
     """Custom subclass responses keep the parent Persian message."""
 
-    class CustomNotFound(ResourceNotFoundError):
+    class CustomNotFoundError(ResourceNotFoundError):
         default_message = "Order not found"
 
-    exc = CustomNotFound()
-    assert exc.message == class_messages(CustomNotFound)
+    exc = CustomNotFoundError()
+    assert exc.message == class_messages(CustomNotFoundError)
 
 
 def test_normalize_messages_backward_compatible_string() -> None:
