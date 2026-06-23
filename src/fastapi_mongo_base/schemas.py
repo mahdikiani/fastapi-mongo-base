@@ -89,7 +89,7 @@ class BaseEntitySchema(BaseModel):
     @property
     def item_url(self) -> str:
         """
-        Get the API URL for this entity item.
+        API URL for this entity item.
 
         Returns:
             Full URL string to the entity endpoint.
