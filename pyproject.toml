@@ -24,13 +24,13 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
-  "pydantic>=2.13.4",
-  "httpx>=0.28.1",
-  "singleton_package>=0.8.2",
-  "json-advanced>=0.12.11",
-  "pytz>=2026.2",
   "beanie>=1.30.0",
   "fastapi>=0.129.0",
+  "httpx>=0.28.1",
+  "json-advanced>=0.12.11",
+  "pydantic>=2.13.4",
+  "pytz>=2026.2",
+  "singleton_package>=0.8.2",
   "uvicorn[standard]>=0.41.0",
   "uuid6>=2025.0.1",
 ]
