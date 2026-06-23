@@ -14,6 +14,7 @@ touch __init__.py models.py schemas.py routes.py services.py
 # schemas.py
 from fastapi_mongo_base.schemas import BaseEntitySchema
 
+
 class BookSchema(BaseEntitySchema):
     title: str
     author: str
@@ -27,8 +28,10 @@ class BookSchema(BaseEntitySchema):
 from fastapi_mongo_base.models import BaseEntity
 from .schemas import BookSchema
 
+
 class Book(BookSchema, BaseEntity):
     """Book model that inherits from both BookSchema and BaseEntity"""
+
     pass
 ```
 
@@ -38,9 +41,11 @@ class Book(BookSchema, BaseEntity):
 from fastapi_mongo_base.routes import AbstractBaseRouter
 from . import models, schemas
 
+
 class BookRouter(AbstractBaseRouter):
     def __init__(self):
         super().__init__(model=models.Book, schema=schemas.BookSchema)
+
 
 router = BookRouter().router
 ```

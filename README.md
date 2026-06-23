@@ -33,6 +33,7 @@ You can also ask questions about the project using DeepWiki:
 ```python
 from fastapi_mongo_base.schemas import BaseEntitySchema
 
+
 class UserSchema(BaseEntitySchema):
     email: str
     name: str
@@ -44,8 +45,10 @@ class UserSchema(BaseEntitySchema):
 from fastapi_mongo_base.models import BaseEntity
 from .schemas import UserSchema
 
+
 class User(UserSchema, BaseEntity):
     """User model that inherits from both UserSchema and BaseEntity"""
+
     pass
 ```
 
@@ -54,9 +57,11 @@ class User(UserSchema, BaseEntity):
 from fastapi_mongo_base.routes import AbstractBaseRouter
 from . import models, schemas
 
+
 class UserRouter(AbstractBaseRouter):
     def __init__(self):
         super().__init__(model=models.User, schema=schemas.UserSchema)
+
 
 router = UserRouter().router
 ```
@@ -106,7 +111,9 @@ class Settings(metaclass=Singleton):
 
     page_max_limit: int = 100
 
-    mongo_uri: str = os.getenv("MONGO_URI", default="mongodb://localhost:27017/")
+    mongo_uri: str = os.getenv(
+        "MONGO_URI", default="mongodb://localhost:27017/"
+    )
     redis_uri: str = os.getenv("REDIS_URI", default="redis://localhost:6379/0")
 
     app_id: str = os.getenv("APP_ID")
@@ -168,7 +175,6 @@ class Settings(metaclass=Singleton):
             (cls.base_dir / "logs").mkdir(parents=True, exist_ok=True)
 
         logging.config.dictConfig(cls.get_log_config())
-
 ```
 
 ## 🛠️ Advanced Usage
@@ -180,10 +186,11 @@ Extend the base router to add custom endpoints:
 ```python
 from fastapi_mongo_base.routes import AbstractBaseRouter
 
+
 class UserRouter(AbstractBaseRouter):
     def __init__(self):
         super().__init__(model=models.User, schema=schemas.UserSchema)
-    
+
     @router.get("/me")
     async def get_current_user(self):
         # Your custom logic here
@@ -203,8 +210,10 @@ from server.config import Settings
 
 logging.getLogger("apscheduler").setLevel(logging.WARNING)
 
+
 async def log_something():
-    logging.info('something')
+    logging.info("something")
+
 
 async def worker():
     scheduler = AsyncIOScheduler()

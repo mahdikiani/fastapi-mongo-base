@@ -8,13 +8,14 @@ You can enable, disable, or customize endpoints by subclassing `AbstractBaseRout
 ```python
 from fastapi_mongo_base.routes import AbstractBaseRouter
 
+
 class MyRouter(AbstractBaseRouter):
     def __init__(self):
         super().__init__(model=MyModel)
-    
+
     def config_routes(self, **kwargs):
         super().config_routes(delete_route=False)
-        
+
     async def get_summary(self, uid: str):
         item = await self.get_item(uid)
         return item.get_summary()
@@ -25,10 +26,11 @@ class MyRouter(AbstractBaseRouter):
 ```python
 from fastapi_mongo_base.routes import AbstractBaseRouter
 
+
 class MyRouter(AbstractBaseRouter):
     def __init__(self):
         super().__init__(model=MyModel)
-    
+
     def config_routes(self, **kwargs):
         super().config_routes()
         self.router.add_api_route(
@@ -54,6 +56,7 @@ from .models import MyModel
 
 router = APIRouter()
 
+
 @router.get("/custom-search")
 def custom_search(query: str):
     # Implement complex query logic here
@@ -66,6 +69,7 @@ For background tasks, use FastAPI's `BackgroundTasks`:
 
 ```python
 from fastapi import BackgroundTasks
+
 
 @router.post("/process-task")
 def process_task(data: dict, background_tasks: BackgroundTasks):

@@ -6,6 +6,7 @@ The `Settings` class manages configuration for your FastAPI app, including Mongo
 
 ```python
 from fastapi_mongo_base.core.config import Settings
+
 settings = Settings()
 print(settings.mongo_uri)
 ```

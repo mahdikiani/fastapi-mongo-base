@@ -11,18 +11,20 @@ from fastapi_mongo_base.models import BaseEntity
 from fastapi_mongo_base.routes import AbstractBaseRouter
 from fastapi_mongo_base.schemas import BaseEntitySchema
 
+
 class ItemSchema(BaseEntity):
     name: str
     description: str | None = None
+
 
 class Item(BaseEntity):
     name: str
     description: str | None = None
 
+
 class ItemRouter(AbstractBaseRouter):
     model = Item
     schema = ItemSchema
-
 
 
 @dataclasses.dataclass
@@ -35,7 +37,6 @@ class Settings(config.Settings):
 
 app = app_factory.create_app(settings=Settings())
 app.include_router(TestRouter().router)
-
 ```
 
 ## Running Locally
