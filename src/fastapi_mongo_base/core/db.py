@@ -51,7 +51,9 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
     try:
         client = AsyncMongoClient(
             settings.mongo_uri,
-            serverSelectionTimeoutMS=settings.mongo_server_selection_timeout_ms,
+            serverSelectionTimeoutMS=(
+                settings.mongo_server_selection_timeout_ms
+            ),
             connectTimeoutMS=settings.mongo_connect_timeout_ms,
         )
         await client.server_info()
