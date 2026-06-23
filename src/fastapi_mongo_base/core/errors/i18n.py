@@ -11,15 +11,12 @@ FALLBACK_LOCALE = "en"
 
 def build_messages(en: str, fa: str | None = None) -> dict[str, str]:
     """
-    Build a language map with English and optional Persian text.
+    Build a bilingual language map with English and Persian text.
 
-    Always includes ``en`` for backward compatibility with older clients that
-    only read ``message["en"]``.
+    Always includes both ``en`` and ``fa``. When Persian text is omitted,
+    ``fa`` falls back to the English string.
     """
-    messages = {"en": en}
-    if fa:
-        messages["fa"] = fa
-    return messages
+    return {"en": en, "fa": fa if fa is not None else en}
 
 
 def normalize_messages(
@@ -32,9 +29,12 @@ def normalize_messages(
         return build_messages(fallback)
     if isinstance(value, str):
         return build_messages(value)
-    if "en" not in value and fallback:
-        return {**value, "en": fallback}
-    return dict(value)
+    messages = dict(value)
+    if "en" not in messages and fallback:
+        messages["en"] = fallback
+    if "fa" not in messages and "en" in messages:
+        messages["fa"] = messages["en"]
+    return messages
 
 
 def resolve_locale(request: Request | None) -> str:
