@@ -23,6 +23,7 @@ class ResourceError(BaseHTTPException):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         super().__init__(
             status_code=self.status_code,
             error=self.error_code,
@@ -50,6 +51,7 @@ class ResourceNotFoundError(ResourceError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if resource and uid:
                 message = build_messages(
@@ -98,6 +100,7 @@ class ResourceAlreadyExistsError(ResourceError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if resource and uid:
                 message = build_messages(
@@ -129,13 +132,52 @@ class ResourceAlreadyExistsError(ResourceError):
         )
 
 
-class ResourceUnauthorizedError(ResourceError):
-    """Raised when the request is not authenticated."""
+class ResourcePaymentRequiredError(ResourceError):
+    """Raised when payment is required to access the resource."""
 
-    status_code = 401
-    error_code = "unauthorized"
-    default_message = "Authentication required"
-    default_message_fa = "برای ادامه، لطفاً وارد حساب کاربری خود شوید."
+    status_code = 402
+    error_code = "payment_required"
+    default_message = "Payment required"
+    default_message_fa = "برای دسترسی به این بخش، پرداخت لازم است."
+
+    def __init__(
+        self,
+        *,
+        resource: str | None = None,
+        reason: str | None = None,
+        detail: str | None = None,
+        message: dict | None = None,
+        **kwargs: object,
+    ) -> None:
+        """Initialize with optional context fields and message overrides."""
+        if message is None:
+            if resource and reason:
+                message = build_messages(
+                    f"Payment required to access this {resource}: {reason}",
+                    f"برای دسترسی به {resource}، پرداخت لازم است: {reason}",
+                )
+            elif resource:
+                message = build_messages(
+                    f"Payment required to access this {resource}",
+                    f"برای دسترسی به {resource}، پرداخت لازم است.",
+                )
+            elif reason:
+                message = build_messages(
+                    f"Payment required: {reason}",
+                    f"پرداخت لازم است: {reason}",
+                )
+            else:
+                message = build_messages(
+                    self.default_message,
+                    self.default_message_fa,
+                )
+        super().__init__(
+            detail=detail,
+            message=message,
+            resource=resource,
+            reason=reason,
+            **kwargs,
+        )
 
 
 class ResourceForbiddenError(ResourceError):
@@ -155,6 +197,7 @@ class ResourceForbiddenError(ResourceError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if resource and action:
                 message = build_messages(
@@ -199,6 +242,7 @@ class ResourceConflictError(ResourceError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if resource and reason:
                 message = build_messages(
@@ -238,6 +282,7 @@ class ResourceGoneError(ResourceError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if resource and uid:
                 message = build_messages(
@@ -263,52 +308,6 @@ class ResourceGoneError(ResourceError):
         )
 
 
-class ResourceInvalidError(ResourceError):
-    """Raised when a resource fails business-rule validation."""
-
-    status_code = 422
-    error_code = "resource_invalid"
-    default_message = "Resource is invalid"
-    default_message_fa = "اطلاعات وارد شده معتبر نیست."
-
-    def __init__(
-        self,
-        *,
-        resource: str | None = None,
-        field: str | None = None,
-        reason: str | None = None,
-        detail: str | None = None,
-        message: dict | None = None,
-        **kwargs: object,
-    ) -> None:
-        if message is None:
-            if resource and field and reason:
-                message = build_messages(
-                    f"Invalid {resource}: {field} - {reason}",
-                    f"در {resource}، مقدار «{field}» معتبر نیست: {reason}",
-                )
-            elif field and reason:
-                message = build_messages(
-                    f"Invalid field '{field}': {reason}",
-                    f"مقدار «{field}» معتبر نیست: {reason}",
-                )
-            elif reason:
-                message = build_messages(reason, reason)
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
-                )
-        super().__init__(
-            detail=detail,
-            message=message,
-            resource=resource,
-            field=field,
-            reason=reason,
-            **kwargs,
-        )
-
-
 class ResourceLockedError(ResourceError):
     """Raised when a resource is locked and cannot be modified."""
 
@@ -326,11 +325,15 @@ class ResourceLockedError(ResourceError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if resource and uid:
                 message = build_messages(
                     f"{resource} with id '{uid}' is locked",
-                    f"{resource} با شناسه «{uid}» قفل شده و فعلاً قابل ویرایش نیست.",
+                    (
+                        f"{resource} با شناسه «{uid}» قفل شده و "
+                        "فعلاً قابل ویرایش نیست."
+                    ),
                 )
             elif resource:
                 message = build_messages(

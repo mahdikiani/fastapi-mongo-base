@@ -4,18 +4,11 @@ import logging
 
 from beanie import init_beanie
 
-from fastapi_mongo_base.core.errors.db_errors import raise_from_pymongo_error
+from fastapi_mongo_base.core.errors.db_errors import from_pymongo_error
 from fastapi_mongo_base.models import BaseEntity
 from fastapi_mongo_base.utils import basic
 
 from .config import Settings
-
-
-def _fail_mongo_init(exc: Exception, settings: Settings) -> None:
-    """Exit the process or raise a typed MongoDB error on init failure."""
-    if settings.exit_on_init_failure:
-        raise SystemExit(1) from exc
-    raise_from_pymongo_error(exc)
 
 
 async def init_mongo_db(settings: Settings | None = None) -> object:
@@ -33,8 +26,9 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
 
     Raises:
         ImportError: If MongoDB client libraries are not installed.
-        SystemExit: If connection fails and ``exit_on_init_failure`` is enabled
-            (default; use in Docker so the container restarts until Mongo is up).
+        SystemExit: If connection fails and ``exit_on_init_failure`` is
+            enabled (default; use in Docker so the container restarts
+            until Mongo is up).
         MongoDBConnectionError: If MongoDB connection or initialization fails
             and ``exit_on_init_failure`` is disabled.
         MongoDBConnectionTimeoutError: If MongoDB connection times out and
@@ -43,13 +37,11 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
     """
     try:
         from pymongo import AsyncMongoClient
-        from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
     except ImportError:
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
 
             AsyncMongoClient = AsyncIOMotorClient  # noqa: N806
-            from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
         except ImportError as e:
             raise ImportError("MongoDB is not installed") from e
 
@@ -75,19 +67,11 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
                 )
             ],
         )
-    except ServerSelectionTimeoutError as e:
-        logging.exception(
-            "MongoDB connection timeout at %s", settings.mongo_uri
-        )
-        _fail_mongo_init(e, settings)
-
-    except PyMongoError as e:
-        logging.exception("MongoDB error at %s", settings.mongo_uri)
-        _fail_mongo_init(e, settings)
-
     except Exception as e:
-        logging.exception("Unexpected failure initializing MongoDB")
-        _fail_mongo_init(e, settings)
+        logging.exception(
+            "MongoDB initialization failed at %s", settings.mongo_uri
+        )
+        raise from_pymongo_error(e, settings=settings) from e
 
     return db
 

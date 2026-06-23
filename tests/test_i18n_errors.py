@@ -1,5 +1,7 @@
 """Tests for bilingual error message helpers."""
 
+from types import SimpleNamespace
+
 import httpx
 import pytest
 from fastapi import FastAPI
@@ -12,48 +14,55 @@ from fastapi_mongo_base.core.errors.i18n import (
     normalize_messages,
     resolve_locale,
 )
-from fastapi_mongo_base.core.errors.resource_errors import ResourceNotFoundError
-from fastapi_mongo_base.core.exceptions import BaseHTTPException, error_messages
+from fastapi_mongo_base.core.errors.resource_errors import (
+    ResourceNotFoundError,
+)
+from fastapi_mongo_base.core.exceptions import (
+    BaseHTTPException,
+    error_messages,
+)
 
 
 def test_build_messages_always_includes_en() -> None:
+    """Build messages always includes en."""
     assert build_messages("Hello") == {"en": "Hello"}
     assert build_messages("Hello", "سلام") == {"en": "Hello", "fa": "سلام"}
 
 
 def test_normalize_messages_backward_compatible_string() -> None:
+    """Normalize messages backward compatible string."""
     assert normalize_messages("Legacy text", fallback="fb") == {
         "en": "Legacy text",
     }
 
 
 def test_normalize_messages_dict_passthrough() -> None:
+    """Normalize messages dict passthrough."""
     messages = {"en": "Hi", "fa": "سلام"}
     assert normalize_messages(messages, fallback="fb") == messages
 
 
 def test_resolve_locale_from_accept_language() -> None:
-    class _Req:
-        headers = {"accept-language": "fa-IR,fa;q=0.9,en;q=0.8"}
+    """Resolve locale from accept language."""
+    fa_request = SimpleNamespace(
+        headers={"accept-language": "fa-IR,fa;q=0.9,en;q=0.8"},
+    )
+    assert resolve_locale(fa_request) == "fa"  # type: ignore[arg-type]
 
-    assert resolve_locale(_Req()) == "fa"  # type: ignore[arg-type]
-
-    class _ReqEn:
-        headers = {"accept-language": "en-US,en;q=0.9"}
-
-    assert resolve_locale(_ReqEn()) == "en"  # type: ignore[arg-type]
+    en_request = SimpleNamespace(headers={"accept-language": "en-US,en;q=0.9"})
+    assert resolve_locale(en_request) == "en"  # type: ignore[arg-type]
 
 
 def test_localized_text_falls_back_to_en() -> None:
+    """Localized text falls back to en."""
     assert localized_text({"en": "Hello"}, "fa") == "Hello"
 
 
 def test_http_error_content_localizes_detail() -> None:
-    class _Req:
-        headers = {"accept-language": "fa"}
-
+    """Http error content localizes detail."""
+    fa_request = SimpleNamespace(headers={"accept-language": "fa"})
     content = http_error_content(
-        _Req(),  # type: ignore[arg-type]
+        fa_request,  # type: ignore[arg-type]
         message={"en": "Not found", "fa": "یافت نشد"},
         error="item_not_found",
         detail=None,
@@ -65,6 +74,7 @@ def test_http_error_content_localizes_detail() -> None:
 
 
 def test_base_http_exception_legacy_error_messages_string() -> None:
+    """Base http exception legacy error messages string."""
     error_messages["legacy_code"] = "Legacy English"
     exc = BaseHTTPException(status_code=400, error="legacy_code")
     assert exc.message == {"en": "Legacy English"}
@@ -73,6 +83,7 @@ def test_base_http_exception_legacy_error_messages_string() -> None:
 
 
 def test_base_http_exception_bilingual_catalog_entry() -> None:
+    """Base http exception bilingual catalog entry."""
     error_messages["bilingual_code"] = {
         "en": "English",
         "fa": "فارسی",
@@ -85,6 +96,7 @@ def test_base_http_exception_bilingual_catalog_entry() -> None:
 
 @pytest.fixture
 def locale_app() -> FastAPI:
+    """FastAPI app with resource error handlers registered."""
     app = FastAPI()
     setup_exception_handlers(app=app)
 
@@ -96,7 +108,10 @@ def locale_app() -> FastAPI:
 
 
 @pytest.mark.asyncio
-async def test_accept_language_fa_localizes_detail(locale_app: FastAPI) -> None:
+async def test_accept_language_fa_localizes_detail(
+    locale_app: FastAPI,
+) -> None:
+    """Accept language fa localizes detail."""
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(
             app=locale_app,
@@ -120,6 +135,7 @@ async def test_accept_language_fa_localizes_detail(locale_app: FastAPI) -> None:
 async def test_without_accept_language_defaults_to_en_detail(
     locale_app: FastAPI,
 ) -> None:
+    """Without accept language defaults to en detail."""
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(
             app=locale_app,

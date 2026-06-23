@@ -132,7 +132,7 @@ class BaseEntity:
 
     @property
     def item_url(self) -> str:
-        """Get the URL for this item."""
+        """URL for this item."""
         return "/".join([
             f"https://{Settings.root_url}{Settings.base_path}",
             f"{self.__class__.__name__.lower()}s",

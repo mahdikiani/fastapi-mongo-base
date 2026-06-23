@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import traceback
-from typing import TYPE_CHECKING
 
 import json_advanced
 from fastapi import Request
@@ -22,10 +21,6 @@ from fastapi_mongo_base.core.errors.i18n import (
     normalize_messages,
     resolve_detail,
 )
-
-if TYPE_CHECKING:
-    from fastapi_mongo_base.core.errors.db_errors import MongoDBError
-    from fastapi_mongo_base.core.errors.resource_errors import ResourceError
 
 try:
     from usso.integrations.fastapi import (
@@ -115,9 +110,7 @@ def base_http_exception_handler(
     )
 
 
-def mongodb_error_handler(
-    request: Request, exc: Exception
-) -> JSONResponse:
+def mongodb_error_handler(request: Request, exc: Exception) -> JSONResponse:
     """
     Handle MongoDBError subclasses and map driver errors to structured JSON.
 
@@ -174,7 +167,7 @@ def mongodb_error_handler(
 
 
 def resource_error_handler(
-    request: Request, exc: "ResourceError"
+    request: Request, exc: BaseHTTPException
 ) -> JSONResponse:
     """
     Handle ResourceError and all subclasses.
@@ -326,15 +319,6 @@ def general_exception_handler(
     )
 
 
-from fastapi_mongo_base.core.errors.db_errors import MongoDBError
-from fastapi_mongo_base.core.errors.resource_errors import ResourceError
-
-try:
-    from pymongo.errors import PyMongoError as _PyMongoError
-except ImportError:
-    _PyMongoError = None
-
-
 def pymongo_exception_handler(
     request: Request, exc: Exception
 ) -> JSONResponse:
@@ -355,25 +339,36 @@ def pymongo_exception_handler(
     return mongodb_error_handler(request, exc)
 
 
-# A dictionary for dynamic registration
-EXCEPTION_HANDLERS = {
-    MongoDBError: mongodb_error_handler,
-    ResourceError: resource_error_handler,
-    BaseHTTPException: base_http_exception_handler,
-    ValidationError: pydantic_exception_handler,
-    ResponseValidationError: pydantic_exception_handler,
-    RequestValidationError: request_validation_exception_handler,
-    Exception: general_exception_handler,
-}
+def _build_exception_handlers() -> dict:
+    from fastapi_mongo_base.core.errors.db_errors import MongoDBError
+    from fastapi_mongo_base.core.errors.resource_errors import ResourceError
 
-if _PyMongoError is not None:
-    EXCEPTION_HANDLERS[_PyMongoError] = pymongo_exception_handler
+    handlers: dict = {
+        MongoDBError: mongodb_error_handler,
+        ResourceError: resource_error_handler,
+        BaseHTTPException: base_http_exception_handler,
+        ValidationError: pydantic_exception_handler,
+        ResponseValidationError: pydantic_exception_handler,
+        RequestValidationError: request_validation_exception_handler,
+        Exception: general_exception_handler,
+    }
 
-try:
-    from bson.errors import InvalidId as _BsonInvalidId
+    try:
+        from pymongo.errors import PyMongoError
 
-    EXCEPTION_HANDLERS[_BsonInvalidId] = pymongo_exception_handler
-except ImportError:
-    pass
+        handlers[PyMongoError] = pymongo_exception_handler
+    except ImportError:
+        pass
 
-EXCEPTION_HANDLERS.update(usso_exception_handler)
+    try:
+        from bson.errors import InvalidId
+
+        handlers[InvalidId] = pymongo_exception_handler
+    except ImportError:
+        pass
+
+    handlers.update(usso_exception_handler)
+    return handlers
+
+
+EXCEPTION_HANDLERS = _build_exception_handlers()

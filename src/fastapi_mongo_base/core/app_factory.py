@@ -64,10 +64,12 @@ async def lifespan(
             function()
 
     logging.info("Startup complete")
-    yield
-    if worker:
-        app.state.worker.cancel()
-    logging.info("Shutdown complete")
+    try:
+        yield
+    finally:
+        if worker:
+            app.state.worker.cancel()
+        logging.info("Shutdown complete")
 
 
 def setup_exception_handlers(
@@ -319,6 +321,7 @@ def configure_app(
             List of log lines as strings.
 
         """
+
         def read_logs() -> list[str]:
             with open(settings.get_log_config()["info_log_path"], "rb") as f:
                 last_100_lines = deque(f, maxlen=100)

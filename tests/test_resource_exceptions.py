@@ -13,10 +13,9 @@ from fastapi_mongo_base.core.errors.resource_errors import (
     ResourceError,
     ResourceForbiddenError,
     ResourceGoneError,
-    ResourceInvalidError,
     ResourceLockedError,
     ResourceNotFoundError,
-    ResourceUnauthorizedError,
+    ResourcePaymentRequiredError,
 )
 
 ResourceCase = tuple[
@@ -45,19 +44,19 @@ RESOURCE_ERROR_CASES: list[ResourceCase] = [
     ),
     (
         "already-exists",
-        lambda: ResourceAlreadyExistsError(
-            resource="User", field="email"
-        ),
+        lambda: ResourceAlreadyExistsError(resource="User", field="email"),
         409,
         "resource_already_exists",
         {"resource": "User", "uid": None, "field": "email"},
     ),
     (
-        "unauthorized",
-        lambda: ResourceUnauthorizedError(),
-        401,
-        "unauthorized",
-        {},
+        "payment-required",
+        lambda: ResourcePaymentRequiredError(
+            resource="Subscription", reason="plan expired"
+        ),
+        402,
+        "payment_required",
+        {"resource": "Subscription", "reason": "plan expired"},
     ),
     (
         "forbidden",
@@ -83,21 +82,6 @@ RESOURCE_ERROR_CASES: list[ResourceCase] = [
         {"resource": "Post", "uid": "post-1"},
     ),
     (
-        "invalid",
-        lambda: ResourceInvalidError(
-            resource="User",
-            field="age",
-            reason="must be positive",
-        ),
-        422,
-        "resource_invalid",
-        {
-            "resource": "User",
-            "field": "age",
-            "reason": "must be positive",
-        },
-    ),
-    (
         "locked",
         lambda: ResourceLockedError(resource="Document", uid="doc-9"),
         423,
@@ -109,6 +93,7 @@ RESOURCE_ERROR_CASES: list[ResourceCase] = [
 
 @pytest.fixture
 def resource_error_app() -> FastAPI:
+    """FastAPI app exposing one route per resource error case."""
     app = FastAPI()
     setup_exception_handlers(app=app)
 
@@ -117,7 +102,7 @@ def resource_error_app() -> FastAPI:
         def make_endpoint(
             exc_factory: Callable[[], Exception] = factory,
         ) -> Callable[[], None]:
-            async def endpoint() -> None:
+            def endpoint() -> None:
                 raise exc_factory()
 
             return endpoint
@@ -135,6 +120,7 @@ def resource_error_app() -> FastAPI:
 async def resource_error_client(
     resource_error_app: FastAPI,
 ) -> AsyncIterator[httpx.AsyncClient]:
+    """HTTP client wired to the resource error test app."""
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(
             app=resource_error_app,
@@ -159,6 +145,7 @@ async def test_resource_error_handler_returns_structured_json(
     error_code: str,
     extra_fields: dict[str, object],
 ) -> None:
+    """Resource error handler returns structured json."""
     _ = factory
     response = await resource_error_client.get(f"/resource/{path}")
 
@@ -177,6 +164,7 @@ async def test_resource_error_handler_returns_structured_json(
 async def test_resource_not_found_message(
     resource_error_client: httpx.AsyncClient,
 ) -> None:
+    """Resource not found message."""
     response = await resource_error_client.get("/resource/not-found")
 
     body = response.json()
@@ -188,6 +176,7 @@ async def test_resource_not_found_message(
 async def test_resource_forbidden_message(
     resource_error_client: httpx.AsyncClient,
 ) -> None:
+    """Resource forbidden message."""
     response = await resource_error_client.get("/resource/forbidden")
 
     body = response.json()

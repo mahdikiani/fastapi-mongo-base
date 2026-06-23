@@ -2,6 +2,7 @@
 
 from typing import ClassVar
 
+from fastapi_mongo_base.core.config import Settings
 from fastapi_mongo_base.core.errors.i18n import build_messages
 from fastapi_mongo_base.core.exceptions import BaseHTTPException
 
@@ -23,6 +24,7 @@ class MongoDBError(BaseHTTPException):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional detail, message, and extra context."""
         super().__init__(
             status_code=self.status_code,
             error=self.error_code,
@@ -83,6 +85,7 @@ class DocumentNotFoundError(MongoDBError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if collection and uid:
                 message = build_messages(
@@ -130,11 +133,18 @@ class DocumentAlreadyExistsError(MongoDBError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if collection and uid:
                 message = build_messages(
-                    f"Document already exists in '{collection}' with id '{uid}'",
-                    f"در «{collection}» موردی با شناسه «{uid}» از قبل ثبت شده است.",
+                    (
+                        f"Document already exists in '{collection}' "
+                        f"with id '{uid}'"
+                    ),
+                    (
+                        f"در «{collection}» موردی با شناسه «{uid}» "
+                        "از قبل ثبت شده است."
+                    ),
                 )
             elif collection:
                 message = build_messages(
@@ -156,7 +166,7 @@ class DocumentAlreadyExistsError(MongoDBError):
 
 
 class DuplicateKeyError(MongoDBError):
-    """Raised on unique-index constraint violations (MongoDB error code 11000)."""
+    """Raised on unique-index constraint violations (code 11000)."""
 
     status_code = 409
     error_code = "duplicate_key"
@@ -175,6 +185,7 @@ class DuplicateKeyError(MongoDBError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if field and value:
                 message = build_messages(
@@ -184,7 +195,10 @@ class DuplicateKeyError(MongoDBError):
             elif field:
                 message = build_messages(
                     f"A record with this {field} already exists",
-                    f"این {field} قبلاً ثبت شده است. لطفاً مقدار دیگری وارد کنید.",
+                    (
+                        f"این {field} قبلاً ثبت شده است. "
+                        "لطفاً مقدار دیگری وارد کنید."
+                    ),
                 )
             else:
                 message = build_messages(
@@ -220,6 +234,7 @@ class MultipleDocumentsFoundError(MongoDBError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if collection and count is not None:
                 message = build_messages(
@@ -266,6 +281,7 @@ class DocumentValidationError(MongoDBError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if field and reason:
                 message = build_messages(
@@ -307,6 +323,7 @@ class InvalidObjectIdError(MongoDBError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if value:
                 message = build_messages(
@@ -342,6 +359,7 @@ class InvalidQueryError(MongoDBError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if reason:
                 message = build_messages(reason, reason)
@@ -384,9 +402,7 @@ class BulkWriteError(MongoDBError):
     status_code = 400
     error_code = "bulk_write_error"
     default_message = "Bulk write operation failed"
-    default_message_fa = (
-        "ذخیره گروهی اطلاعات کامل نشد. لطفاً دوباره تلاش کنید."
-    )
+    default_message_fa = "ذخیره گروهی اطلاعات کامل نشد. لطفاً دوباره تلاش کنید."
 
     def __init__(
         self,
@@ -396,6 +412,7 @@ class BulkWriteError(MongoDBError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if failed_count is not None:
                 message = build_messages(
@@ -420,9 +437,7 @@ class TransactionError(MongoDBError):
 
     error_code = "transaction_error"
     default_message = "Database transaction failed"
-    default_message_fa = (
-        "این عملیات کامل نشد. لطفاً دوباره تلاش کنید."
-    )
+    default_message_fa = "این عملیات کامل نشد. لطفاً دوباره تلاش کنید."
 
 
 class WriteConflictError(MongoDBError):
@@ -441,7 +456,7 @@ class WriteConflictError(MongoDBError):
 
 
 class UnauthorizedDatabaseAccessError(MongoDBError):
-    """Raised when the database user lacks permission for the requested action."""
+    """Raised when the database user lacks permission for the action."""
 
     status_code = 403
     error_code = "unauthorized_database_access"
@@ -467,10 +482,14 @@ class MongoDBIndexError(MongoDBError):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
+        """Initialize with optional context fields and message overrides."""
         if message is None:
             if collection and index:
                 message = build_messages(
-                    f"Failed to manage index '{index}' on collection '{collection}'",
+                    (
+                        f"Failed to manage index '{index}' on "
+                        f"collection '{collection}'"
+                    ),
                     f"به‌روزرسانی فهرست «{index}» در «{collection}» انجام نشد.",
                 )
             elif index:
@@ -504,11 +523,38 @@ def _duplicate_key_from_details(
     return DuplicateKeyError(field=field, value=value, detail=detail)
 
 
+def _is_connection_error(exc: Exception) -> bool:
+    """Return True when exc indicates MongoDB is unreachable."""
+    try:
+        from pymongo.errors import (
+            ConfigurationError,
+            ConnectionFailure,
+            InvalidURI,
+            NetworkTimeout,
+            ServerSelectionTimeoutError,
+            WaitQueueTimeoutError,
+        )
+    except ImportError:
+        return False
+
+    return isinstance(
+        exc,
+        (
+            ServerSelectionTimeoutError,
+            NetworkTimeout,
+            WaitQueueTimeoutError,
+            ConnectionFailure,
+            InvalidURI,
+            ConfigurationError,
+        ),
+    )
+
+
 def _map_connection_error(exc: Exception, detail: str) -> MongoDBError | None:
+    if not _is_connection_error(exc):
+        return None
+
     from pymongo.errors import (
-        ConfigurationError,
-        ConnectionFailure,
-        InvalidURI,
         NetworkTimeout,
         ServerSelectionTimeoutError,
         WaitQueueTimeoutError,
@@ -519,15 +565,17 @@ def _map_connection_error(exc: Exception, detail: str) -> MongoDBError | None:
         (ServerSelectionTimeoutError, NetworkTimeout, WaitQueueTimeoutError),
     ):
         return MongoDBConnectionTimeoutError(detail=detail)
-    if isinstance(exc, (ConnectionFailure, InvalidURI, ConfigurationError)):
-        return MongoDBConnectionError(detail=detail)
-    return None
+    return MongoDBConnectionError(detail=detail)
 
 
 def _map_write_error(exc: Exception, detail: str) -> MongoDBError | None:
     from pymongo.errors import (
         BulkWriteError as PyMongoBulkWriteError,
+    )
+    from pymongo.errors import (
         DuplicateKeyError as PyMongoDuplicateKeyError,
+    )
+    from pymongo.errors import (
         WriteConcernError,
         WriteError,
         WTimeoutError,
@@ -614,6 +662,27 @@ def _map_operation_failure(exc: Exception, detail: str) -> MongoDBError | None:
     return None
 
 
+def _match_driver_error(exc: BaseException) -> BaseException | None:
+    """Return exc when it is a pymongo or BSON driver error."""
+    try:
+        from bson.errors import InvalidId
+
+        if isinstance(exc, InvalidId):
+            return exc
+    except ImportError:
+        pass
+
+    try:
+        from pymongo.errors import PyMongoError
+
+        if isinstance(exc, PyMongoError):
+            return exc
+    except ImportError:
+        pass
+
+    return None
+
+
 def find_driver_error(
     exc: BaseException | None,
     *,
@@ -636,21 +705,9 @@ def find_driver_error(
     if isinstance(exc, MongoDBError):
         return None
 
-    try:
-        from bson.errors import InvalidId
-
-        if isinstance(exc, InvalidId):
-            return exc
-    except ImportError:
-        pass
-
-    try:
-        from pymongo.errors import PyMongoError
-
-        if isinstance(exc, PyMongoError):
-            return exc
-    except ImportError:
-        pass
+    matched = _match_driver_error(exc)
+    if matched is not None:
+        return matched
 
     for link in (exc.__cause__, exc.__context__):
         found = find_driver_error(link, _seen=_seen)
@@ -674,11 +731,27 @@ def from_any_exception(exc: Exception) -> MongoDBError | None:
     return from_pymongo_error(driver)
 
 
-def from_pymongo_error(exc: Exception) -> MongoDBError:
+def _fail_mongo_init(exc: Exception, settings: Settings) -> None:
+    """Exit the process or raise a typed MongoDB error on init failure."""
+    if settings.exit_on_init_failure:
+        raise SystemExit(1) from exc
+    raise from_pymongo_error(exc, _for_raise=True) from exc
+
+
+def from_pymongo_error(
+    exc: Exception,
+    *,
+    settings: Settings | None = None,
+    _for_raise: bool = False,
+) -> MongoDBError:
     """
     Convert a pymongo/BSON driver error into a MongoDBError subclass.
 
     Check order matters: connection → write → operation failures.
+
+    When ``settings`` is provided and ``exc`` is a connection-health error,
+    delegates to :func:`_fail_mongo_init` so startup can exit or raise a typed
+    error. Non-pymongo exceptions are re-raised unchanged.
     """
     detail = str(exc)
 
@@ -695,14 +768,16 @@ def from_pymongo_error(exc: Exception) -> MongoDBError:
     except ImportError:
         return MongoDBError(detail=detail)
 
-    if not isinstance(exc, PyMongoError):
-        return MongoDBError(detail=detail)
+    connection_mapped = _map_connection_error(exc, detail)
+    if connection_mapped is not None:
+        if settings is not None and not _for_raise:
+            _fail_mongo_init(exc, settings)
+        return connection_mapped
 
-    for mapper in (
-        _map_connection_error,
-        _map_write_error,
-        _map_operation_failure,
-    ):
+    if not isinstance(exc, PyMongoError):
+        raise exc
+
+    for mapper in (_map_write_error, _map_operation_failure):
         mapped = mapper(exc, detail)
         if mapped is not None:
             return mapped
@@ -711,8 +786,8 @@ def from_pymongo_error(exc: Exception) -> MongoDBError:
 
 
 def raise_from_pymongo_error(exc: Exception) -> None:
-    """Re-raise a driver error as MongoDBError, keeping the original traceback."""
+    """Re-raise a driver error as MongoDBError with original traceback."""
     if isinstance(exc, MongoDBError):
         raise exc
     driver = find_driver_error(exc) or exc
-    raise from_pymongo_error(driver) from exc
+    raise from_pymongo_error(driver, _for_raise=True) from exc

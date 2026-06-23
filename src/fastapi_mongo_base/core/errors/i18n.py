@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from fastapi import Request
+from fastapi import Request
 
 SUPPORTED_LOCALES = ("en", "fa")
 DEFAULT_LOCALE = "en"
@@ -114,6 +111,8 @@ def http_error_content(
     return {
         "message": message,
         "error": error,
-        "detail": resolve_detail(message=message, detail=detail, locale=locale),
+        "detail": resolve_detail(
+            message=message, detail=detail, locale=locale
+        ),
         **(data or {}),
     }

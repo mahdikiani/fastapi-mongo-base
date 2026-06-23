@@ -173,12 +173,12 @@ class TaskMixin(BaseModel):
 
     @property
     def webhook_exclude_fields(self) -> set[str] | None:
-        """Get fields to exclude from webhook payload."""
+        """Fields to exclude from webhook payload."""
         return None
 
     @property
     def webhook_include_fields(self) -> set[str] | None:
-        """Get fields to include in webhook payload."""
+        """Fields to include in webhook payload."""
         return None
 
     @classmethod
@@ -188,7 +188,7 @@ class TaskMixin(BaseModel):
 
     @property
     def item_webhook_url(self) -> str:
-        """Get the webhook URL for this task item."""
+        """Webhook URL for this task item."""
         return f"{self.item_url}/webhook"  # type: ignore
 
     @property

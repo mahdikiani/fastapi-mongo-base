@@ -34,7 +34,7 @@ class Settings(metaclass=Singleton):
     @property
     def cors_origins(self) -> list[str]:
         """
-        Get CORS allowed origins as a list.
+        CORS allowed origins as a list.
 
         Returns:
             List of allowed origin URLs.

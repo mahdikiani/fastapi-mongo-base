@@ -47,7 +47,7 @@ class Language(StrEnum):
     @property
     def _info(self) -> dict[str, str]:
         """
-        Get language information dictionary.
+        Language information dictionary.
 
         Returns:
             Dictionary containing Persian name, English name, and abbreviation.
@@ -174,7 +174,7 @@ class Language(StrEnum):
     @property
     def fa(self) -> str:
         """
-        Get Persian name of the language.
+        Persian name of the language.
 
         Returns:
             Persian name string.
@@ -185,7 +185,7 @@ class Language(StrEnum):
     @property
     def en(self) -> str:
         """
-        Get English name of the language.
+        English name of the language.
 
         Returns:
             English name string.
@@ -196,7 +196,7 @@ class Language(StrEnum):
     @property
     def abbreviation(self) -> str:
         """
-        Get language abbreviation code.
+        Language abbreviation code.
 
         Returns:
             Two-letter language code (e.g., "en", "fa").

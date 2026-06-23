@@ -13,6 +13,7 @@ from fastapi_mongo_base.core.app_factory import setup_exception_handlers
 
 @pytest.fixture
 def mongo_error_app() -> FastAPI:
+    """FastAPI app with MongoDB error handlers registered."""
     app = FastAPI()
     setup_exception_handlers(app=app)
 
@@ -27,12 +28,15 @@ def mongo_error_app() -> FastAPI:
             },
         )
 
+    def _duplicate_key_error() -> DuplicateKeyError:
+        return DuplicateKeyError("E11000 duplicate key error", 11000, {})
+
+    def _raise_wrapped_duplicate_key() -> None:
+        raise RuntimeError("insert failed") from _duplicate_key_error()
+
     @app.get("/wrapped")
     async def wrapped() -> None:
-        try:
-            raise DuplicateKeyError("E11000 duplicate key error", 11000, {})
-        except DuplicateKeyError as err:
-            raise RuntimeError("insert failed") from err
+        _raise_wrapped_duplicate_key()
 
     @app.get("/timeout")
     async def timeout() -> None:
@@ -53,6 +57,7 @@ def mongo_error_app() -> FastAPI:
 async def mongo_error_client(
     mongo_error_app: FastAPI,
 ) -> AsyncIterator[httpx.AsyncClient]:
+    """HTTP client wired to the MongoDB error test app."""
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(
             app=mongo_error_app,
@@ -67,6 +72,7 @@ async def mongo_error_client(
 async def test_duplicate_key_auto_mapped(
     mongo_error_client: httpx.AsyncClient,
 ) -> None:
+    """Duplicate key auto mapped."""
     response = await mongo_error_client.get("/duplicate-key")
 
     assert response.status_code == 409
@@ -81,6 +87,7 @@ async def test_duplicate_key_auto_mapped(
 async def test_wrapped_duplicate_key_auto_mapped(
     mongo_error_client: httpx.AsyncClient,
 ) -> None:
+    """Wrapped duplicate key auto mapped."""
     response = await mongo_error_client.get("/wrapped")
 
     assert response.status_code == 409
@@ -91,6 +98,7 @@ async def test_wrapped_duplicate_key_auto_mapped(
 async def test_connection_timeout_auto_mapped(
     mongo_error_client: httpx.AsyncClient,
 ) -> None:
+    """Connection timeout auto mapped."""
     response = await mongo_error_client.get("/timeout")
 
     assert response.status_code == 503
@@ -101,6 +109,7 @@ async def test_connection_timeout_auto_mapped(
 async def test_invalid_object_id_auto_mapped(
     mongo_error_client: httpx.AsyncClient,
 ) -> None:
+    """Invalid object id auto mapped."""
     response = await mongo_error_client.get("/invalid-id")
 
     assert response.status_code == 400
@@ -111,6 +120,7 @@ async def test_invalid_object_id_auto_mapped(
 async def test_unrelated_exception_stays_generic(
     mongo_error_client: httpx.AsyncClient,
 ) -> None:
+    """Unrelated exception stays generic."""
     response = await mongo_error_client.get("/other")
 
     assert response.status_code == 500

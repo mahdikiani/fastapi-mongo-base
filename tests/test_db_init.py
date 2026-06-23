@@ -12,7 +12,12 @@ from fastapi_mongo_base.core.errors.db_errors import (
 
 
 class _FailingClient:
-    def __init__(self, exc: Exception, *args: object, **kwargs: object) -> None:
+    def __init__(
+        self,
+        exc: Exception,
+        *args: object,
+        **kwargs: object,
+    ) -> None:
         self._exc = exc
 
     async def server_info(self) -> None:
@@ -39,6 +44,7 @@ def _settings(*, exit_on_init_failure: bool) -> Settings:
 async def test_init_mongo_db_raises_connection_timeout_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Init mongo db raises connection timeout error."""
     monkeypatch.setattr(
         "pymongo.AsyncMongoClient",
         _client_factory(ServerSelectionTimeoutError("connection timed out")),
@@ -52,6 +58,7 @@ async def test_init_mongo_db_raises_connection_timeout_error(
 async def test_init_mongo_db_raises_connection_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Init mongo db raises connection error."""
     monkeypatch.setattr(
         "pymongo.AsyncMongoClient",
         _client_factory(ConnectionFailure("could not connect")),
@@ -65,6 +72,7 @@ async def test_init_mongo_db_raises_connection_error(
 async def test_init_mongo_db_exits_on_connection_failure_by_default(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Init mongo db exits on connection failure by default."""
     monkeypatch.setattr(
         "pymongo.AsyncMongoClient",
         _client_factory(ServerSelectionTimeoutError("connection timed out")),
