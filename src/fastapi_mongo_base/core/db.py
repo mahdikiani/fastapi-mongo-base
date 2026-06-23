@@ -4,6 +4,7 @@ import logging
 
 from beanie import init_beanie
 
+from fastapi_mongo_base.core.errors.db_errors import raise_from_pymongo_error
 from fastapi_mongo_base.models import BaseEntity
 from fastapi_mongo_base.utils import basic
 
@@ -25,17 +26,18 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
 
     Raises:
         ImportError: If MongoDB client libraries are not installed.
-        MongoDBConnectionError: If MongoDB connection or initialization fails.
+        MongoDBError: If MongoDB connection or initialization fails.
 
     """
     try:
         from pymongo import AsyncMongoClient
-        from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
+        from pymongo.errors import PyMongoError
     except ImportError:
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
 
             AsyncMongoClient = AsyncIOMotorClient  # noqa: N806
+            from pymongo.errors import PyMongoError
         except ImportError as e:
             raise ImportError("MongoDB is not installed") from e
 
@@ -61,19 +63,13 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
                 )
             ],
         )
-    except ServerSelectionTimeoutError as e:
-        logging.exception(
-            "MongoDB connection timeout at %s", settings.mongo_uri
-        )
-        raise SystemExit(1) from e
-
     except PyMongoError as e:
         logging.exception("MongoDB error at %s", settings.mongo_uri)
-        raise SystemExit(1) from e
+        raise_from_pymongo_error(e)
 
     except Exception as e:
         logging.exception("Unexpected failure initializing MongoDB")
-        raise SystemExit(1) from e
+        raise_from_pymongo_error(e)
 
     return db
 

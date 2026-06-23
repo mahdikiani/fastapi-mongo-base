@@ -1,0 +1,133 @@
+"""Tests for bilingual error message helpers."""
+
+import httpx
+import pytest
+from fastapi import FastAPI
+
+from fastapi_mongo_base.core.app_factory import setup_exception_handlers
+from fastapi_mongo_base.core.errors.i18n import (
+    build_messages,
+    http_error_content,
+    localized_text,
+    normalize_messages,
+    resolve_locale,
+)
+from fastapi_mongo_base.core.errors.resource_errors import ResourceNotFoundError
+from fastapi_mongo_base.core.exceptions import BaseHTTPException, error_messages
+
+
+def test_build_messages_always_includes_en() -> None:
+    assert build_messages("Hello") == {"en": "Hello"}
+    assert build_messages("Hello", "سلام") == {"en": "Hello", "fa": "سلام"}
+
+
+def test_normalize_messages_backward_compatible_string() -> None:
+    assert normalize_messages("Legacy text", fallback="fb") == {
+        "en": "Legacy text",
+    }
+
+
+def test_normalize_messages_dict_passthrough() -> None:
+    messages = {"en": "Hi", "fa": "سلام"}
+    assert normalize_messages(messages, fallback="fb") == messages
+
+
+def test_resolve_locale_from_accept_language() -> None:
+    class _Req:
+        headers = {"accept-language": "fa-IR,fa;q=0.9,en;q=0.8"}
+
+    assert resolve_locale(_Req()) == "fa"  # type: ignore[arg-type]
+
+    class _ReqEn:
+        headers = {"accept-language": "en-US,en;q=0.9"}
+
+    assert resolve_locale(_ReqEn()) == "en"  # type: ignore[arg-type]
+
+
+def test_localized_text_falls_back_to_en() -> None:
+    assert localized_text({"en": "Hello"}, "fa") == "Hello"
+
+
+def test_http_error_content_localizes_detail() -> None:
+    class _Req:
+        headers = {"accept-language": "fa"}
+
+    content = http_error_content(
+        _Req(),  # type: ignore[arg-type]
+        message={"en": "Not found", "fa": "یافت نشد"},
+        error="item_not_found",
+        detail=None,
+        data={"uid": "1"},
+    )
+    assert content["message"] == {"en": "Not found", "fa": "یافت نشد"}
+    assert content["detail"] == "یافت نشد"
+    assert content["uid"] == "1"
+
+
+def test_base_http_exception_legacy_error_messages_string() -> None:
+    error_messages["legacy_code"] = "Legacy English"
+    exc = BaseHTTPException(status_code=400, error="legacy_code")
+    assert exc.message == {"en": "Legacy English"}
+    assert exc.detail == "Legacy English"
+    error_messages.pop("legacy_code")
+
+
+def test_base_http_exception_bilingual_catalog_entry() -> None:
+    error_messages["bilingual_code"] = {
+        "en": "English",
+        "fa": "فارسی",
+    }
+    exc = BaseHTTPException(status_code=400, error="bilingual_code")
+    assert exc.message["en"] == "English"
+    assert exc.message["fa"] == "فارسی"
+    error_messages.pop("bilingual_code")
+
+
+@pytest.fixture
+def locale_app() -> FastAPI:
+    app = FastAPI()
+    setup_exception_handlers(app=app)
+
+    @app.get("/not-found")
+    async def not_found() -> None:
+        raise ResourceNotFoundError(resource="User", uid="abc123")
+
+    return app
+
+
+@pytest.mark.asyncio
+async def test_accept_language_fa_localizes_detail(locale_app: FastAPI) -> None:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(
+            app=locale_app,
+            raise_app_exceptions=False,
+        ),
+        base_url="http://test",
+    ) as client:
+        response = await client.get(
+            "/not-found",
+            headers={"Accept-Language": "fa-IR,fa;q=0.9"},
+        )
+
+    body = response.json()
+    assert response.status_code == 404
+    assert body["message"]["en"] == "User with id 'abc123' not found"
+    assert body["message"]["fa"] == "User با شناسه «abc123» پیدا نشد."
+    assert body["detail"] == body["message"]["fa"]
+
+
+@pytest.mark.asyncio
+async def test_without_accept_language_defaults_to_en_detail(
+    locale_app: FastAPI,
+) -> None:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(
+            app=locale_app,
+            raise_app_exceptions=False,
+        ),
+        base_url="http://test",
+    ) as client:
+        response = await client.get("/not-found")
+
+    body = response.json()
+    assert body["detail"] == body["message"]["en"]
