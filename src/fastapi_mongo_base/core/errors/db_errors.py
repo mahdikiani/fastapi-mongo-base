@@ -402,7 +402,9 @@ class BulkWriteError(MongoDBError):
     status_code = 400
     error_code = "bulk_write_error"
     default_message = "Bulk write operation failed"
-    default_message_fa = "ذخیره گروهی اطلاعات کامل نشد. لطفاً دوباره تلاش کنید."
+    default_message_fa = (
+        "ذخیره گروهی اطلاعات کامل نشد. " + "لطفاً دوباره تلاش کنید."
+    )
 
     def __init__(
         self,
