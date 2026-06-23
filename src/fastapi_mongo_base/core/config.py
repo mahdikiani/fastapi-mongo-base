@@ -34,7 +34,7 @@ class Settings(metaclass=Singleton):
     @property
     def cors_origins(self) -> list[str]:
         """
-        Get CORS allowed origins as a list.
+        CORS allowed origins as a list.
 
         Returns:
             List of allowed origin URLs.
@@ -54,6 +54,9 @@ class Settings(metaclass=Singleton):
     mongo_connect_timeout_ms: int = int(
         os.getenv("MONGO_CONNECT_TIMEOUT_MS", default="5000")
     )
+    exit_on_init_failure: bool = os.getenv(
+        "EXIT_ON_INIT_FAILURE", default="true"
+    ).lower() in ("true", "on", "1")
 
     @classmethod
     def get_coverage_dir(cls) -> str:
