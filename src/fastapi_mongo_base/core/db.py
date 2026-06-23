@@ -11,6 +11,13 @@ from fastapi_mongo_base.utils import basic
 from .config import Settings
 
 
+def _fail_mongo_init(exc: Exception, settings: Settings) -> None:
+    """Exit the process or raise a typed MongoDB error on init failure."""
+    if settings.exit_on_init_failure:
+        raise SystemExit(1) from exc
+    raise_from_pymongo_error(exc)
+
+
 async def init_mongo_db(settings: Settings | None = None) -> object:
     """
     Initialize MongoDB connection and Beanie ODM.
@@ -26,30 +33,35 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
 
     Raises:
         ImportError: If MongoDB client libraries are not installed.
-        MongoDBError: If MongoDB connection or initialization fails.
+        SystemExit: If connection fails and ``exit_on_init_failure`` is enabled
+            (default; use in Docker so the container restarts until Mongo is up).
+        MongoDBConnectionError: If MongoDB connection or initialization fails
+            and ``exit_on_init_failure`` is disabled.
+        MongoDBConnectionTimeoutError: If MongoDB connection times out and
+            ``exit_on_init_failure`` is disabled.
 
     """
     try:
         from pymongo import AsyncMongoClient
-        from pymongo.errors import PyMongoError
+        from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
     except ImportError:
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
 
             AsyncMongoClient = AsyncIOMotorClient  # noqa: N806
-            from pymongo.errors import PyMongoError
+            from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
         except ImportError as e:
             raise ImportError("MongoDB is not installed") from e
 
     if settings is None:
         settings = Settings()
 
-    client = AsyncMongoClient(
-        settings.mongo_uri,
-        serverSelectionTimeoutMS=settings.mongo_server_selection_timeout_ms,
-        connectTimeoutMS=settings.mongo_connect_timeout_ms,
-    )
     try:
+        client = AsyncMongoClient(
+            settings.mongo_uri,
+            serverSelectionTimeoutMS=settings.mongo_server_selection_timeout_ms,
+            connectTimeoutMS=settings.mongo_connect_timeout_ms,
+        )
         await client.server_info()
         db = client.get_database(settings.project_name)
         await init_beanie(
@@ -63,13 +75,19 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
                 )
             ],
         )
+    except ServerSelectionTimeoutError as e:
+        logging.exception(
+            "MongoDB connection timeout at %s", settings.mongo_uri
+        )
+        _fail_mongo_init(e, settings)
+
     except PyMongoError as e:
         logging.exception("MongoDB error at %s", settings.mongo_uri)
-        raise_from_pymongo_error(e)
+        _fail_mongo_init(e, settings)
 
     except Exception as e:
         logging.exception("Unexpected failure initializing MongoDB")
-        raise_from_pymongo_error(e)
+        _fail_mongo_init(e, settings)
 
     return db
 
@@ -86,13 +104,13 @@ def init_redis(settings: Settings | None = None) -> tuple:
         Returns (None, None) if Redis is not configured or unavailable.
 
     """
+    if settings is None:
+        settings = Settings()
+
     try:
         from redis import Redis as RedisSync
         from redis.asyncio.client import Redis
         from redis.exceptions import RedisError
-
-        if settings is None:
-            settings = Settings()
 
         redis_uri = getattr(settings, "redis_uri", None)
         if redis_uri:
@@ -111,7 +129,8 @@ def init_redis(settings: Settings | None = None) -> tuple:
             return redis_sync, redis
     except RedisError as e:
         logging.exception("Redis connection error")
-        raise SystemExit(1) from e
+        if settings.exit_on_init_failure:
+            raise SystemExit(1) from e
     except (ImportError, AttributeError, Exception):
         logging.exception("Error initializing Redis")
 
