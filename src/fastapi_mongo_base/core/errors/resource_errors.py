@@ -2,7 +2,7 @@
 
 from typing import ClassVar
 
-from fastapi_mongo_base.core.errors.i18n import build_messages
+from fastapi_mongo_base.core.errors.i18n import build_messages, class_messages
 from fastapi_mongo_base.core.exceptions import BaseHTTPException
 
 
@@ -24,12 +24,12 @@ class ResourceError(BaseHTTPException):
         **kwargs: object,
     ) -> None:
         """Initialize with optional context fields and message overrides."""
+        message = class_messages(type(self), message)
         super().__init__(
             status_code=self.status_code,
             error=self.error_code,
             detail=detail,
-            message=message
-            or build_messages(self.default_message, self.default_message_fa),
+            message=message,
             **kwargs,
         )
 
@@ -67,11 +67,6 @@ class ResourceNotFoundError(ResourceError):
                 message = build_messages(
                     f"Resource with id '{uid}' not found",
                     f"موردی با شناسه «{uid}» پیدا نشد.",
-                )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
                 )
         super().__init__(
             detail=detail,
@@ -117,11 +112,6 @@ class ResourceAlreadyExistsError(ResourceError):
                     f"{resource} already exists",
                     f"{resource} از قبل وجود دارد.",
                 )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
-                )
         super().__init__(
             detail=detail,
             message=message,
@@ -166,11 +156,6 @@ class ResourcePaymentRequiredError(ResourceError):
                     f"Payment required: {reason}",
                     f"پرداخت لازم است: {reason}",
                 )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
-                )
         super().__init__(
             detail=detail,
             message=message,
@@ -209,11 +194,6 @@ class ResourceForbiddenError(ResourceError):
                     f"You are not authorized to access this {resource}",
                     f"شما اجازه دسترسی به {resource} را ندارید.",
                 )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
-                )
         super().__init__(
             detail=detail,
             message=message,
@@ -251,11 +231,6 @@ class ResourceConflictError(ResourceError):
                 )
             elif reason:
                 message = build_messages(reason, reason)
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
-                )
         super().__init__(
             detail=detail,
             message=message,
@@ -293,11 +268,6 @@ class ResourceGoneError(ResourceError):
                 message = build_messages(
                     f"{resource} is no longer available",
                     f"{resource} دیگر در دسترس نیست.",
-                )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
                 )
         super().__init__(
             detail=detail,
@@ -339,11 +309,6 @@ class ResourceLockedError(ResourceError):
                 message = build_messages(
                     f"{resource} is locked",
                     f"{resource} قفل شده و فعلاً قابل ویرایش نیست.",
-                )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
                 )
         super().__init__(
             detail=detail,

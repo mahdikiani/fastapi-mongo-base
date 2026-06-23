@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi_mongo_base.core.app_factory import setup_exception_handlers
 from fastapi_mongo_base.core.errors.i18n import (
     build_messages,
+    class_messages,
     http_error_content,
     localized_text,
     normalize_messages,
@@ -23,17 +24,63 @@ from fastapi_mongo_base.core.exceptions import (
 )
 
 
-def test_build_messages_always_includes_en_and_fa() -> None:
-    """Build messages always includes en and fa."""
-    assert build_messages("Hello") == {"en": "Hello", "fa": "Hello"}
+def test_build_messages_includes_fa_only_when_provided() -> None:
+    """Build messages omits fa when it is not provided."""
+    assert build_messages("Hello") == {"en": "Hello"}
     assert build_messages("Hello", "سلام") == {"en": "Hello", "fa": "سلام"}
+    assert build_messages("Hello", None) == {"en": "Hello"}
+
+
+def test_class_messages_inherits_missing_parent_defaults() -> None:
+    """Missing en or fa on a subclass falls back to the parent values."""
+
+    class CustomNotFound(ResourceNotFoundError):
+        default_message = "Order not found"
+
+    assert class_messages(CustomNotFound) == {
+        "en": "Order not found",
+        "fa": ResourceNotFoundError.default_message_fa,
+    }
+
+
+def test_class_messages_skips_explicit_none_fa() -> None:
+    """Explicit None fa on a subclass uses the parent fa message."""
+
+    class CustomNotFound(ResourceNotFoundError):
+        default_message = "Order not found"
+        default_message_fa = None
+
+    assert class_messages(CustomNotFound)["fa"] == (
+        ResourceNotFoundError.default_message_fa
+    )
+
+
+def test_class_messages_uses_parent_fa_for_en_only_dict() -> None:
+    """Passing only en uses the parent fa translation."""
+
+    class CustomNotFound(ResourceNotFoundError):
+        default_message = "Order not found"
+
+    assert class_messages(CustomNotFound, {"en": "Order missing"}) == {
+        "en": "Order missing",
+        "fa": ResourceNotFoundError.default_message_fa,
+    }
+
+
+def test_custom_subclass_keeps_parent_fa() -> None:
+    """Custom subclass responses keep the parent Persian message."""
+
+    class CustomNotFound(ResourceNotFoundError):
+        default_message = "Order not found"
+
+    exc = CustomNotFound()
+    assert exc.message == class_messages(CustomNotFound)
 
 
 def test_normalize_messages_backward_compatible_string() -> None:
     """Normalize messages backward compatible string."""
     assert normalize_messages("Legacy text", fallback="fb") == {
         "en": "Legacy text",
-        "fa": "Legacy text",
     }
 
 
@@ -78,7 +125,7 @@ def test_base_http_exception_legacy_error_messages_string() -> None:
     """Base http exception legacy error messages string."""
     error_messages["legacy_code"] = "Legacy English"
     exc = BaseHTTPException(status_code=400, error="legacy_code")
-    assert exc.message == {"en": "Legacy English", "fa": "Legacy English"}
+    assert exc.message == {"en": "Legacy English"}
     assert exc.detail == "Legacy English"
     error_messages.pop("legacy_code")
 

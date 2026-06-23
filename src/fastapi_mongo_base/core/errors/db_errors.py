@@ -3,7 +3,7 @@
 from typing import ClassVar
 
 from fastapi_mongo_base.core.config import Settings
-from fastapi_mongo_base.core.errors.i18n import build_messages
+from fastapi_mongo_base.core.errors.i18n import build_messages, class_messages
 from fastapi_mongo_base.core.exceptions import BaseHTTPException
 
 
@@ -25,12 +25,12 @@ class MongoDBError(BaseHTTPException):
         **kwargs: object,
     ) -> None:
         """Initialize with optional detail, message, and extra context."""
+        message = class_messages(type(self), message)
         super().__init__(
             status_code=self.status_code,
             error=self.error_code,
             detail=detail,
-            message=message
-            or build_messages(self.default_message, self.default_message_fa),
+            message=message,
             **kwargs,
         )
 
@@ -102,11 +102,6 @@ class DocumentNotFoundError(MongoDBError):
                     f"Document with id '{uid}' not found",
                     f"موردی با شناسه «{uid}» پیدا نشد.",
                 )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
-                )
         super().__init__(
             detail=detail,
             message=message,
@@ -151,11 +146,6 @@ class DocumentAlreadyExistsError(MongoDBError):
                     f"Document already exists in '{collection}'",
                     f"در «{collection}» این مورد از قبل وجود دارد.",
                 )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
-                )
         super().__init__(
             detail=detail,
             message=message,
@@ -199,11 +189,6 @@ class DuplicateKeyError(MongoDBError):
                         f"این {field} قبلاً ثبت شده است. "
                         "لطفاً مقدار دیگری وارد کنید."
                     ),
-                )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
                 )
         super().__init__(
             detail=detail,
@@ -250,11 +235,6 @@ class MultipleDocumentsFoundError(MongoDBError):
                     f"در «{collection}» باید یک نتیجه می‌یافت، "
                     "اما چند مورد پیدا شد.",
                 )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
-                )
         super().__init__(
             detail=detail,
             message=message,
@@ -293,11 +273,6 @@ class DocumentValidationError(MongoDBError):
                     f"Validation failed for field '{field}'",
                     f"لطفاً مقدار «{field}» را بررسی و اصلاح کنید.",
                 )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
-                )
         super().__init__(
             detail=detail,
             message=message,
@@ -324,17 +299,11 @@ class InvalidObjectIdError(MongoDBError):
         **kwargs: object,
     ) -> None:
         """Initialize with optional context fields and message overrides."""
-        if message is None:
-            if value:
-                message = build_messages(
-                    f"Invalid document identifier: '{value}'",
-                    f"شناسه «{value}» معتبر نیست. لطفاً شناسه را بررسی کنید.",
-                )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
-                )
+        if message is None and value:
+            message = build_messages(
+                f"Invalid document identifier: '{value}'",
+                f"شناسه «{value}» معتبر نیست. لطفاً شناسه را بررسی کنید.",
+            )
         super().__init__(
             detail=detail,
             message=message,
@@ -360,14 +329,8 @@ class InvalidQueryError(MongoDBError):
         **kwargs: object,
     ) -> None:
         """Initialize with optional context fields and message overrides."""
-        if message is None:
-            if reason:
-                message = build_messages(reason, reason)
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
-                )
+        if message is None and reason:
+            message = build_messages(reason, reason)
         super().__init__(
             detail=detail,
             message=message,
@@ -413,17 +376,11 @@ class BulkWriteError(MongoDBError):
         **kwargs: object,
     ) -> None:
         """Initialize with optional context fields and message overrides."""
-        if message is None:
-            if failed_count is not None:
-                message = build_messages(
-                    f"Bulk write failed for {failed_count} document(s)",
-                    f"ذخیره {failed_count} مورد با مشکل مواجه شد.",
-                )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
-                )
+        if message is None and failed_count is not None:
+            message = build_messages(
+                f"Bulk write failed for {failed_count} document(s)",
+                f"ذخیره {failed_count} مورد با مشکل مواجه شد.",
+            )
         super().__init__(
             detail=detail,
             message=message,
@@ -496,11 +453,6 @@ class MongoDBIndexError(MongoDBError):
                 message = build_messages(
                     f"Failed to manage index '{index}'",
                     f"به‌روزرسانی فهرست «{index}» انجام نشد.",
-                )
-            else:
-                message = build_messages(
-                    self.default_message,
-                    self.default_message_fa,
                 )
         super().__init__(
             detail=detail,

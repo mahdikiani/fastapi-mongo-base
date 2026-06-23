@@ -4,19 +4,42 @@ from __future__ import annotations
 
 from fastapi import Request
 
-SUPPORTED_LOCALES = ("en", "fa")
 DEFAULT_LOCALE = "en"
 FALLBACK_LOCALE = "en"
 
 
 def build_messages(en: str, fa: str | None = None) -> dict[str, str]:
-    """
-    Build a bilingual language map with English and Persian text.
+    """Build a language map. ``fa`` is included only when provided."""
+    messages: dict[str, str] = {"en": en}
+    if fa is not None:
+        messages["fa"] = fa
+    return messages
 
-    Always includes both ``en`` and ``fa``. When Persian text is omitted,
-    ``fa`` falls back to the English string.
-    """
-    return {"en": en, "fa": fa if fa is not None else en}
+
+def _class_default(cls: type, attr: str) -> str | None:
+    """Return *attr* from *cls* or the nearest parent that defines it."""
+    for klass in cls.__mro__:
+        if klass is object or attr not in klass.__dict__:
+            continue
+        value = klass.__dict__[attr]
+        if value is not None:
+            return value
+    return None
+
+
+def class_messages(
+    cls: type,
+    message: dict[str, str] | None = None,
+) -> dict[str, str]:
+    """Build en/fa messages, using parent defaults for any missing locale."""
+    msg = dict(message or {})
+    if not msg.get("en"):
+        msg["en"] = _class_default(cls, "default_message") or ""
+    if "fa" not in msg:
+        fa = _class_default(cls, "default_message_fa")
+        if fa is not None:
+            msg["fa"] = fa
+    return msg
 
 
 def normalize_messages(
@@ -32,8 +55,6 @@ def normalize_messages(
     messages = dict(value)
     if "en" not in messages and fallback:
         messages["en"] = fallback
-    if "fa" not in messages and "en" in messages:
-        messages["fa"] = messages["en"]
     return messages
 
 
