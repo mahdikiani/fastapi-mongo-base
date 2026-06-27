@@ -15,13 +15,6 @@ from fastapi.exceptions import (
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from fastapi_mongo_base.core.errors.i18n import (
-    build_messages,
-    http_error_content,
-    normalize_messages,
-    resolve_detail,
-)
-
 try:
     from usso.integrations.fastapi import (
         EXCEPTION_HANDLERS as usso_exception_handler,  # noqa: N811
@@ -30,6 +23,14 @@ except ImportError:
     usso_exception_handler = {}
 
 error_messages: dict[str, str | dict[str, str]] = {}
+
+
+def map_exception_message(en: str, fa: str | None = None) -> dict[str, str]:
+    """Build a bilingual ``message`` map."""
+    messages: dict[str, str] = {"en": en}
+    if fa is not None:
+        messages["fa"] = fa
+    return messages
 
 
 class BaseHTTPException(HTTPException):
@@ -45,10 +46,57 @@ class BaseHTTPException(HTTPException):
 
     """
 
+    @classmethod
+    def generate_response_error(
+        cls,
+        request: Request | None,
+        *,
+        message: dict[str, str],
+        error: str,
+        detail: str | None,
+        data: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        """
+        Build the standard error JSON payload.
+
+        Includes the full ``message`` map and localizes ``detail`` from
+        ``Accept-Language`` when it was not set explicitly.
+        """
+        locale = "en"
+        if request is not None:
+            header = request.headers.get("accept-language", "")
+            for part in header.split(","):
+                token = part.split(";")[0].strip().lower()
+                if token.startswith("fa"):
+                    locale = "fa"
+                    break
+                if token.startswith("en"):
+                    locale = "en"
+                    break
+
+        if locale in message:
+            localized = message[locale]
+        elif "en" in message:
+            localized = message["en"]
+        else:
+            localized = next(iter(message.values()), "")
+
+        if detail is None or ("en" in message and detail == message["en"]):
+            resolved_detail = localized
+        else:
+            resolved_detail = detail
+
+        return {
+            "message": message,
+            "error": error,
+            "detail": resolved_detail,
+            **(data or {}),
+        }
+
     def __init__(
         self,
-        status_code: int,
-        error: str,
+        status_code: int | None = None,
+        error: str | None = None,
         detail: str | None = None,
         message: dict | None = None,
         **kwargs: object,
@@ -57,30 +105,60 @@ class BaseHTTPException(HTTPException):
         Initialize base HTTP exception.
 
         Args:
-            status_code: HTTP status code.
-            error: Error code string.
+            status_code:
+                HTTP status code. If omitted, reads class ``status_code``.
+            error: Error code string. If omitted, reads class ``error_code``.
             detail: Optional error detail message.
             message: Optional dictionary of language-specific messages.
             **kwargs: Additional error data.
 
         """
-        self.status_code = status_code
-        self.error = error
-        if message is None:
-            if detail:
-                msg = build_messages(detail)
+        resolved_status = (
+            status_code
+            if status_code is not None
+            else getattr(type(self), "status_code", 500)
+        )
+        resolved_error = error if error is not None else getattr(
+            type(self), "error_code", ""
+        )
+
+        self.status_code = resolved_status
+        self.error = resolved_error
+        msg = dict(message or {})
+
+        if not msg:
+            if detail is not None:
+                msg["en"] = detail
             else:
-                msg = normalize_messages(
-                    error_messages.get(error),
-                    fallback=error if isinstance(error, str) else str(error),
+                catalog_value = error_messages.get(resolved_error)
+                if isinstance(catalog_value, str):
+                    msg["en"] = catalog_value
+                elif isinstance(catalog_value, dict):
+                    msg = dict(catalog_value)
+
+        default_en = getattr(type(self), "default_message", None)
+        default_fa = getattr(type(self), "default_message_fa", None)
+        if not msg.get("en"):
+            if default_en:
+                msg["en"] = default_en
+            else:
+                msg["en"] = (
+                    resolved_error
+                    if isinstance(resolved_error, str)
+                    else str(resolved_error)
                 )
-        else:
-            msg = dict(message)
+        if "fa" not in msg and default_fa is not None:
+            msg["fa"] = default_fa
 
         self.message = msg
-        self.detail = resolve_detail(message=msg, detail=detail)
+        if detail is None:
+            self.detail = msg.get("en", "")
+        elif msg.get("en") and detail == msg["en"]:
+            self.detail = msg["en"]
+        else:
+            self.detail = detail
         self.data = kwargs
-        super().__init__(status_code, detail=self.detail)
+        super().__init__(resolved_status, detail=self.detail)
 
 
 def base_http_exception_handler(
@@ -100,7 +178,7 @@ def base_http_exception_handler(
     logging.debug("base_http_exception_handler: %s\n%s", request.url, exc)
     return JSONResponse(
         status_code=exc.status_code,
-        content=http_error_content(
+        content=BaseHTTPException.generate_response_error(
             request,
             message=exc.message,
             error=exc.error,
@@ -156,7 +234,7 @@ def mongodb_error_handler(request: Request, exc: Exception) -> JSONResponse:
     )
     return JSONResponse(
         status_code=mongo_exc.status_code,
-        content=http_error_content(
+        content=BaseHTTPException.generate_response_error(
             request,
             message=mongo_exc.message,
             error=mongo_exc.error,
@@ -196,7 +274,7 @@ def resource_error_handler(
     )
     return JSONResponse(
         status_code=exc.status_code,
-        content=http_error_content(
+        content=BaseHTTPException.generate_response_error(
             request,
             message=exc.message,
             error=exc.error,

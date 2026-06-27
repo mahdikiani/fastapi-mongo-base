@@ -3,8 +3,12 @@
 from typing import ClassVar
 
 from fastapi_mongo_base.core.config import Settings
-from fastapi_mongo_base.core.errors.i18n import build_messages, class_messages
-from fastapi_mongo_base.core.exceptions import BaseHTTPException
+from fastapi_mongo_base.core.exceptions import (
+    BaseHTTPException,
+)
+from fastapi_mongo_base.core.exceptions import (
+    map_exception_message as make_message_map,
+)
 
 
 class MongoDBError(BaseHTTPException):
@@ -16,23 +20,6 @@ class MongoDBError(BaseHTTPException):
     default_message_fa: ClassVar[str | None] = (
         "مشکلی در پایگاه داده پیش آمد. لطفاً دوباره تلاش کنید."
     )
-
-    def __init__(
-        self,
-        *,
-        detail: str | None = None,
-        message: dict | None = None,
-        **kwargs: object,
-    ) -> None:
-        """Initialize with optional detail, message, and extra context."""
-        message = class_messages(type(self), message)
-        super().__init__(
-            status_code=self.status_code,
-            error=self.error_code,
-            detail=detail,
-            message=message,
-            **kwargs,
-        )
 
 
 class MongoDBConnectionError(MongoDBError):
@@ -88,17 +75,17 @@ class DocumentNotFoundError(MongoDBError):
         """Initialize with optional context fields and message overrides."""
         if message is None:
             if collection and uid:
-                message = build_messages(
+                message = make_message_map(
                     f"Document not found in '{collection}' with id '{uid}'",
                     f"در «{collection}» موردی با شناسه «{uid}» پیدا نشد.",
                 )
             elif collection:
-                message = build_messages(
+                message = make_message_map(
                     f"Document not found in '{collection}'",
                     f"در «{collection}» موردی پیدا نشد.",
                 )
             elif uid:
-                message = build_messages(
+                message = make_message_map(
                     f"Document with id '{uid}' not found",
                     f"موردی با شناسه «{uid}» پیدا نشد.",
                 )
@@ -131,7 +118,7 @@ class DocumentAlreadyExistsError(MongoDBError):
         """Initialize with optional context fields and message overrides."""
         if message is None:
             if collection and uid:
-                message = build_messages(
+                message = make_message_map(
                     (
                         f"Document already exists in '{collection}' "
                         f"with id '{uid}'"
@@ -142,7 +129,7 @@ class DocumentAlreadyExistsError(MongoDBError):
                     ),
                 )
             elif collection:
-                message = build_messages(
+                message = make_message_map(
                     f"Document already exists in '{collection}'",
                     f"در «{collection}» این مورد از قبل وجود دارد.",
                 )
@@ -178,12 +165,12 @@ class DuplicateKeyError(MongoDBError):
         """Initialize with optional context fields and message overrides."""
         if message is None:
             if field and value:
-                message = build_messages(
+                message = make_message_map(
                     f"A record with {field}='{value}' already exists",
                     f"مقدار {field}='{value}' قبلاً ثبت شده است.",
                 )
             elif field:
-                message = build_messages(
+                message = make_message_map(
                     f"A record with this {field} already exists",
                     (
                         f"این {field} قبلاً ثبت شده است. "
@@ -222,14 +209,14 @@ class MultipleDocumentsFoundError(MongoDBError):
         """Initialize with optional context fields and message overrides."""
         if message is None:
             if collection and count is not None:
-                message = build_messages(
+                message = make_message_map(
                     f"Expected a single document in '{collection}', "
                     f"but found {count}",
                     f"در «{collection}» باید یک نتیجه می‌یافت، "
                     f"اما {count} مورد پیدا شد.",
                 )
             elif collection:
-                message = build_messages(
+                message = make_message_map(
                     f"Expected a single document in '{collection}', "
                     "but found multiple",
                     f"در «{collection}» باید یک نتیجه می‌یافت، "
@@ -264,12 +251,12 @@ class DocumentValidationError(MongoDBError):
         """Initialize with optional context fields and message overrides."""
         if message is None:
             if field and reason:
-                message = build_messages(
+                message = make_message_map(
                     f"Validation failed for field '{field}': {reason}",
                     f"مقدار «{field}» معتبر نیست: {reason}",
                 )
             elif field:
-                message = build_messages(
+                message = make_message_map(
                     f"Validation failed for field '{field}'",
                     f"لطفاً مقدار «{field}» را بررسی و اصلاح کنید.",
                 )
@@ -300,7 +287,7 @@ class InvalidObjectIdError(MongoDBError):
     ) -> None:
         """Initialize with optional context fields and message overrides."""
         if message is None and value:
-            message = build_messages(
+            message = make_message_map(
                 f"Invalid document identifier: '{value}'",
                 f"شناسه «{value}» معتبر نیست. لطفاً شناسه را بررسی کنید.",
             )
@@ -330,7 +317,7 @@ class InvalidQueryError(MongoDBError):
     ) -> None:
         """Initialize with optional context fields and message overrides."""
         if message is None and reason:
-            message = build_messages(reason, reason)
+            message = make_message_map(reason, reason)
         super().__init__(
             detail=detail,
             message=message,
@@ -377,7 +364,7 @@ class BulkWriteError(MongoDBError):
     ) -> None:
         """Initialize with optional context fields and message overrides."""
         if message is None and failed_count is not None:
-            message = build_messages(
+            message = make_message_map(
                 f"Bulk write failed for {failed_count} document(s)",
                 f"ذخیره {failed_count} مورد با مشکل مواجه شد.",
             )
@@ -442,7 +429,7 @@ class MongoDBIndexError(MongoDBError):
         """Initialize with optional context fields and message overrides."""
         if message is None:
             if collection and index:
-                message = build_messages(
+                message = make_message_map(
                     (
                         f"Failed to manage index '{index}' on "
                         f"collection '{collection}'"
@@ -450,7 +437,7 @@ class MongoDBIndexError(MongoDBError):
                     f"به‌روزرسانی فهرست «{index}» در «{collection}» انجام نشد.",
                 )
             elif index:
-                message = build_messages(
+                message = make_message_map(
                     f"Failed to manage index '{index}'",
                     f"به‌روزرسانی فهرست «{index}» انجام نشد.",
                 )

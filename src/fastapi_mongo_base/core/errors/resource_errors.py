@@ -2,8 +2,12 @@
 
 from typing import ClassVar
 
-from fastapi_mongo_base.core.errors.i18n import build_messages, class_messages
-from fastapi_mongo_base.core.exceptions import BaseHTTPException
+from fastapi_mongo_base.core.exceptions import (
+    BaseHTTPException,
+)
+from fastapi_mongo_base.core.exceptions import (
+    map_exception_message as make_message_map,
+)
 
 
 class ResourceError(BaseHTTPException):
@@ -15,23 +19,6 @@ class ResourceError(BaseHTTPException):
     default_message_fa: ClassVar[str | None] = (
         "مشکلی در پردازش درخواست شما پیش آمد."
     )
-
-    def __init__(
-        self,
-        *,
-        detail: str | None = None,
-        message: dict | None = None,
-        **kwargs: object,
-    ) -> None:
-        """Initialize with optional context fields and message overrides."""
-        message = class_messages(type(self), message)
-        super().__init__(
-            status_code=self.status_code,
-            error=self.error_code,
-            detail=detail,
-            message=message,
-            **kwargs,
-        )
 
 
 class ResourceNotFoundError(ResourceError):
@@ -54,17 +41,17 @@ class ResourceNotFoundError(ResourceError):
         """Initialize with optional context fields and message overrides."""
         if message is None:
             if resource and uid:
-                message = build_messages(
+                message = make_message_map(
                     f"{resource} with id '{uid}' not found",
                     f"{resource} با شناسه «{uid}» پیدا نشد.",
                 )
             elif resource:
-                message = build_messages(
+                message = make_message_map(
                     f"{resource} not found",
                     f"{resource} پیدا نشد.",
                 )
             elif uid:
-                message = build_messages(
+                message = make_message_map(
                     f"Resource with id '{uid}' not found",
                     f"موردی با شناسه «{uid}» پیدا نشد.",
                 )
@@ -98,17 +85,17 @@ class ResourceAlreadyExistsError(ResourceError):
         """Initialize with optional context fields and message overrides."""
         if message is None:
             if resource and uid:
-                message = build_messages(
+                message = make_message_map(
                     f"{resource} with id '{uid}' already exists",
                     f"{resource} با شناسه «{uid}» از قبل ثبت شده است.",
                 )
             elif resource and field:
-                message = build_messages(
+                message = make_message_map(
                     f"{resource} with this {field} already exists",
                     f"{resource} با این {field} از قبل ثبت شده است.",
                 )
             elif resource:
-                message = build_messages(
+                message = make_message_map(
                     f"{resource} already exists",
                     f"{resource} از قبل وجود دارد.",
                 )
@@ -142,17 +129,17 @@ class ResourcePaymentRequiredError(ResourceError):
         """Initialize with optional context fields and message overrides."""
         if message is None:
             if resource and reason:
-                message = build_messages(
+                message = make_message_map(
                     f"Payment required to access this {resource}: {reason}",
                     f"برای دسترسی به {resource}، پرداخت لازم است: {reason}",
                 )
             elif resource:
-                message = build_messages(
+                message = make_message_map(
                     f"Payment required to access this {resource}",
                     f"برای دسترسی به {resource}، پرداخت لازم است.",
                 )
             elif reason:
-                message = build_messages(
+                message = make_message_map(
                     f"Payment required: {reason}",
                     f"پرداخت لازم است: {reason}",
                 )
@@ -185,12 +172,12 @@ class ResourceForbiddenError(ResourceError):
         """Initialize with optional context fields and message overrides."""
         if message is None:
             if resource and action:
-                message = build_messages(
+                message = make_message_map(
                     f"You are not authorized to {action} this {resource}",
                     f"شما اجازه {action} این {resource} را ندارید.",
                 )
             elif resource:
-                message = build_messages(
+                message = make_message_map(
                     f"You are not authorized to access this {resource}",
                     f"شما اجازه دسترسی به {resource} را ندارید.",
                 )
@@ -225,12 +212,12 @@ class ResourceConflictError(ResourceError):
         """Initialize with optional context fields and message overrides."""
         if message is None:
             if resource and reason:
-                message = build_messages(
+                message = make_message_map(
                     f"{resource} conflict: {reason}",
                     f"در {resource} تداخلی پیش آمده است: {reason}",
                 )
             elif reason:
-                message = build_messages(reason, reason)
+                message = make_message_map(reason, reason)
         super().__init__(
             detail=detail,
             message=message,
@@ -260,12 +247,12 @@ class ResourceGoneError(ResourceError):
         """Initialize with optional context fields and message overrides."""
         if message is None:
             if resource and uid:
-                message = build_messages(
+                message = make_message_map(
                     f"{resource} with id '{uid}' is no longer available",
                     f"{resource} با شناسه «{uid}» دیگر در دسترس نیست.",
                 )
             elif resource:
-                message = build_messages(
+                message = make_message_map(
                     f"{resource} is no longer available",
                     f"{resource} دیگر در دسترس نیست.",
                 )
@@ -298,7 +285,7 @@ class ResourceLockedError(ResourceError):
         """Initialize with optional context fields and message overrides."""
         if message is None:
             if resource and uid:
-                message = build_messages(
+                message = make_message_map(
                     f"{resource} with id '{uid}' is locked",
                     (
                         f"{resource} با شناسه «{uid}» قفل شده و "
@@ -306,7 +293,7 @@ class ResourceLockedError(ResourceError):
                     ),
                 )
             elif resource:
-                message = build_messages(
+                message = make_message_map(
                     f"{resource} is locked",
                     f"{resource} قفل شده و فعلاً قابل ویرایش نیست.",
                 )

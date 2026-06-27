@@ -173,6 +173,164 @@ class Settings(metaclass=Singleton):
 
 ## 🛠️ Advanced Usage
 
+### HTTP Exceptions
+
+The package provides structured, bilingual HTTP errors (`en` / `fa`) with a consistent JSON shape. Exception handlers are registered automatically when you create the app via `app_factory.create_app()` (or call `setup_exception_handlers` manually).
+
+#### Response format
+
+Every handled error returns JSON like:
+
+```json
+{
+  "message": {
+    "en": "User with id 'abc123' not found",
+    "fa": "User با شناسه «abc123» پیدا نشد."
+  },
+  "error": "item_not_found",
+  "detail": "User با شناسه «abc123» پیدا نشد.",
+  "uid": "abc123"
+}
+```
+
+- `message` — full bilingual map (always included when available).
+- `error` — stable machine-readable error code.
+- `detail` — user-facing text; follows the `Accept-Language` header (`fa` or `en`) unless you pass an explicit `detail`.
+- Extra keyword arguments (e.g. `uid`, `resource`) are merged into the response body.
+
+#### Using predefined exceptions
+
+**Resource errors** — for API entities and business resources:
+
+```python
+from fastapi_mongo_base.core.errors.resource_errors import (
+    ResourceNotFoundError,
+    ResourceAlreadyExistsError,
+    ResourceForbiddenError,
+    ResourceConflictError,
+)
+
+async def get_user(uid: str):
+    user = await User.get(uid)
+    if user is None:
+        raise ResourceNotFoundError(resource="User", uid=uid)
+    return user
+```
+
+| Class | HTTP status | `error` code |
+|-------|-------------|--------------|
+| `ResourceNotFoundError` | 404 | `item_not_found` |
+| `ResourceAlreadyExistsError` | 409 | `resource_already_exists` |
+| `ResourcePaymentRequiredError` | 402 | `payment_required` |
+| `ResourceForbiddenError` | 403 | `forbidden` |
+| `ResourceConflictError` | 409 | `resource_conflict` |
+| `ResourceGoneError` | 410 | `resource_gone` |
+| `ResourceLockedError` | 423 | `resource_locked` |
+
+**MongoDB errors** — for database-layer failures (also mapped automatically from PyMongo driver errors):
+
+```python
+from fastapi_mongo_base.core.errors.db_errors import (
+    DocumentNotFoundError,
+    DuplicateKeyError,
+    InvalidObjectIdError,
+)
+
+async def get_document(collection: str, uid: str):
+    doc = await find_one(collection, uid)
+    if doc is None:
+        raise DocumentNotFoundError(collection=collection, uid=uid)
+    return doc
+```
+
+Common classes include `MongoDBConnectionError`, `DocumentNotFoundError`, `DocumentAlreadyExistsError`, `DuplicateKeyError`, `InvalidObjectIdError`, `DocumentValidationError`, and `WriteConflictError`. See `fastapi_mongo_base.core.errors.db_errors` for the full list.
+
+Predefined exceptions accept optional context kwargs (`resource`, `uid`, `collection`, etc.) that both enrich the message and appear in the response payload.
+
+#### Defining custom exceptions
+
+Subclass a predefined exception and override class attributes. **No custom `__init__` or i18n logic is required** — `BaseHTTPException` resolves `status_code`, `error_code`, and default messages from class attributes automatically:
+
+```python
+from fastapi_mongo_base.core.errors.resource_errors import ResourceNotFoundError
+
+class OrderNotFoundError(ResourceNotFoundError):
+    default_message = "Order not found"
+    default_message_fa = "سفارش پیدا نشد."  # optional; inherits parent fa if omitted
+
+# Uses status_code=404, error="item_not_found", and your messages
+raise OrderNotFoundError()
+
+# Context-aware messages still work from the parent class
+raise OrderNotFoundError(resource="Order", uid="ord_123")
+```
+
+Override only what you need:
+
+```python
+from fastapi_mongo_base.core.errors.db_errors import MongoDBConnectionTimeoutError
+
+class AppDatabaseTimeoutError(MongoDBConnectionTimeoutError):
+    default_message = "The app database is temporarily unavailable"
+    # status_code (503) and error_code inherit from the parent chain
+```
+
+`ResourceError` and `MongoDBError` themselves are also class-attribute based (no extra constructor needed) unless you want context-specific dynamic messages.
+
+Class attributes used by the framework:
+
+| Attribute | Purpose |
+|-----------|---------|
+| `status_code` | HTTP status code |
+| `error_code` | Value of the `error` field in JSON |
+| `default_message` | English text (`message.en`) |
+| `default_message_fa` | Persian text (`message.fa`); walks up the parent chain when omitted |
+
+#### Overrides at raise time
+
+You can override messages or detail when raising:
+
+```python
+raise ResourceNotFoundError(
+    resource="User",
+    uid=uid,
+    detail="This user was removed by an admin.",  # explicit detail wins
+)
+
+raise ResourceNotFoundError(
+    message={"en": "Custom EN", "fa": "متن سفارشی"},
+)
+```
+
+Or use the helper for consistency:
+
+```python
+from fastapi_mongo_base.core.exceptions import map_exception_message
+
+raise ResourceNotFoundError(
+    message=map_exception_message("Custom EN", "متن سفارشی"),
+)
+```
+
+#### Legacy error catalog
+
+For ad-hoc errors without a dedicated class, register messages in the global catalog and raise `BaseHTTPException`:
+
+```python
+from fastapi_mongo_base.core.exceptions import BaseHTTPException, error_messages
+
+error_messages["invalid_coupon"] = {
+    "en": "This coupon is not valid",
+    "fa": "این کد تخفیف معتبر نیست",
+}
+
+raise BaseHTTPException(status_code=400, error="invalid_coupon")
+```
+
+#### Client locale
+
+Send `Accept-Language: fa` (or `fa-IR`) to receive Persian in `detail`; omit the header or send `en` for English. The full `message` map is always returned in both languages when available.
+
 ### Custom Business Logic
 
 Extend the base router to add custom endpoints:
