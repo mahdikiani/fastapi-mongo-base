@@ -237,7 +237,7 @@ def _async_retry_wrapper(
                 if inspect.iscoroutinefunction(func):
                     return await func(*args, **kwargs)
                 return await asyncio.to_thread(func, *args, **kwargs)
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 last_exception = e
                 logging.warning(
                     "Attempt %d failed for %s: %s",
@@ -260,7 +260,7 @@ def _sync_retry_wrapper(func: Callable, attempts: int, delay: int) -> Callable:
         for attempt in range(attempts):
             try:
                 return func(*args, **kwargs)
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 last_exception = e
                 logging.warning(
                     "Attempt %d failed for %s: %s",

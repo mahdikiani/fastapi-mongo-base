@@ -1,10 +1,11 @@
 """Pydantic schemas for entities and responses."""
 
 from datetime import datetime
-from typing import Self
+from typing import Generic, TypeVar
 
 import uuid6
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from .core.config import Settings
 from .utils import timezone
@@ -153,11 +154,14 @@ class TenantOwnedEntitySchema(TenantScopedEntitySchema, OwnedEntitySchema):
         return list({*super().update_exclude_set(), "tenant_id", "owner_id"})
 
 
-class PaginatedResponse[TSCHEMA: BaseModel](BaseModel):
+TSchema = TypeVar("TSchema", bound=BaseModel)
+
+
+class PaginatedResponse(BaseModel, Generic[TSchema]):
     """Generic paginated response model for list endpoints."""
 
     heads: dict[str, dict[str, str]] = Field(default_factory=dict)
-    items: list[TSCHEMA]
+    items: list[TSchema]
     total: int
     offset: int = Field(default=0)
     limit: int = Field(default=Settings.page_max_limit)

@@ -3,7 +3,8 @@
 import json
 import uuid
 from datetime import datetime
-from typing import Never, Self
+
+from typing_extensions import Never, Self
 
 try:
     from sqlalchemy import JSON, event, select

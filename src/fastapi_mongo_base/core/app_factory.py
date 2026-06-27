@@ -6,7 +6,6 @@ import logging
 from collections import deque
 from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
-from typing import Any
 
 import fastapi
 from fastapi.responses import RedirectResponse
@@ -33,7 +32,7 @@ def health(request: fastapi.Request) -> dict[str, str]:
 async def lifespan(
     *,
     app: fastapi.FastAPI,
-    worker: Callable[[], Any] | None = None,
+    worker: Callable[[], object] | None = None,
     init_functions: list | None = None,
     settings: config.Settings | None = None,
 ) -> AsyncGenerator[None]:
@@ -122,13 +121,13 @@ def get_app_kwargs(
     title: str | None = None,
     description: str | None = None,
     version: str = "0.1.0",
-    lifespan_func: Callable[[fastapi.FastAPI], Any] | None = None,
-    worker: Callable[[], Any] | None = None,
+    lifespan_func: Callable[[fastapi.FastAPI], object] | None = None,
+    worker: Callable[[], object] | None = None,
     init_functions: list | None = None,
     contact: dict[str, str] | None = None,
     license_info: dict[str, str] | None = None,
     **kwargs: object,
-) -> dict[str, Any]:
+) -> dict[str, object]:
     """
     Generate keyword arguments for FastAPI app creation.
 
@@ -208,8 +207,8 @@ def create_app(
     version: str = "0.1.0",
     serve_coverage: bool = False,
     origins: list | None = None,
-    lifespan_func: Callable[[fastapi.FastAPI], Any] | None = None,
-    worker: Callable[[], Any] | None = None,
+    lifespan_func: Callable[[fastapi.FastAPI], object] | None = None,
+    worker: Callable[[], object] | None = None,
     init_functions: list | None = None,
     contact: dict[str, str] | None = None,
     license_info: dict[str, str] | None = None,

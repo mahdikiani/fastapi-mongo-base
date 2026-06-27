@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import Any, ClassVar, Self, cast
+from typing import ClassVar, cast
 
 from beanie import (
     Document,
@@ -16,6 +16,7 @@ from beanie import (
 from beanie.odm.queries.find import FindMany
 from pydantic import ConfigDict
 from pymongo import ASCENDING, IndexModel
+from typing_extensions import Self
 
 from .core.config import Settings
 from .schemas import (
@@ -69,7 +70,7 @@ class BaseEntity(BaseEntitySchema, Document):
         self.updated_at = datetime.now(timezone.tz)
 
     @classmethod
-    def _build_extra_filters(cls, **kwargs: dict[str, Any]) -> dict:
+    def _build_extra_filters(cls, **kwargs: dict[str, object]) -> dict:
         """
         Build MongoDB filter dictionary from keyword arguments.
 

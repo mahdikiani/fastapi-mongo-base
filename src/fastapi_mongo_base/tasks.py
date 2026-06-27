@@ -6,11 +6,12 @@ import logging
 from collections.abc import Coroutine
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal, Self, Union
+from typing import Literal, Union
 
 import json_advanced as json
 from pydantic import BaseModel, Field, field_serializer, field_validator
 from singleton import Singleton
+from typing_extensions import Self
 
 from .schemas import BaseEntitySchema
 from .utils import basic, timezone
