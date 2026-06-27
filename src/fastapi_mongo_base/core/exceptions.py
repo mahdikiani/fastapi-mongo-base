@@ -74,6 +74,8 @@ class BaseHTTPException(HTTPException):
                 self.message = {
                     "en": detail,
                 }
+        else:
+            self.message = message
         self.detail = detail or str(self.message.get("en"))
         self.data = kwargs
         super().__init__(status_code, detail=detail)
