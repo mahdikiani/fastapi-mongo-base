@@ -17,7 +17,7 @@ from .app.server import app as fastapi_app
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    """Start debugpy when remote debugging is enabled."""
+    """Set up debugpy when DEBUGPY env var is enabled."""
     if os.getenv("DEBUGPY", "False").lower() in ("true", "1", "yes"):
         import debugpy  # noqa: T100
 
@@ -60,14 +60,11 @@ async def init_db(mongo_client: object) -> None:
     orig_list_collection_names = database.delegate.list_collection_names
 
     def _patched_list_collection_names(
-        query_filter: object | None = None,
+        filter: dict | None = None,  # noqa: A002
         session: object | None = None,
         **kwargs: object,
     ) -> list[str]:
-        return orig_list_collection_names(
-            filter=query_filter,
-            session=session,
-        )
+        return orig_list_collection_names(filter=filter, session=session)
 
     database.delegate.list_collection_names = _patched_list_collection_names
     await init_beanie(
@@ -96,16 +93,16 @@ async def db(mongo_client: object) -> AsyncGenerator[None]:
 
 
 @pytest_asyncio.fixture(scope="session")
-async def client(
-    db: None,
-) -> AsyncGenerator[httpx.AsyncClient]:
+async def client(db: None) -> AsyncGenerator[httpx.AsyncClient]:
     """
     Fixture to provide an AsyncClient for FastAPI app.
+
+    Args:
+        db: Ensures the test database is initialized before requests.
 
     Returns:
         AsyncClient.
     """
-    _ = db
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=fastapi_app),
         base_url="http://test.usso.io",

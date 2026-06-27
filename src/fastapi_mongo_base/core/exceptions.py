@@ -15,13 +15,6 @@ from fastapi.exceptions import (
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from fastapi_mongo_base.core.errors.i18n import (
-    build_messages,
-    http_error_content,
-    normalize_messages,
-    resolve_detail,
-)
-
 try:
     from usso.integrations.fastapi import (
         EXCEPTION_HANDLERS as usso_exception_handler,  # noqa: N811
@@ -29,7 +22,7 @@ try:
 except ImportError:
     usso_exception_handler = {}
 
-error_messages: dict[str, str | dict[str, str]] = {}
+error_messages = {}
 
 
 class BaseHTTPException(HTTPException):
@@ -45,10 +38,15 @@ class BaseHTTPException(HTTPException):
 
     """
 
+    status_code: int = 500
+    error_code: str = "unknown_error"
+    message_en: str = "An unknown error occurred"
+    message_fa: str | None = "یک خطای ناشناخته رخ داده است"
+
     def __init__(
         self,
         status_code: int,
-        error: str,
+        error_code: str,
         detail: str | None = None,
         message: dict | None = None,
         **kwargs: object,
@@ -58,29 +56,27 @@ class BaseHTTPException(HTTPException):
 
         Args:
             status_code: HTTP status code.
-            error: Error code string.
+            error_code: Error code string.
             detail: Optional error detail message.
             message: Optional dictionary of language-specific messages.
             **kwargs: Additional error data.
 
         """
         self.status_code = status_code
-        self.error = error
+        self.error_code = error_code
         if message is None:
-            if detail:
-                msg = build_messages(detail)
+            if self.message_en and self.message_fa:
+                self.message = {
+                    "en": self.message_en,
+                    "fa": self.message_fa,
+                }
             else:
-                msg = normalize_messages(
-                    error_messages.get(error),
-                    fallback=error if isinstance(error, str) else str(error),
-                )
-        else:
-            msg = dict(message)
-
-        self.message = msg
-        self.detail = resolve_detail(message=msg, detail=detail)
+                self.message = {
+                    "en": detail,
+                }
+        self.detail = detail or str(self.message.get("en"))
         self.data = kwargs
-        super().__init__(status_code, detail=self.detail)
+        super().__init__(status_code, detail=detail)
 
 
 def base_http_exception_handler(
@@ -98,111 +94,21 @@ def base_http_exception_handler(
 
     """
     logging.debug("base_http_exception_handler: %s\n%s", request.url, exc)
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=http_error_content(
-            request,
-            message=exc.message,
-            error=exc.error,
-            detail=exc.detail,
-            data=exc.data,
-        ),
-    )
 
-
-def mongodb_error_handler(request: Request, exc: Exception) -> JSONResponse:
-    """
-    Handle MongoDBError subclasses and map driver errors to structured JSON.
-
-    FastAPI matches this handler via MRO for MongoDBError subclasses.
-    pymongo_exception_handler and general_exception_handler delegate here
-    after resolving the exception (including __cause__ / __context__ chains).
-
-    Args:
-        request: FastAPI request object.
-        exc: MongoDBError, pymongo/BSON driver error, or wrapped driver error.
-
-    Returns:
-        JSONResponse with error details and any context from exc.data.
-
-    """
-    from fastapi_mongo_base.core.errors.db_errors import (
-        MongoDBError,
-        from_any_exception,
-        from_pymongo_error,
-    )
-
-    if isinstance(exc, MongoDBError):
-        mongo_exc = exc
-    elif (resolved := from_any_exception(exc)) is not None:
-        mongo_exc = resolved
+    if request.headers.get("accept-language"):
+        locale = request.headers.get("accept-language").split(",")[0]
+        message = {locale: exc.message.get(locale)}
     else:
-        mongo_exc = from_pymongo_error(exc)
+        message = exc.message
 
-    log_level = (
-        logging.ERROR if mongo_exc.status_code >= 500 else logging.WARNING
-    )
-    logging.log(
-        log_level,
-        "mongodb_error_handler: %s [%s] %s - %s data=%s",
-        request.url,
-        mongo_exc.error,
-        type(mongo_exc).__name__,
-        mongo_exc.detail,
-        mongo_exc.data,
-        exc_info=(type(exc), exc, exc.__traceback__)
-        if not isinstance(exc, MongoDBError)
-        else False,
-    )
-    return JSONResponse(
-        status_code=mongo_exc.status_code,
-        content=http_error_content(
-            request,
-            message=mongo_exc.message,
-            error=mongo_exc.error,
-            detail=mongo_exc.detail,
-            data=mongo_exc.data,
-        ),
-    )
-
-
-def resource_error_handler(
-    request: Request, exc: BaseHTTPException
-) -> JSONResponse:
-    """
-    Handle ResourceError and all subclasses.
-
-    Registered on the ResourceError base class so every resource-specific
-    exception (ResourceNotFoundError, ResourceForbiddenError, etc.) is
-    handled here before the generic BaseHTTPException handler.
-
-    Args:
-        request: FastAPI request object.
-        exc: ResourceError instance or subclass.
-
-    Returns:
-        JSONResponse with error details and any context from exc.data.
-
-    """
-    log_level = logging.ERROR if exc.status_code >= 500 else logging.WARNING
-    logging.log(
-        log_level,
-        "resource_error_handler: %s [%s] %s - %s data=%s",
-        request.url,
-        exc.error,
-        type(exc).__name__,
-        exc.detail,
-        exc.data,
-    )
     return JSONResponse(
         status_code=exc.status_code,
-        content=http_error_content(
-            request,
-            message=exc.message,
-            error=exc.error,
-            detail=exc.detail,
-            data=exc.data,
-        ),
+        content={
+            "message": message,
+            "error": exc.error_code,
+            "detail": exc.detail,
+            **exc.data,
+        },
     )
 
 
@@ -277,14 +183,33 @@ async def request_validation_exception_handler(
     return await default_handler(request, exc)
 
 
+def mongodb_exception_handler(
+    request: Request, exc: Exception
+) -> JSONResponse:
+    """
+    Handle PyMongo errors and return a structured JSON response.
+
+    Args:
+        request: FastAPI request object.
+        exc: PyMongoError instance (or subclass).
+
+    Returns:
+        JSONResponse with MongoDB error details.
+
+    """
+    from fastapi_mongo_base.core.errors.mongodb_errors import (
+        convert_pymongo_error,
+    )
+
+    logging.error("MongoDB error on %s: %s", request.url, exc)
+    return base_http_exception_handler(request, convert_pymongo_error(exc))
+
+
 def general_exception_handler(
     request: Request, exc: Exception
 ) -> JSONResponse:
     """
     Handle general exceptions and return JSON response.
-
-    Unwraps pymongo/BSON errors hidden in __cause__ / __context__ chains
-    before falling back to a generic 500 response.
 
     Args:
         request: FastAPI request object.
@@ -294,15 +219,21 @@ def general_exception_handler(
         JSONResponse with error message.
 
     """
-    from fastapi_mongo_base.core.errors.db_errors import from_any_exception
-
-    mongo_exc = from_any_exception(exc)
-    if mongo_exc is not None:
-        return mongodb_error_handler(request, exc)
-
     traceback_str = "".join(traceback.format_tb(exc.__traceback__))
     logging.error("Exception: %s %s", traceback_str, exc)
     logging.error("Exception on request: %s", request.url)
+
+    from fastapi_mongo_base.core.errors.mongodb_errors import (
+        convert_pymongo_error,
+        find_pymongo_error,
+    )
+
+    pymongo_exc = find_pymongo_error(exc)
+    if pymongo_exc is not None:
+        logging.error("MongoDB error (from exception chain): %s", pymongo_exc)
+        return base_http_exception_handler(
+            request, convert_pymongo_error(pymongo_exc)
+        )
 
     try:
         from redis.exceptions import RedisError
@@ -319,56 +250,20 @@ def general_exception_handler(
     )
 
 
-def pymongo_exception_handler(
-    request: Request, exc: Exception
-) -> JSONResponse:
-    """
-    Handle raw pymongo/BSON driver exceptions matched via MRO.
+# A dictionary for dynamic registration
+EXCEPTION_HANDLERS = {
+    BaseHTTPException: base_http_exception_handler,
+    ValidationError: pydantic_exception_handler,
+    ResponseValidationError: pydantic_exception_handler,
+    RequestValidationError: request_validation_exception_handler,
+    Exception: general_exception_handler,
+}
 
-    Delegates to mongodb_error_handler which maps the driver error to a
-    MongoDBError subclass.
+try:
+    from pymongo.errors import PyMongoError
 
-    Args:
-        request: FastAPI request object.
-        exc: PyMongoError or BSON InvalidId from the driver.
+    EXCEPTION_HANDLERS[PyMongoError] = mongodb_exception_handler
+except ImportError:
+    pass
 
-    Returns:
-        JSONResponse with mapped database error details.
-
-    """
-    return mongodb_error_handler(request, exc)
-
-
-def _build_exception_handlers() -> dict:
-    from fastapi_mongo_base.core.errors.db_errors import MongoDBError
-    from fastapi_mongo_base.core.errors.resource_errors import ResourceError
-
-    handlers: dict = {
-        MongoDBError: mongodb_error_handler,
-        ResourceError: resource_error_handler,
-        BaseHTTPException: base_http_exception_handler,
-        ValidationError: pydantic_exception_handler,
-        ResponseValidationError: pydantic_exception_handler,
-        RequestValidationError: request_validation_exception_handler,
-        Exception: general_exception_handler,
-    }
-
-    try:
-        from pymongo.errors import PyMongoError
-
-        handlers[PyMongoError] = pymongo_exception_handler
-    except ImportError:
-        pass
-
-    try:
-        from bson.errors import InvalidId
-
-        handlers[InvalidId] = pymongo_exception_handler
-    except ImportError:
-        pass
-
-    handlers.update(usso_exception_handler)
-    return handlers
-
-
-EXCEPTION_HANDLERS = _build_exception_handlers()
+EXCEPTION_HANDLERS.update(usso_exception_handler)
