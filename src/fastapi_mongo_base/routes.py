@@ -266,7 +266,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         if item is None:
             raise BaseHTTPException(
                 status_code=404,
-                error="item_not_found",
+                error_code="item_not_found",
                 message={
                     "en": f"{self.model.__name__.capitalize()} not found"
                 },
