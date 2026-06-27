@@ -98,7 +98,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         self.config_routes(**kwargs)
 
     def config_schemas(
-        self, schema: BaseEntitySchema, **kwargs: object
+        self, schema: type[BaseEntitySchema], **kwargs: object
     ) -> None:
         """
         Configure Pydantic schemas for request/response validation.
