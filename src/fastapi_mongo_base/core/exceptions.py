@@ -100,8 +100,13 @@ def base_http_exception_handler(
     logging.debug("base_http_exception_handler: %s\n%s", request.url, exc)
 
     if request.headers.get("accept-language"):
-        locale = request.headers.get("accept-language").split(",")[0]
-        message = {locale: exc.message.get(locale)}
+        locales = request.headers.get("accept-language").split(",")
+        msg = {}
+        for locale in locales:
+            lang = locale.split("-")[0]
+            if lang in exc.message:
+                msg[lang] = exc.message.get(lang)
+        message = msg
     else:
         message = exc.message
 
@@ -109,7 +114,7 @@ def base_http_exception_handler(
         status_code=exc.status_code,
         content={
             "message": message,
-            "error": exc.error_code,
+            "error_code": exc.error_code,
             "detail": exc.detail,
             **exc.data,
         },
