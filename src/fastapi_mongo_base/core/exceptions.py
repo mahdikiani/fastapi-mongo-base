@@ -176,7 +176,7 @@ def pydantic_exception_handler(
 
     Args:
         request: FastAPI request object.
-        exc: ValidationError or ResponseValidationError instance.
+        exc: RequestValidationError or ResponseValidationError instance.
 
     Returns:
         JSONResponse with validation error details.
