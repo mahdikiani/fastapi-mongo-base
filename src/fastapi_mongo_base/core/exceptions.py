@@ -165,7 +165,7 @@ def _validation_error_response(
 
 
 def pydantic_exception_handler(
-    request: Request, exc: ResponseValidationError
+    request: Request, exc: RequestValidationError | ResponseValidationError
 ) -> JSONResponse:
     """
     Handle Pydantic validation errors and return JSON response.
