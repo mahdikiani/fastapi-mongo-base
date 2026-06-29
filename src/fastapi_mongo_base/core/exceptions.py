@@ -121,29 +121,67 @@ def base_http_exception_handler(
     )
 
 
+def _resolve_validation_message(request: Request) -> dict[str, str]:
+    message = {
+        "en": "Validation error",
+        "fa": "اطلاعات وارد شده صحیح نیست",
+    }
+    if request.headers.get("accept-language"):
+        locales = request.headers.get("accept-language").split(",")
+        filtered_message = {}
+        for locale in locales:
+            lang = locale.split("-")[0]
+            if lang in message:
+                filtered_message[lang] = message[lang]
+        return filtered_message or message
+    return message
+
+
+def _format_validation_reasons(errors: list[dict]) -> list[dict]:
+    reasons_by_field: dict[str, dict] = {}
+    for error in json.loads(json_advanced.dumps(errors)):
+        loc = error.pop("loc", ())
+        field = str(loc[-1]) if loc else "unknown"
+        error.pop("url", None)
+        error["field"] = field
+        reasons_by_field.setdefault(field, error)
+    return list(reasons_by_field.values())
+
+
+def _validation_error_response(
+    request: Request,
+    errors: list[dict],
+    status_code: int = 422,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "message": _resolve_validation_message(request),
+            "error_code": "validation_error",
+            "detail": None,
+            "reasons": _format_validation_reasons(errors),
+        },
+    )
+
+
 def pydantic_exception_handler(
-    request: Request, exc: ValidationError
+    request: Request, exc: ResponseValidationError
 ) -> JSONResponse:
     """
     Handle Pydantic validation errors and return JSON response.
 
     Args:
         request: FastAPI request object.
-        exc: ValidationError instance.
+        exc: ValidationError or ResponseValidationError instance.
 
     Returns:
         JSONResponse with validation error details.
 
     """
     logging.debug("pydantic_exception_handler: %s\n%s", request.url, exc)
-    return JSONResponse(
-        status_code=500,
-        content={
-            "message": str(exc),
-            "error": "Exception",
-            "errors": json.loads(json_advanced.dumps(exc.errors())),
-        },
-    )
+
+    status_code = 500 if isinstance(exc, ResponseValidationError) else 422
+    return _validation_error_response(request, exc.errors(), status_code)
 
 
 async def request_validation_exception_handler(
@@ -185,11 +223,7 @@ async def request_validation_exception_handler(
         dict(request.headers),
     )
 
-    from fastapi.exception_handlers import (
-        request_validation_exception_handler as default_handler,
-    )
-
-    return await default_handler(request, exc)
+    return _validation_error_response(request, exc.errors())
 
 
 def mongodb_exception_handler(
