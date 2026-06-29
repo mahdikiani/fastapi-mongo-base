@@ -15,6 +15,13 @@ from fastapi.exceptions import (
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
+from fastapi_mongo_base.core.error_responses import (
+    APIErrorResponseModel,
+    InternalErrorResponseModel,
+    ValidationErrorResponseModel,
+    ValidationReason,
+)
+
 try:
     from usso.integrations.fastapi import (
         EXCEPTION_HANDLERS as usso_exception_handler,  # noqa: N811
@@ -110,15 +117,13 @@ def base_http_exception_handler(
     else:
         message = exc.message
 
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "message": message,
-            "error_code": exc.error_code,
-            "detail": exc.detail,
-            **exc.data,
-        },
-    )
+    content = APIErrorResponseModel(
+        message=message,
+        error_code=exc.error_code,
+        detail=exc.detail,
+        **exc.data,
+    ).model_dump()
+    return JSONResponse(status_code=exc.status_code, content=content)
 
 
 def _resolve_validation_message(request: Request) -> dict[str, str]:
@@ -153,15 +158,14 @@ def _validation_error_response(
     errors: list[dict],
     status_code: int = 422,
 ) -> JSONResponse:
-    return JSONResponse(
-        status_code=status_code,
-        content={
-            "message": _resolve_validation_message(request),
-            "error_code": "validation_error",
-            "detail": None,
-            "reasons": _format_validation_reasons(errors),
-        },
-    )
+    content = ValidationErrorResponseModel(
+        message=_resolve_validation_message(request),
+        reasons=[
+            ValidationReason(**reason)
+            for reason in _format_validation_reasons(errors)
+        ],
+    ).model_dump()
+    return JSONResponse(status_code=status_code, content=content)
 
 
 def pydantic_exception_handler(
@@ -287,10 +291,8 @@ def general_exception_handler(
     except ImportError:
         pass
 
-    return JSONResponse(
-        status_code=500,
-        content={"message": str(exc), "error": "Exception"},
-    )
+    content = InternalErrorResponseModel(message=str(exc)).model_dump()
+    return JSONResponse(status_code=500, content=content)
 
 
 # A dictionary for dynamic registration

@@ -11,6 +11,7 @@ from fastapi import APIRouter, BackgroundTasks, Query, Request
 from pydantic import BaseModel
 
 from .core.config import Settings
+from .core.error_responses import COMMON_ERROR_RESPONSES
 from .core.exceptions import BaseHTTPException
 from .models import BaseEntity
 from .schemas import BaseEntitySchema, PaginatedResponse
@@ -90,9 +91,13 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         if tags is None:
             tags = [self.model.__name__]
 
-        self.router = APIRouter(
-            prefix=prefix, tags=cast(list[str | Enum], tags), **kwargs
-        )
+        router_kwargs = {
+            "prefix": prefix,
+            "tags": cast(list[str | Enum], tags),
+            "responses": kwargs.pop("responses", COMMON_ERROR_RESPONSES),
+            **kwargs,
+        }
+        self.router = APIRouter(**router_kwargs)
 
         self.config_schemas(self.schema, **kwargs)
         self.config_routes(**kwargs)
