@@ -12,6 +12,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import config, db, exceptions
+from .error_responses import COMMON_ERROR_RESPONSES, setup_openapi_errors
 
 
 def health(request: fastapi.Request) -> dict[str, str]:
@@ -258,7 +259,10 @@ def create_app(
         license_info=license_info,
     )
 
-    app = fastapi.FastAPI(**data)
+    app = fastapi.FastAPI(
+        **data,
+        responses=kwargs.pop("responses", COMMON_ERROR_RESPONSES),
+    )
 
     app = configure_app(
         app=app,
@@ -355,5 +359,7 @@ def configure_app(
             StaticFiles(directory=settings.get_coverage_dir()),
             name="coverage",
         )
+
+    setup_openapi_errors(app)
 
     return app

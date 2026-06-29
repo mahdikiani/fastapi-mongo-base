@@ -15,6 +15,13 @@ from fastapi.exceptions import (
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
+from fastapi_mongo_base.core.error_responses import (
+    APIErrorResponseModel,
+    InternalErrorResponseModel,
+    ValidationErrorResponseModel,
+    ValidationReason,
+)
+
 try:
     from usso.integrations.fastapi import (
         EXCEPTION_HANDLERS as usso_exception_handler,  # noqa: N811
@@ -110,40 +117,75 @@ def base_http_exception_handler(
     else:
         message = exc.message
 
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "message": message,
-            "error_code": exc.error_code,
-            "detail": exc.detail,
-            **exc.data,
-        },
-    )
+    content = APIErrorResponseModel(
+        message=message,
+        error_code=exc.error_code,
+        detail=exc.detail,
+        **exc.data,
+    ).model_dump()
+    return JSONResponse(status_code=exc.status_code, content=content)
+
+
+def _resolve_validation_message(request: Request) -> dict[str, str]:
+    message = {
+        "en": "Validation error",
+        "fa": "اطلاعات وارد شده صحیح نیست",
+    }
+    if request.headers.get("accept-language"):
+        locales = request.headers.get("accept-language").split(",")
+        filtered_message = {}
+        for locale in locales:
+            lang = locale.split("-")[0]
+            if lang in message:
+                filtered_message[lang] = message[lang]
+        return filtered_message or message
+    return message
+
+
+def _format_validation_reasons(errors: list[dict]) -> list[dict]:
+    reasons_by_field: dict[str, dict] = {}
+    for error in json.loads(json_advanced.dumps(errors)):
+        loc = error.pop("loc", ())
+        field = str(loc[-1]) if loc else "unknown"
+        error.pop("url", None)
+        error["field"] = field
+        reasons_by_field.setdefault(field, error)
+    return list(reasons_by_field.values())
+
+
+def _validation_error_response(
+    request: Request,
+    errors: list[dict],
+    status_code: int = 422,
+) -> JSONResponse:
+    content = ValidationErrorResponseModel(
+        message=_resolve_validation_message(request),
+        reasons=[
+            ValidationReason(**reason)
+            for reason in _format_validation_reasons(errors)
+        ],
+    ).model_dump()
+    return JSONResponse(status_code=status_code, content=content)
 
 
 def pydantic_exception_handler(
-    request: Request, exc: ValidationError
+    request: Request, exc: RequestValidationError | ResponseValidationError
 ) -> JSONResponse:
     """
     Handle Pydantic validation errors and return JSON response.
 
     Args:
         request: FastAPI request object.
-        exc: ValidationError instance.
+        exc: RequestValidationError or ResponseValidationError instance.
 
     Returns:
         JSONResponse with validation error details.
 
     """
     logging.debug("pydantic_exception_handler: %s\n%s", request.url, exc)
-    return JSONResponse(
-        status_code=500,
-        content={
-            "message": str(exc),
-            "error": "Exception",
-            "errors": json.loads(json_advanced.dumps(exc.errors())),
-        },
-    )
+
+    status_code = 500 if isinstance(exc, ResponseValidationError) else 422
+    return _validation_error_response(request, exc.errors(), status_code)
 
 
 async def request_validation_exception_handler(
@@ -185,11 +227,7 @@ async def request_validation_exception_handler(
         dict(request.headers),
     )
 
-    from fastapi.exception_handlers import (
-        request_validation_exception_handler as default_handler,
-    )
-
-    return await default_handler(request, exc)
+    return _validation_error_response(request, exc.errors())
 
 
 def mongodb_exception_handler(
@@ -253,10 +291,8 @@ def general_exception_handler(
     except ImportError:
         pass
 
-    return JSONResponse(
-        status_code=500,
-        content={"message": str(exc), "error": "Exception"},
-    )
+    content = InternalErrorResponseModel(message=str(exc)).model_dump()
+    return JSONResponse(status_code=500, content=content)
 
 
 # A dictionary for dynamic registration
