@@ -3,7 +3,9 @@
 import logging
 
 from beanie import init_beanie
+from pymongo import monitoring
 
+from fastapi_mongo_base.core.prometheus.mongo import DatabasePoolMonitor
 from fastapi_mongo_base.models import BaseEntity
 from fastapi_mongo_base.utils import basic
 
@@ -41,6 +43,11 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
 
     if settings is None:
         settings = Settings()
+
+    pool_monitor = DatabasePoolMonitor(
+        database_name=settings.project_name,
+    )
+    monitoring.register(pool_monitor)
 
     client = AsyncMongoClient(
         settings.mongo_uri,
