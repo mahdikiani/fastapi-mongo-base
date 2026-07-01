@@ -35,12 +35,14 @@ dependencies = [
   "uvicorn[standard]>=0.41.0",
   "uuid6>=2025.0.1",
   "typing_extensions>=4.5.0; python_version<'3.11'",
+  "pydantic-settings>=2.14.2",
 ]
 
 [project.optional-dependencies]
 usso = ["usso>=0.30.1"]
 sql = ["sqlalchemy>=2.0.43"]
 test = ["pytest", "pytest-cov", "pytest-asyncio", "mongomock_motor", "coverage"]
+prometheus = ["prometheus-client>=0.25.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/mahdikiani/fastapi-mongo-base-app"
