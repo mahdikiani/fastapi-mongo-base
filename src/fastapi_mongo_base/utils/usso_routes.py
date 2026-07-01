@@ -188,7 +188,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
         if item is None:
             raise exceptions.BaseHTTPException(
                 status_code=404,
-                error="item_not_found",
+                error_code="item_not_found",
                 message={
                     "en": f"{self.model.__name__.capitalize()} not found"
                 },
@@ -223,7 +223,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
         if filters.get("__deny__"):
             raise exceptions.BaseHTTPException(
                 status_code=403,
-                error="forbidden",
+                error_code="forbidden",
                 message={
                     "en": "You are not authorized to access this resource"
                 },
@@ -448,7 +448,7 @@ class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
         ):
             raise exceptions.BaseHTTPException(
                 status_code=400,
-                error="workspace_required",
+                error_code="workspace_required",
                 message={
                     "en": "User must belong to a workspace for this resource"
                 },
