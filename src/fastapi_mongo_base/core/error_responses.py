@@ -1,7 +1,5 @@
 """OpenAPI error response schemas aligned with exception handlers."""
 
-from typing import Any
-
 import fastapi
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, ConfigDict, Field
@@ -25,8 +23,8 @@ class ValidationReason(BaseModel):
     field: str
     type: str | None = None
     msg: str | None = None
-    input: Any = None
-    ctx: dict[str, Any] | None = None
+    input: object = None
+    ctx: dict[str, object] | None = None
 
 
 class ValidationErrorResponseModel(BaseModel):
@@ -45,7 +43,7 @@ class InternalErrorResponseModel(BaseModel):
     error: str = "Exception"
 
 
-COMMON_ERROR_RESPONSES: dict[int, dict[str, Any]] = {
+COMMON_ERROR_RESPONSES: dict[int, dict[str, object]] = {
     400: {
         "model": APIErrorResponseModel,
         "description": "Bad request",
@@ -89,7 +87,7 @@ COMMON_ERROR_RESPONSES: dict[int, dict[str, Any]] = {
 }
 
 
-def _patch_validation_responses(schema: dict[str, Any]) -> None:
+def _patch_validation_responses(schema: dict[str, object]) -> None:
     validation_ref = {
         "$ref": "#/components/schemas/ValidationErrorResponseModel"
     }
@@ -119,7 +117,7 @@ def setup_openapi_errors(app: fastapi.FastAPI) -> None:
 
     """
 
-    def custom_openapi() -> dict[str, Any]:
+    def custom_openapi() -> dict[str, object]:
         if app.openapi_schema:
             return app.openapi_schema
 

@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import config, db, exceptions
 from .error_responses import COMMON_ERROR_RESPONSES, setup_openapi_errors
+from .sentry import setup_sentry
 
 
 def health(request: fastapi.Request) -> dict[str, str]:
@@ -160,6 +161,7 @@ def get_app_kwargs(
         init_functions = []
 
     settings.config_logger()
+    setup_sentry(settings)
 
     if settings is None:
         settings = config.Settings()

@@ -4,26 +4,32 @@ from __future__ import annotations
 
 from threading import Lock
 
-from prometheus_client import Counter, Gauge
 from pymongo import monitoring
 
-pool_connections = Gauge(
-    "mongodb_pool_connections",
-    "Current MongoDB pool connections",
-    ["database", "state"],
-)
+try:
+    from prometheus_client import Counter, Gauge
 
-connections_created_total = Counter(
-    "mongodb_pool_connections_created_total",
-    "Total MongoDB connections created",
-    ["database"],
-)
+    pool_connections = Gauge(
+        "mongodb_pool_connections",
+        "Current MongoDB pool connections",
+        ["database", "state"],
+    )
 
-connections_closed_total = Counter(
-    "mongodb_pool_connections_closed_total",
-    "Total MongoDB connections closed",
-    ["database"],
-)
+    connections_created_total = Counter(
+        "mongodb_pool_connections_created_total",
+        "Total MongoDB connections created",
+        ["database"],
+    )
+
+    connections_closed_total = Counter(
+        "mongodb_pool_connections_closed_total",
+        "Total MongoDB connections closed",
+        ["database"],
+    )
+except ImportError:
+    pool_connections = None
+    connections_created_total = None
+    connections_closed_total = None
 
 
 class DatabasePoolMonitor(monitoring.ConnectionPoolListener):
