@@ -14,7 +14,7 @@ from collections.abc import Awaitable, Callable, Coroutine
 from typing import TypeVar
 
 try:
-    import json_advanced as json
+    import json_advanced
 except ImportError:
     import json as json_advanced
 
