@@ -60,31 +60,30 @@ def test_setup_sentry_warns_when_sdk_missing() -> None:
     warning_mock.assert_called_once()
 
 
-@patch("sentry_sdk.init")
 def test_setup_sentry_initializes_with_dsn(init_mock: MagicMock) -> None:
     """Sentry should initialize when DSN is set and sentry-sdk is available."""
-    pytest.importorskip("sentry_sdk")
+    sentry_sdk = pytest.importorskip("sentry_sdk")
+    with patch.object(sentry_sdk, "init") as init_mock:
+        settings = _TestSentrySettings(
+            sentry_dsn="https://example@sentry.io/1",
+            sentry_environment="test",
+            sentry_release="1.0.0",
+            sentry_traces_sample_rate=0.5,
+            sentry_profiles_sample_rate=0.1,
+            sentry_send_default_pii=True,
+        )
 
-    settings = _TestSentrySettings(
-        sentry_dsn="https://example@sentry.io/1",
-        sentry_environment="test",
-        sentry_release="1.0.0",
-        sentry_traces_sample_rate=0.5,
-        sentry_profiles_sample_rate=0.1,
-        sentry_send_default_pii=True,
-    )
-
-    assert setup_sentry(settings) is True
-    init_mock.assert_called_once()
-    kwargs = init_mock.call_args.kwargs
-    assert kwargs["dsn"] == "https://example@sentry.io/1"
-    assert kwargs["environment"] == "test"
-    assert kwargs["release"] == "1.0.0"
-    assert kwargs["traces_sample_rate"] == pytest.approx(0.5)
-    assert kwargs["profiles_sample_rate"] == pytest.approx(0.1)
-    assert kwargs["send_default_pii"] is True
-    assert len(kwargs["integrations"]) == 2
-    assert all(
-        integration.transaction_style == "endpoint"
-        for integration in kwargs["integrations"]
-    )
+        assert setup_sentry(settings) is True
+        init_mock.assert_called_once()
+        kwargs = init_mock.call_args.kwargs
+        assert kwargs["dsn"] == "https://example@sentry.io/1"
+        assert kwargs["environment"] == "test"
+        assert kwargs["release"] == "1.0.0"
+        assert kwargs["traces_sample_rate"] == pytest.approx(0.5)
+        assert kwargs["profiles_sample_rate"] == pytest.approx(0.1)
+        assert kwargs["send_default_pii"] is True
+        assert len(kwargs["integrations"]) == 2
+        assert all(
+            integration.transaction_style == "endpoint"
+            for integration in kwargs["integrations"]
+        )
