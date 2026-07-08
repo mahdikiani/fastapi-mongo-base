@@ -4,7 +4,10 @@ import logging
 import os
 from collections.abc import AsyncGenerator, Generator
 
-import httpx
+try:
+    import httpx2 as httpx
+except ImportError:
+    import httpx
 import pytest
 import pytest_asyncio
 from beanie import init_beanie
@@ -105,6 +108,6 @@ async def client(db: None) -> AsyncGenerator[httpx.AsyncClient]:
     """
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=fastapi_app),
-        base_url="http://test.usso.io",
+        base_url=f"{Settings.root_url}{Settings.base_path}",
     ) as ac:
         yield ac

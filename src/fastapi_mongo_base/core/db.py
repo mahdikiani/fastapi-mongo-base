@@ -4,10 +4,10 @@ import logging
 
 from beanie import init_beanie
 
-from fastapi_mongo_base.models import BaseEntity
-from fastapi_mongo_base.utils import basic
-
+from ..models import BaseEntity
+from ..utils import basic
 from .config import Settings
+from .errors.mongodb_errors import MongoDBConnectionError
 
 
 async def init_mongo_db(settings: Settings | None = None) -> object:
@@ -42,6 +42,18 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
     if settings is None:
         settings = Settings()
 
+    try:
+        from pymongo import monitoring
+
+        from ..core.prometheus.mongo import DatabasePoolMonitor
+
+        pool_monitor = DatabasePoolMonitor(
+            database_name=settings.project_name,
+        )
+        monitoring.register(pool_monitor)
+    except ImportError:
+        pass
+
     client = AsyncMongoClient(
         settings.mongo_uri,
         serverSelectionTimeoutMS=settings.mongo_server_selection_timeout_ms,
@@ -65,15 +77,15 @@ async def init_mongo_db(settings: Settings | None = None) -> object:
         logging.exception(
             "MongoDB connection timeout at %s", settings.mongo_uri
         )
-        raise SystemExit(1) from e
+        raise MongoDBConnectionError("Failed to connect to MongoDB") from e
 
     except PyMongoError as e:
         logging.exception("MongoDB error at %s", settings.mongo_uri)
-        raise SystemExit(1) from e
+        raise MongoDBConnectionError("Failed to connect to MongoDB") from e
 
     except Exception as e:
         logging.exception("Unexpected failure initializing MongoDB")
-        raise SystemExit(1) from e
+        raise MongoDBConnectionError("Failed to connect to MongoDB") from e
 
     return db
 

@@ -10,9 +10,13 @@ import inspect
 import json
 import logging
 import time
-from collections.abc import Callable, Coroutine
+from collections.abc import Awaitable, Callable, Coroutine
+from typing import TypeVar
 
-import json_advanced
+try:
+    import json_advanced as json
+except ImportError:
+    import json as json_advanced
 
 FunctionOrCoroutine = (
     Callable[..., None] | Callable[..., Coroutine[object, object, None]]
@@ -319,3 +323,39 @@ async def gather_sync(
     if sync:
         return [await coroutine for coroutine in coroutines]
     return await asyncio.gather(*coroutines)
+
+
+R = TypeVar("R")
+
+
+def debug_mode_mock(
+    mock_response: R | Callable[..., R | Awaitable[R]],
+) -> Callable[[Callable[..., Awaitable[R]]], Callable[..., Awaitable[R]]]:
+    """
+    Return a mock response if debug is enabled.
+
+    Args:
+        mock_response: The mock response to return if debug is enabled.
+
+    Returns:
+        A decorator that returns a mock response if debug is enabled.
+    """
+    from ..core.config import Settings
+
+    def decorator(
+        func: Callable[..., Awaitable[R]],
+    ) -> Callable[..., Awaitable[R]]:
+        @functools.wraps(func)
+        async def wrapper(*args: object, **kwargs: object) -> R:
+            if Settings.debug:
+                if callable(mock_response):
+                    result = mock_response(*args, **kwargs)
+                    if isinstance(result, Awaitable):
+                        return await result
+                    return result
+                return mock_response
+            return await func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
