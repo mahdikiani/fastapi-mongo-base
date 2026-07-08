@@ -328,9 +328,21 @@ async def gather_sync(
 R = TypeVar("R")
 
 
+def _resolve_mock(
+    mock_response: R | Callable[..., R | Awaitable[R]],
+    *args: object,
+    **kwargs: object,
+) -> R | Awaitable[R]:
+    if callable(mock_response):
+        return mock_response(*args, **kwargs)
+    return mock_response
+
+
 def debug_mode_mock(
     mock_response: R | Callable[..., R | Awaitable[R]],
-) -> Callable[[Callable[..., Awaitable[R]]], Callable[..., Awaitable[R]]]:
+) -> Callable[
+    [Callable[..., R | Awaitable[R]]], Callable[..., R | Awaitable[R]]
+]:
     """
     Return a mock response if debug is enabled.
 
@@ -340,22 +352,39 @@ def debug_mode_mock(
     Returns:
         A decorator that returns a mock response if debug is enabled.
     """
-    from ..core.config import Settings
 
     def decorator(
-        func: Callable[..., Awaitable[R]],
-    ) -> Callable[..., Awaitable[R]]:
+        func: Callable[..., R | Awaitable[R]],
+    ) -> Callable[..., R | Awaitable[R]]:
+
+        from ..core.config import Settings
+
         @functools.wraps(func)
-        async def wrapper(*args: object, **kwargs: object) -> R:
+        async def async_wrapper(*args: object, **kwargs: object) -> R:
             if Settings.debug:
-                if callable(mock_response):
-                    result = mock_response(*args, **kwargs)
-                    if isinstance(result, Awaitable):
-                        return await result
-                    return result
-                return mock_response
+                result = _resolve_mock(mock_response, *args, **kwargs)
+                if isinstance(result, Awaitable):
+                    return await result
+                return result
             return await func(*args, **kwargs)
 
-        return wrapper
+        @functools.wraps(func)
+        def sync_wrapper(*args: object, **kwargs: object) -> R:
+            if Settings.debug:
+                result = _resolve_mock(mock_response, *args, **kwargs)
+                if isinstance(result, Awaitable):
+                    msg = (
+                        "debug_mode_mock callable returned "
+                        "Awaitable for sync function"
+                    )
+                    raise TypeError(msg)
+                return result
+            return func(*args, **kwargs)
+
+        return (
+            async_wrapper
+            if inspect.iscoroutinefunction(func)
+            else sync_wrapper
+        )
 
     return decorator
