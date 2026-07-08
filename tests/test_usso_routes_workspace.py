@@ -2,7 +2,11 @@
 
 import pytest
 from pydantic import BaseModel
-from usso.user import UserData
+
+try:
+    from usso.user import UserData
+except ImportError:
+    pytest.skip("usso not installed", allow_module_level=True)
 
 from fastapi_mongo_base.core.exceptions import BaseHTTPException
 from fastapi_mongo_base.utils.usso_routes import AbstractOwnedUSSORouter
