@@ -65,6 +65,8 @@ class DatabasePoolMonitor(monitoring.ConnectionPoolListener):
         self.in_use_connections = 0
 
     def _update_metrics(self) -> None:
+        if pool_connections is None:
+            return
         pool_connections.labels(
             database=self.database_name,
             state="available",
@@ -109,6 +111,8 @@ class DatabasePoolMonitor(monitoring.ConnectionPoolListener):
         """Record a MongoDB connection creation event."""
         del event
 
+        if connections_created_total is None:
+            return
         with self._lock:
             connections_created_total.labels(
                 database=self.database_name,
@@ -121,6 +125,8 @@ class DatabasePoolMonitor(monitoring.ConnectionPoolListener):
         """Record a MongoDB connection readiness event."""
         del event
 
+        if connections_ready_total is None:
+            return
         with self._lock:
             self.available_connections += 1
 
@@ -137,6 +143,8 @@ class DatabasePoolMonitor(monitoring.ConnectionPoolListener):
         """Record a MongoDB connection closure event."""
         del event
 
+        if connections_closed_total is None:
+            return
         with self._lock:
             if self.in_use_connections > 0:
                 self.in_use_connections -= 1
@@ -159,6 +167,8 @@ class DatabasePoolMonitor(monitoring.ConnectionPoolListener):
         """Record the start of a MongoDB connection checkout attempt."""
         del event
 
+        if checkouts_started_total is None:
+            return
         with self._lock:
             checkouts_started_total.labels(
                 database=self.database_name,
@@ -169,6 +179,8 @@ class DatabasePoolMonitor(monitoring.ConnectionPoolListener):
         event: monitoring.ConnectionCheckOutFailedEvent,
     ) -> None:
         """Record a failed MongoDB connection checkout attempt."""
+        if checkouts_failed_total is None:
+            return
         with self._lock:
             checkouts_failed_total.labels(
                 database=self.database_name,
