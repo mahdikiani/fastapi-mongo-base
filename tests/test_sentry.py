@@ -3,7 +3,7 @@
 import builtins
 import dataclasses
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -60,7 +60,7 @@ def test_setup_sentry_warns_when_sdk_missing() -> None:
     warning_mock.assert_called_once()
 
 
-def test_setup_sentry_initializes_with_dsn(init_mock: MagicMock) -> None:
+def test_setup_sentry_initializes_with_dsn() -> None:
     """Sentry should initialize when DSN is set and sentry-sdk is available."""
     sentry_sdk = pytest.importorskip("sentry_sdk")
     with patch.object(sentry_sdk, "init") as init_mock:
