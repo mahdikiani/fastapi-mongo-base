@@ -420,7 +420,8 @@ class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
         self_action: The action for owned resource (default "owner").
         self_access: Allow list access to own resources (default True).
         workspace_only: When True, owner_id must be a workspace_id;
-                        raises 400 if user has no workspace (default False).
+                        raises 400 if user has no workspace and no broad
+                        resource scope (default False).
     """
 
     owner_attr: str = "owner_id"
@@ -438,6 +439,20 @@ class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
         Callable[[type["AbstractOwnedUSSORouter"], UserData], str] | None
     ) = None  # same as get_owner_id
 
+    def _has_broad_resource_access(self, user: UserData) -> bool:
+        """
+        Return True when the user has an unfiltered scope on this resource.
+
+        Users with e.g. ``*:*`` or ``create:ns/service/resource`` (no query
+        filters) may operate without ``workspace_id`` in their JWT.
+        """
+        return authorization.check_access(
+            user_scopes=user.scopes or [],
+            resource_path=self.resource_path,
+            action="read",
+            filters=None,
+        )
+
     def _resolve_owner_id(self, user: UserData) -> str:
         """Resolve owner_id, raising a clear error if workspace is missing."""
         owner_id = self.get_owner_id(user)
@@ -445,6 +460,7 @@ class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
             self.workspace_only
             and user.claims.get("sub_type") != "agent"
             and not owner_id
+            and not self._has_broad_resource_access(user)
         ):
             raise exceptions.BaseHTTPException(
                 status_code=400,

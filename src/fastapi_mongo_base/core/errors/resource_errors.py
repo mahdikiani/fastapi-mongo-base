@@ -13,6 +13,7 @@ class ResourceError(BaseHTTPException):
 
     def __init__(
         self,
+        error_code: str | None = None,
         detail: str | None = None,
         message: dict | None = None,
         **kwargs: object,
@@ -20,7 +21,7 @@ class ResourceError(BaseHTTPException):
         """Initialize ResourceError with optional detail, message, and data."""
         super().__init__(
             status_code=self.status_code,
-            error_code=self.error_code,
+            error_code=error_code or self.error_code,
             detail=detail or self.message_en,
             message=message,
             **kwargs,
