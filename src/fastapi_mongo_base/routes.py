@@ -11,8 +11,8 @@ from fastapi import APIRouter, BackgroundTasks, Query, Request
 from pydantic import BaseModel
 
 from .core.config import Settings
-from .core.error_responses import COMMON_ERROR_RESPONSES
-from .core.exceptions import BaseHTTPException
+from .errors.base import BaseHTTPException
+from .errors.responses import COMMON_ERROR_RESPONSES
 from .models import BaseEntity
 from .schemas import BaseEntitySchema, PaginatedResponse
 from .tasks import TaskStatusEnum

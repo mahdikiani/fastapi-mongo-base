@@ -329,17 +329,17 @@ R = TypeVar("R")
 
 
 def _resolve_mock(
-    mock_response: R | Callable[..., R | Awaitable[R]],
+    return_value: R | Callable[..., R | Awaitable[R]],
     *args: object,
     **kwargs: object,
 ) -> R | Awaitable[R]:
-    if callable(mock_response):
-        return mock_response(*args, **kwargs)
-    return mock_response
+    if callable(return_value):
+        return return_value(*args, **kwargs)
+    return return_value
 
 
 def debug_mode_mock(
-    mock_response: R | Callable[..., R | Awaitable[R]],
+    return_value: R | Callable[..., R | Awaitable[R]],
 ) -> Callable[
     [Callable[..., R | Awaitable[R]]], Callable[..., R | Awaitable[R]]
 ]:
@@ -347,7 +347,7 @@ def debug_mode_mock(
     Return a mock response if debug is enabled.
 
     Args:
-        mock_response: The mock response to return if debug is enabled.
+        return_value: The mock response to return if debug is enabled.
 
     Returns:
         A decorator that returns a mock response if debug is enabled.
@@ -362,7 +362,7 @@ def debug_mode_mock(
         @functools.wraps(func)
         async def async_wrapper(*args: object, **kwargs: object) -> R:
             if Settings.debug:
-                result = _resolve_mock(mock_response, *args, **kwargs)
+                result = _resolve_mock(return_value, *args, **kwargs)
                 if isinstance(result, Awaitable):
                     return await result
                 return result
@@ -371,7 +371,7 @@ def debug_mode_mock(
         @functools.wraps(func)
         def sync_wrapper(*args: object, **kwargs: object) -> R:
             if Settings.debug:
-                result = _resolve_mock(mock_response, *args, **kwargs)
+                result = _resolve_mock(return_value, *args, **kwargs)
                 if isinstance(result, Awaitable):
                     msg = (
                         "debug_mode_mock callable returned "

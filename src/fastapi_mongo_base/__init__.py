@@ -1,5 +1,5 @@
 """FastAPI MongoDB base package with models, schemas, and routers."""
 
-from .core import exceptions
+from . import errors
 
-__all__ = ["exceptions"]
+__all__ = ["errors"]

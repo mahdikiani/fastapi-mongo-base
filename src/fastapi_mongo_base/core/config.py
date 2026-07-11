@@ -2,7 +2,6 @@
 
 import dataclasses
 import json
-import logging
 import logging.config
 from pathlib import Path
 from typing import Literal
@@ -11,31 +10,7 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from singleton import Singleton
 
-
-class JsonFormatter(logging.Formatter):
-    """
-    Logging formatter that outputs a single-line structured JSON object.
-
-    Using json_advanced.dumps ensures special types (datetime, UUID,
-    ObjectId, Pydantic models, etc.) are serialised without raising errors.
-    """
-
-    def format(self, record: logging.LogRecord) -> str:
-        """Serialise *record* to a JSON string."""
-        data: dict[str, object] = {
-            "timestamp": self.formatTime(record, self.datefmt),
-            "level": record.levelname,
-            "logger": record.name,
-            "filename": record.filename,
-            "lineno": record.lineno,
-            "funcName": record.funcName,
-            "message": record.getMessage(),
-        }
-        if record.exc_info:
-            data["exc_info"] = self.formatException(record.exc_info)
-        if record.stack_info:
-            data["stack_info"] = self.formatStack(record.stack_info)
-        return json.dumps(data, ensure_ascii=False)
+from ..logging.formatters import JsonFormatter
 
 
 class ProjectSettings(BaseSettings):
@@ -79,9 +54,7 @@ class ProjectSettings(BaseSettings):
         validation_alias="CORS_ORIGINS",
     )
     page_max_limit: int = 100
-    mongo_uri: str = Field(
-        default="mongodb://localhost:27017/", validation_alias="MONGO_URI"
-    )
+    mongo_uri: str | None = Field(default=None, validation_alias="MONGO_URI")
     mongo_server_selection_timeout_ms: int = 5000
     mongo_connect_timeout_ms: int = 5000
     sentry_dsn: str | None = Field(default=None, validation_alias="SENTRY_DSN")
@@ -104,6 +77,34 @@ class ProjectSettings(BaseSettings):
     sentry_send_default_pii: bool = Field(
         default=False,
         validation_alias="SENTRY_SEND_DEFAULT_PII",
+    )
+    redis_uri: str | None = Field(default=None, validation_alias="REDIS_URI")
+    database_uri: str | None = Field(
+        default=None,
+        validation_alias="DATABASE_URI",
+    )
+    database_echo: bool = Field(
+        default=False, validation_alias="DATABASE_ECHO"
+    )
+    database_pool_size: int | None = Field(
+        default=None,
+        validation_alias="DATABASE_POOL_SIZE",
+    )
+    database_max_overflow: int | None = Field(
+        default=None,
+        validation_alias="DATABASE_MAX_OVERFLOW",
+    )
+    database_pool_timeout: int | None = Field(
+        default=None,
+        validation_alias="DATABASE_POOL_TIMEOUT",
+    )
+    database_pool_pre_ping: bool = Field(
+        default=True,
+        validation_alias="DATABASE_POOL_PRE_PING",
+    )
+    database_pool_recycle: int | None = Field(
+        default=None,
+        validation_alias="DATABASE_POOL_RECYCLE",
     )
     log_format: Literal["json", "text"] = Field(
         default="json",
@@ -216,7 +217,7 @@ class Settings(metaclass=Singleton):
         return ["http://localhost:8000"]
 
     page_max_limit: int = project_settings.page_max_limit
-    mongo_uri: str = project_settings.mongo_uri
+    mongo_uri: str | None = project_settings.mongo_uri
     mongo_server_selection_timeout_ms: int = (
         project_settings.mongo_server_selection_timeout_ms
     )
@@ -231,6 +232,14 @@ class Settings(metaclass=Singleton):
         project_settings.sentry_profiles_sample_rate
     )
     sentry_send_default_pii: bool = project_settings.sentry_send_default_pii
+    redis_uri: str | None = project_settings.redis_uri
+    database_uri: str | None = project_settings.database_uri
+    database_echo: bool = project_settings.database_echo
+    database_pool_size: int | None = project_settings.database_pool_size
+    database_max_overflow: int | None = project_settings.database_max_overflow
+    database_pool_timeout: int | None = project_settings.database_pool_timeout
+    database_pool_pre_ping: bool = project_settings.database_pool_pre_ping
+    database_pool_recycle: int | None = project_settings.database_pool_recycle
     log_format: str = project_settings.log_format
 
     @classmethod

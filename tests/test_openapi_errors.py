@@ -2,11 +2,11 @@
 
 from fastapi.testclient import TestClient
 
-from fastapi_mongo_base.core.error_responses import (
+from src.fastapi_mongo_base.errors.base import BaseHTTPException
+from src.fastapi_mongo_base.errors.responses import (
     APIErrorResponseModel,
     ValidationErrorResponseModel,
 )
-from fastapi_mongo_base.core.exceptions import BaseHTTPException
 
 from .app.server import app as fastapi_app
 
@@ -90,8 +90,10 @@ def test_custom_route_documents_api_error_response() -> None:
     """App-level responses should document APIErrorResponseModel on routes."""
     from fastapi import FastAPI
 
-    from fastapi_mongo_base.core.app_factory import setup_exception_handlers
-    from fastapi_mongo_base.core.error_responses import (
+    from src.fastapi_mongo_base.core.app_factory import (
+        setup_exception_handlers,
+    )
+    from src.fastapi_mongo_base.errors.responses import (
         COMMON_ERROR_RESPONSES,
         setup_openapi_errors,
     )

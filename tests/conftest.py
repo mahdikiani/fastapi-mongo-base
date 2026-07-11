@@ -3,6 +3,7 @@
 import logging
 import os
 from collections.abc import AsyncGenerator, Generator
+from contextlib import AsyncExitStack
 
 try:
     import httpx2 as httpx
@@ -96,18 +97,42 @@ async def db(mongo_client: object) -> AsyncGenerator[None]:
 
 
 @pytest_asyncio.fixture(scope="session")
-async def client(db: None) -> AsyncGenerator[httpx.AsyncClient]:
+async def client(
+    db: None, mongo_client: object
+) -> AsyncGenerator[httpx.AsyncClient]:
     """
     Fixture to provide an AsyncClient for FastAPI app.
 
     Args:
         db: Ensures the test database is initialized before requests.
+        mongo_client: Shared MongoDB mock client for app lifespan.
 
     Returns:
         AsyncClient.
     """
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=fastapi_app),
-        base_url=f"{Settings.root_url}{Settings.base_path}",
-    ) as ac:
-        yield ac
+    from unittest.mock import AsyncMock, patch
+
+    from src.fastapi_mongo_base.core import db as db_module
+
+    def _patched_init_mongo_db(
+        settings: object | None = None,
+    ) -> tuple[object, object]:
+        project_name = getattr(settings, "project_name", Settings.project_name)
+        database = mongo_client.get_database(project_name)
+        return database, mongo_client
+
+    with patch.object(
+        db_module,
+        "init_mongo_db",
+        new_callable=AsyncMock,
+        side_effect=_patched_init_mongo_db,
+    ):
+        async with AsyncExitStack() as stack:
+            await stack.enter_async_context(
+                fastapi_app.router.lifespan_context(fastapi_app),
+            )
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=fastapi_app),
+                base_url=f"{Settings.root_url}{Settings.base_path}",
+            ) as ac:
+                yield ac

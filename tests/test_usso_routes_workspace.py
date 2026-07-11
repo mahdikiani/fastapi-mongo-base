@@ -8,8 +8,8 @@ try:
 except ImportError:
     pytest.skip("usso not installed", allow_module_level=True)
 
-from fastapi_mongo_base.core.exceptions import BaseHTTPException
-from fastapi_mongo_base.utils.usso_routes import AbstractOwnedUSSORouter
+from src.fastapi_mongo_base.errors.base import BaseHTTPException
+from src.fastapi_mongo_base.utils.usso_routes import AbstractOwnedUSSORouter
 
 
 class _DummySchema(BaseModel):

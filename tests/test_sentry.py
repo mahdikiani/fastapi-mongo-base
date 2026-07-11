@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from src.fastapi_mongo_base.core.sentry import setup_sentry
+from src.fastapi_mongo_base.monitoring.sentry import setup_sentry
 
 
 @dataclasses.dataclass
@@ -48,7 +48,7 @@ def test_setup_sentry_warns_when_sdk_missing() -> None:
     try:
         with (
             patch(
-                "src.fastapi_mongo_base.core.sentry.logger.warning"
+                "src.fastapi_mongo_base.monitoring.sentry.logger.warning"
             ) as warning_mock,
             patch("builtins.__import__", side_effect=mock_import),
         ):

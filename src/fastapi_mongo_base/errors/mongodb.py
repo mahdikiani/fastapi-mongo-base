@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fastapi_mongo_base.core.errors.resource_errors import (
-    ResourceAlreadyExistsError,
-    ResourceNotFoundError,
+from .base import BaseHTTPException
+from .http import (
+    AlreadyExistsError,
+    NotFoundError,
 )
-from fastapi_mongo_base.core.exceptions import BaseHTTPException
 
 if TYPE_CHECKING:
     from pymongo.errors import PyMongoError
@@ -68,7 +68,7 @@ class MongodbOperationTimeoutError(MongoDBError):
     message_fa = "یک خطای timeout عملیات پایگاه داده رخ داده است"
 
 
-class DocumentNotFoundError(MongoDBError, ResourceNotFoundError):
+class DocumentNotFoundError(MongoDBError, NotFoundError):
     """Raised when a document is not found."""
 
     status_code = 404
@@ -77,7 +77,7 @@ class DocumentNotFoundError(MongoDBError, ResourceNotFoundError):
     message_fa = "سند یافت نشد"
 
 
-class DocumentAlreadyExistsError(MongoDBError, ResourceAlreadyExistsError):
+class DocumentAlreadyExistsError(MongoDBError, AlreadyExistsError):
     """Raised when a document already exists."""
 
     status_code = 409

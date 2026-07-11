@@ -1,15 +1,15 @@
-"""Resource error exceptions for HTTP responses."""
+"""Structured HTTP API error exceptions."""
 
-from fastapi_mongo_base.core.exceptions import BaseHTTPException
+from .base import BaseHTTPException
 
 
-class ResourceError(BaseHTTPException):
-    """Base exception for all resource errors."""
+class ServerError(BaseHTTPException):
+    """Base exception for application API errors."""
 
     status_code: int = 500
-    error_code: str = "resource_error"
-    message_en: str = "A resource error occurred"
-    message_fa: str | None = "مشکلی در منبع پیش آمد. لطفاً دوباره تلاش کنید."
+    error_code: str = "internal_server_error"
+    message_en: str = "Internal server error"
+    message_fa: str | None = "خطای داخلی سرور رخ داده است"
 
     def __init__(
         self,
@@ -18,7 +18,7 @@ class ResourceError(BaseHTTPException):
         message: dict | None = None,
         **kwargs: object,
     ) -> None:
-        """Initialize ResourceError with optional detail, message, and data."""
+        """Initialize ServerError with optional detail and data."""
         super().__init__(
             status_code=self.status_code,
             error_code=error_code or self.error_code,
@@ -28,8 +28,8 @@ class ResourceError(BaseHTTPException):
         )
 
 
-class ResourceNotFoundError(ResourceError):
-    """Raised when a resource is not found."""
+class NotFoundError(ServerError):
+    """Raised when a requested entity is not found."""
 
     status_code = 404
     error_code = "resource_not_found"
@@ -37,8 +37,8 @@ class ResourceNotFoundError(ResourceError):
     message_fa = "یافت نشد"
 
 
-class ResourceAlreadyExistsError(ResourceError):
-    """Raised when a resource already exists."""
+class AlreadyExistsError(ServerError):
+    """Raised when an entity already exists."""
 
     status_code = 409
     error_code = "resource_already_exists"
@@ -46,8 +46,8 @@ class ResourceAlreadyExistsError(ResourceError):
     message_fa = "نمونه‌ی مشابه وجود دارد"
 
 
-class ResourceConflictError(ResourceError):
-    """Raised when a resource conflict occurs."""
+class ConflictError(ServerError):
+    """Raised when a request conflicts with current state."""
 
     status_code = 409
     error_code = "resource_conflict"
@@ -55,8 +55,8 @@ class ResourceConflictError(ResourceError):
     message_fa = "اطلاعات ارسال شده تداخل دارد"
 
 
-class ResourcePaymentRequiredError(ResourceError):
-    """Raised when a resource payment is required."""
+class PaymentRequiredError(ServerError):
+    """Raised when payment is required before access."""
 
     status_code = 402
     error_code = "resource_payment_required"
@@ -64,8 +64,8 @@ class ResourcePaymentRequiredError(ResourceError):
     message_fa = "برای دسترسی، پرداخت لازم است"
 
 
-class ResourceForbiddenError(ResourceError):
-    """Raised when a resource is forbidden."""
+class ForbiddenError(ServerError):
+    """Raised when the caller lacks permission."""
 
     status_code = 403
     error_code = "permission_denied"
@@ -73,8 +73,8 @@ class ResourceForbiddenError(ResourceError):
     message_fa = "دسترسی غیر مجاز"
 
 
-class ResourceGoneError(ResourceError):
-    """Raised when a resource is gone."""
+class GoneError(ServerError):
+    """Raised when an entity is no longer available."""
 
     status_code = 410
     error_code = "resource_gone"
@@ -82,10 +82,15 @@ class ResourceGoneError(ResourceError):
     message_fa = "در دسترس نیست"
 
 
-class ResourceLockedError(ResourceError):
-    """Raised when a resource is locked."""
+class LockedError(ServerError):
+    """Raised when an entity is locked."""
 
     status_code = 423
     error_code = "resource_locked"
     message_en = "Resource locked"
     message_fa = "قفل شده است"
+
+
+# Backward-compatible aliases from earlier refactors.
+HTTPClientError = ServerError
+APIError = ServerError

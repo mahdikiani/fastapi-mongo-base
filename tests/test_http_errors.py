@@ -1,102 +1,120 @@
-"""Tests for resource error exceptions."""
+"""Tests for HTTP API error exceptions."""
 
 import pytest
 from fastapi import HTTPException
 
-from fastapi_mongo_base.core.errors.resource_errors import (
+from src.fastapi_mongo_base.errors.base import BaseHTTPException
+from src.fastapi_mongo_base.errors.http import HTTPClientError, ServerError
+from src.fastapi_mongo_base.errors.resource import (
+    AlreadyExistsError,
+    ConflictError,
+    ForbiddenError,
+    GoneError,
+    LockedError,
+    NotFoundError,
+    PaymentRequiredError,
     ResourceAlreadyExistsError,
     ResourceConflictError,
-    ResourceError,
     ResourceForbiddenError,
     ResourceGoneError,
     ResourceLockedError,
     ResourceNotFoundError,
     ResourcePaymentRequiredError,
 )
-from fastapi_mongo_base.core.exceptions import BaseHTTPException
 
-RESOURCE_ERROR_CASES = [
+HTTP_ERROR_CASES = [
     pytest.param(
-        ResourceError,
+        ServerError,
         500,
-        "resource_error",
-        "A resource error occurred",
-        "مشکلی در منبع پیش آمد. لطفاً دوباره تلاش کنید.",
-        id="ResourceError",
+        "internal_server_error",
+        "Internal server error",
+        "خطای داخلی سرور رخ داده است",
+        id="APIError",
     ),
     pytest.param(
-        ResourceNotFoundError,
+        NotFoundError,
         404,
         "resource_not_found",
         "Resource not found",
         "یافت نشد",
-        id="ResourceNotFoundError",
+        id="NotFoundError",
     ),
     pytest.param(
-        ResourceAlreadyExistsError,
+        AlreadyExistsError,
         409,
         "resource_already_exists",
         "Resource already exists",
         "نمونه‌ی مشابه وجود دارد",
-        id="ResourceAlreadyExistsError",
+        id="AlreadyExistsError",
     ),
     pytest.param(
-        ResourceConflictError,
+        ConflictError,
         409,
         "resource_conflict",
         "Resource conflict",
         "اطلاعات ارسال شده تداخل دارد",
-        id="ResourceConflictError",
+        id="ConflictError",
     ),
     pytest.param(
-        ResourcePaymentRequiredError,
+        PaymentRequiredError,
         402,
         "resource_payment_required",
         "Resource payment required",
         "برای دسترسی، پرداخت لازم است",
-        id="ResourcePaymentRequiredError",
+        id="PaymentRequiredError",
     ),
     pytest.param(
-        ResourceForbiddenError,
+        ForbiddenError,
         403,
         "permission_denied",
         "Permission denied",
         "دسترسی غیر مجاز",
-        id="ResourceForbiddenError",
+        id="ForbiddenError",
     ),
     pytest.param(
-        ResourceGoneError,
+        GoneError,
         410,
         "resource_gone",
         "Resource gone",
         "در دسترس نیست",
-        id="ResourceGoneError",
+        id="GoneError",
     ),
     pytest.param(
-        ResourceLockedError,
+        LockedError,
         423,
         "resource_locked",
         "Resource locked",
         "قفل شده است",
-        id="ResourceLockedError",
+        id="LockedError",
     ),
 ]
 
-ALL_RESOURCE_ERROR_CLASSES = [case.values[0] for case in RESOURCE_ERROR_CASES]
+ALL_HTTP_ERROR_CLASSES = [case.values[0] for case in HTTP_ERROR_CASES]
+
+LEGACY_ALIASES = [
+    (ServerError, ServerError),
+    (ResourceNotFoundError, NotFoundError),
+    (ResourceAlreadyExistsError, AlreadyExistsError),
+    (ResourceConflictError, ConflictError),
+    (ResourcePaymentRequiredError, PaymentRequiredError),
+    (ResourceForbiddenError, ForbiddenError),
+    (ResourceGoneError, GoneError),
+    (ResourceLockedError, LockedError),
+]
 
 
 @pytest.mark.parametrize(
     ("exc_cls", "status_code", "error_code", "message_en", "message_fa"),
-    RESOURCE_ERROR_CASES,
+    HTTP_ERROR_CASES,
 )
-def test_resource_error_class_messages(
-    exc_cls: type[ResourceError],
+def test_api_error_class_messages(
+    exc_cls: type[ServerError],
     status_code: int,
     error_code: str,
     message_en: str,
     message_fa: str,
 ) -> None:
-    """Each resource error defines the expected English and Farsi messages."""
+    """Each API error defines expected en/fa messages."""
     assert exc_cls.status_code == status_code
     assert exc_cls.error_code == error_code
     assert exc_cls.message_en == message_en
@@ -105,10 +123,10 @@ def test_resource_error_class_messages(
 
 @pytest.mark.parametrize(
     ("exc_cls", "status_code", "error_code", "message_en", "message_fa"),
-    RESOURCE_ERROR_CASES,
+    HTTP_ERROR_CASES,
 )
-def test_resource_error_detail_and_bilingual_message(
-    exc_cls: type[ResourceError],
+def test_api_error_detail_and_bilingual_message(
+    exc_cls: type[ServerError],
     status_code: int,
     error_code: str,
     message_en: str,
@@ -126,18 +144,16 @@ def test_resource_error_detail_and_bilingual_message(
 
 
 @pytest.mark.parametrize(
-    "exc_cls", ALL_RESOURCE_ERROR_CLASSES[1:], ids=lambda c: c.__name__
+    "exc_cls", ALL_HTTP_ERROR_CLASSES[1:], ids=lambda c: c.__name__
 )
-def test_resource_errors_inherit_from_resource_error(
-    exc_cls: type[ResourceError],
-) -> None:
-    """Every specialized resource error extends ResourceError."""
-    assert issubclass(exc_cls, ResourceError)
+def test_api_errors_inherit_from_api_error(exc_cls: type[ServerError]) -> None:
+    """Every specialized API error extends APIError."""
+    assert issubclass(exc_cls, ServerError)
 
 
-def test_resource_error_inheritance() -> None:
-    """Resource errors extend the shared HTTP exception hierarchy."""
-    for exc_cls in ALL_RESOURCE_ERROR_CLASSES:
+def test_api_error_inheritance() -> None:
+    """API errors extend the shared HTTP exception hierarchy."""
+    for exc_cls in ALL_HTTP_ERROR_CLASSES:
         assert issubclass(exc_cls, BaseHTTPException)
         assert issubclass(exc_cls, HTTPException)
 
@@ -146,12 +162,12 @@ def test_resource_error_inheritance() -> None:
     ("exc_cls", "message_en", "message_fa"),
     [
         (case.values[0], case.values[3], case.values[4])
-        for case in RESOURCE_ERROR_CASES
+        for case in HTTP_ERROR_CASES
     ],
-    ids=[case.id for case in RESOURCE_ERROR_CASES],
+    ids=[case.id for case in HTTP_ERROR_CASES],
 )
-def test_resource_error_custom_detail_preserves_bilingual_message(
-    exc_cls: type[ResourceError],
+def test_api_error_custom_detail_preserves_bilingual_message(
+    exc_cls: type[ServerError],
     message_en: str,
     message_fa: str,
 ) -> None:
@@ -164,8 +180,22 @@ def test_resource_error_custom_detail_preserves_bilingual_message(
     assert exc.message["fa"] == message_fa
 
 
-def test_resource_error_extra_data() -> None:
+def test_api_error_extra_data() -> None:
     """Additional keyword arguments are stored on the exception instance."""
-    exc = ResourceNotFoundError(resource_id="abc-123")
+    exc = NotFoundError(resource_id="abc-123")
 
     assert exc.data == {"resource_id": "abc-123"}
+
+
+@pytest.mark.parametrize(("legacy", "canonical"), LEGACY_ALIASES)
+def test_legacy_resource_error_aliases(
+    legacy: type[ServerError],
+    canonical: type[ServerError],
+) -> None:
+    """Resource* names remain aliases of the canonical API errors."""
+    assert legacy is canonical
+
+
+def test_http_client_error_alias() -> None:
+    """HTTPClientError remains an alias of APIError."""
+    assert HTTPClientError is ServerError

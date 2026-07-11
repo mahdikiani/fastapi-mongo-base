@@ -1,4 +1,4 @@
-"""Prometheus metrics middleware for FastAPI applications."""
+"""HTTP request monitoring middleware for FastAPI applications."""
 
 from __future__ import annotations
 

@@ -14,7 +14,11 @@ from pymongo.errors import (
     WTimeoutError,
 )
 
-from fastapi_mongo_base.core.errors.mongodb_errors import (
+from src.fastapi_mongo_base.errors.handlers import (
+    general_exception_handler,
+    mongodb_exception_handler,
+)
+from src.fastapi_mongo_base.errors.mongodb import (
     DocumentDuplicateKeyError,
     DocumentNotFoundError,
     MongoDBConnectionError,
@@ -23,10 +27,6 @@ from fastapi_mongo_base.core.errors.mongodb_errors import (
     MongoDBTimeoutError,
     convert_pymongo_error,
     find_pymongo_error,
-)
-from fastapi_mongo_base.core.exceptions import (
-    general_exception_handler,
-    mongodb_exception_handler,
 )
 
 MONGODB_ERROR_CASES = [
@@ -245,3 +245,22 @@ def test_general_exception_handler_converts_chained_pymongo_error() -> None:
 
     assert response.status_code == 503
     assert b"mongodb_connection_error" in response.body
+
+
+def test_general_exception_handler_returns_503_for_redis_error() -> None:
+    """general_exception_handler returns 503 for Redis errors."""
+    redis_module = pytest.importorskip("redis")
+    request = Request({
+        "type": "http",
+        "headers": [],
+        "method": "GET",
+        "path": "/",
+    })
+
+    response = general_exception_handler(
+        request,
+        redis_module.exceptions.RedisError("connection lost"),
+    )
+
+    assert response.status_code == 503
+    assert b"A Redis error occurred" in response.body

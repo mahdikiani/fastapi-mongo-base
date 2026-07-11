@@ -8,26 +8,151 @@ from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 
 import fastapi
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import config, db, exceptions
-from .error_responses import COMMON_ERROR_RESPONSES, setup_openapi_errors
-from .sentry import setup_sentry
+from ..errors.handlers import EXCEPTION_HANDLERS
+from ..errors.responses import COMMON_ERROR_RESPONSES, setup_openapi_errors
+from ..monitoring.sentry import setup_sentry
+from . import config, db
 
 
-def health(request: fastapi.Request) -> dict[str, str]:
+def _is_configured_uri(value: str | None) -> bool:
+    return bool(value and str(value).strip())
+
+
+def _use_mongodb(settings: config.Settings | None) -> bool:
+    if settings is None:
+        return False
+    return _is_configured_uri(getattr(settings, "mongo_uri", None))
+
+
+def _use_redis(settings: config.Settings | None) -> bool:
+    if settings is None:
+        return False
+    return _is_configured_uri(getattr(settings, "redis_uri", None))
+
+
+def _use_sql(settings: config.Settings | None) -> bool:
+    if settings is None:
+        return False
+    return _is_configured_uri(getattr(settings, "database_uri", None))
+
+
+def health(request: fastapi.Request) -> dict[str, object]:
     """
-    Health check endpoint handler.
+    Liveness probe endpoint handler.
 
     Args:
         request: FastAPI request object.
 
     Returns:
-        Dictionary with status "up".
+        Dictionary with status and optional version.
 
     """
-    return {"status": "up"}
+    payload: dict[str, object] = {"status": "up"}
+
+    if request.app.version:
+        payload["version"] = request.app.version
+    return payload
+
+
+async def readiness(request: fastapi.Request) -> JSONResponse:
+    """
+    Readiness probe endpoint handler.
+
+    Args:
+        request: FastAPI request object.
+
+    Returns:
+        JSON response with dependency checks and HTTP 503 when degraded.
+
+    """
+    datasources = getattr(request.app.state, "datasources", {})
+    mongo_client = getattr(request.app.state, "mongo_client", None)
+    redis_client = getattr(request.app.state, "redis_async_client", None)
+    sql_session = getattr(request.app.state, "async_session", None)
+
+    checks: dict[str, str] = {}
+    if datasources.get("mongodb"):
+        checks["mongodb"] = await db.check_mongodb(mongo_client)
+    else:
+        checks["mongodb"] = "skipped"
+
+    if datasources.get("redis"):
+        checks["redis"] = await db.check_redis(redis_client)
+    else:
+        checks["redis"] = "skipped"
+
+    if datasources.get("sql"):
+        checks["sql"] = await db.check_sql(sql_session)
+    else:
+        checks["sql"] = "skipped"
+
+    is_ready = "down" not in checks.values()
+    payload: dict[str, object] = {
+        "status": "up" if is_ready else "degraded",
+        "checks": checks,
+    }
+    if request.app.version:
+        payload["version"] = request.app.version
+
+    return JSONResponse(
+        status_code=fastapi.status.HTTP_200_OK
+        if is_ready
+        else fastapi.status.HTTP_503_SERVICE_UNAVAILABLE,
+        content=payload,
+    )
+
+
+async def _startup_datasources(
+    app: fastapi.FastAPI,
+    settings: config.Settings | None,
+) -> None:
+    use_mongo = _use_mongodb(settings)
+    use_redis = _use_redis(settings)
+    use_sql = _use_sql(settings)
+    app.state.datasources = {
+        "mongodb": use_mongo,
+        "redis": use_redis,
+        "sql": use_sql,
+    }
+
+    if use_mongo:
+        mongo_db, mongo_client = await db.init_mongo_db(settings)
+    else:
+        mongo_db, mongo_client = None, None
+    app.state.mongo_db = mongo_db
+    app.state.mongo_client = mongo_client
+
+    if use_redis:
+        redis_sync, redis_async = db.init_redis(settings)
+    else:
+        redis_sync, redis_async = None, None
+    app.state.redis_sync_client = redis_sync
+    app.state.redis_async_client = redis_async
+
+    if use_sql:
+        sql_engine, sql_session = await db.init_sql(settings)
+    else:
+        sql_engine, sql_session = None, None
+    app.state.sql_engine = sql_engine
+    app.state.async_session = sql_session
+
+
+async def _shutdown_datasources(app: fastapi.FastAPI) -> None:
+    if getattr(app.state, "mongo_client", None) is not None:
+        await db.close_mongo_client(app.state.mongo_client)
+    if (
+        getattr(app.state, "redis_sync_client", None) is not None
+        or getattr(app.state, "redis_async_client", None) is not None
+    ):
+        await db.close_redis(
+            getattr(app.state, "redis_sync_client", None),
+            getattr(app.state, "redis_async_client", None),
+        )
+    if getattr(app.state, "sql_engine", None) is not None:
+        await db.close_sql(app.state.sql_engine)
 
 
 @asynccontextmanager
@@ -53,7 +178,10 @@ async def lifespan(
     """
     if init_functions is None:
         init_functions = []
-    await db.init_mongo_db(settings)
+    if settings is not None:
+        app.state.settings = settings
+
+    await _startup_datasources(app, settings)
 
     if worker:
         app.state.worker = asyncio.create_task(worker())
@@ -70,6 +198,7 @@ async def lifespan(
     finally:
         if worker:
             app.state.worker.cancel()
+        await _shutdown_datasources(app)
         logging.info("Shutdown complete")
 
 
@@ -85,7 +214,7 @@ def setup_exception_handlers(
         **kwargs: Additional keyword arguments.
 
     """
-    exception_handlers = exceptions.EXCEPTION_HANDLERS
+    exception_handlers = EXCEPTION_HANDLERS
     if handlers:
         exception_handlers.update(handlers)
 
@@ -218,6 +347,7 @@ def create_app(
     exception_handlers: dict | None = None,
     log_route: bool = False,
     health_route: bool = True,
+    readiness_route: bool = True,
     index_route: bool = True,
     **kwargs: object,
 ) -> fastapi.FastAPI:
@@ -238,7 +368,8 @@ def create_app(
         license_info: Optional license information dictionary.
         exception_handlers: Optional exception handlers dictionary.
         log_route: Whether to enable log viewing route.
-        health_route: Whether to enable health check route.
+        health_route: Whether to enable liveness health check route.
+        readiness_route: Whether to enable readiness health check route.
         index_route: Whether to enable index redirect route.
         **kwargs: Additional keyword arguments.
 
@@ -274,6 +405,7 @@ def create_app(
         exception_handlers=exception_handlers,
         log_route=log_route,
         health_route=health_route,
+        readiness_route=readiness_route,
         index_route=index_route,
         **kwargs,
     )
@@ -290,6 +422,7 @@ def configure_app(
     exception_handlers: dict | None = None,
     log_route: bool = False,
     health_route: bool = True,
+    readiness_route: bool = True,
     index_route: bool = True,
     **kwargs: object,
 ) -> fastapi.FastAPI:
@@ -303,7 +436,8 @@ def configure_app(
         origins: Optional list of allowed CORS origins.
         exception_handlers: Optional exception handlers dictionary.
         log_route: Whether to enable log viewing route.
-        health_route: Whether to enable health check route.
+        health_route: Whether to enable liveness health check route.
+        readiness_route: Whether to enable readiness health check route.
         index_route: Whether to enable index redirect route.
         **kwargs: Additional keyword arguments.
 
@@ -349,6 +483,8 @@ def configure_app(
 
     if health_route:
         app.get(f"{base_path}/health")(health)
+    if readiness_route:
+        app.get(f"{base_path}/health/ready")(readiness)
     if log_route:
         app.get(f"{base_path}/logs", include_in_schema=False)(logs)
     if index_route:

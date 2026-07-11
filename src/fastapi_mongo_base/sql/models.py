@@ -8,22 +8,19 @@ from typing_extensions import Never, Self
 
 try:
     from sqlalchemy import JSON, event, select
-    from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.orm import (
         Mapped,
         as_declarative,
         declared_attr,
         mapped_column,
-        sessionmaker,
     )
     from sqlalchemy.sql import func
 except ImportError as e:
     raise ImportError("SQLAlchemy is not installed") from e
 
-from .core.config import Settings
-from .utils import basic, timezone
-
-async_session: sessionmaker[AsyncSession] = None  # type: ignore
+from ..core.config import Settings
+from ..utils import basic, timezone
+from .session import async_session
 
 
 @as_declarative()

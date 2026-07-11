@@ -1,4 +1,4 @@
-"""Prometheus metrics for MongoDB connection pools."""
+"""Monitoring metrics for MongoDB connection pools."""
 
 from __future__ import annotations
 
