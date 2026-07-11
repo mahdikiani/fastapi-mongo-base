@@ -4,7 +4,7 @@ import pytest
 from fastapi import HTTPException
 
 from src.fastapi_mongo_base.errors.base import BaseHTTPException
-from src.fastapi_mongo_base.errors.http import HTTPClientError, ServerError
+from src.fastapi_mongo_base.errors.http import ServerError
 from src.fastapi_mongo_base.errors.resource import (
     AlreadyExistsError,
     ConflictError,
@@ -108,7 +108,7 @@ LEGACY_ALIASES = [
     HTTP_ERROR_CASES,
 )
 def test_api_error_class_messages(
-    exc_cls: type[ServerError],
+    exc_cls: type[BaseHTTPException],
     status_code: int,
     error_code: str,
     message_en: str,
@@ -126,7 +126,7 @@ def test_api_error_class_messages(
     HTTP_ERROR_CASES,
 )
 def test_api_error_detail_and_bilingual_message(
-    exc_cls: type[ServerError],
+    exc_cls: type[BaseHTTPException],
     status_code: int,
     error_code: str,
     message_en: str,
@@ -146,9 +146,11 @@ def test_api_error_detail_and_bilingual_message(
 @pytest.mark.parametrize(
     "exc_cls", ALL_HTTP_ERROR_CLASSES[1:], ids=lambda c: c.__name__
 )
-def test_api_errors_inherit_from_api_error(exc_cls: type[ServerError]) -> None:
+def test_api_errors_inherit_from_api_error(
+    exc_cls: type[BaseHTTPException],
+) -> None:
     """Every specialized API error extends APIError."""
-    assert issubclass(exc_cls, ServerError)
+    assert issubclass(exc_cls, BaseHTTPException)
 
 
 def test_api_error_inheritance() -> None:
@@ -167,7 +169,7 @@ def test_api_error_inheritance() -> None:
     ids=[case.id for case in HTTP_ERROR_CASES],
 )
 def test_api_error_custom_detail_preserves_bilingual_message(
-    exc_cls: type[ServerError],
+    exc_cls: type[BaseHTTPException],
     message_en: str,
     message_fa: str,
 ) -> None:
@@ -189,13 +191,8 @@ def test_api_error_extra_data() -> None:
 
 @pytest.mark.parametrize(("legacy", "canonical"), LEGACY_ALIASES)
 def test_legacy_resource_error_aliases(
-    legacy: type[ServerError],
-    canonical: type[ServerError],
+    legacy: type[BaseHTTPException],
+    canonical: type[BaseHTTPException],
 ) -> None:
     """Resource* names remain aliases of the canonical API errors."""
     assert legacy is canonical
-
-
-def test_http_client_error_alias() -> None:
-    """HTTPClientError remains an alias of APIError."""
-    assert HTTPClientError is ServerError

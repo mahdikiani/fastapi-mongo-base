@@ -25,8 +25,8 @@ class BaseHTTPException(HTTPException):
 
     def __init__(
         self,
-        status_code: int,
-        error_code: str,
+        status_code: int | None = None,
+        error_code: str | None = None,
         detail: str | None = None,
         message: dict | None = None,
         **kwargs: object,
@@ -42,8 +42,8 @@ class BaseHTTPException(HTTPException):
             **kwargs: Additional error data.
 
         """
-        self.status_code = status_code
-        self.error_code = error_code
+        self.status_code = status_code or self.status_code
+        self.error_code = error_code or self.error_code
         if message is None:
             if self.message_en and self.message_fa:
                 self.message = localized(self.message_en, self.message_fa)
@@ -55,4 +55,4 @@ class BaseHTTPException(HTTPException):
             self.message = message
         self.detail = detail or str(self.message.get("en"))
         self.data = kwargs
-        super().__init__(status_code, detail=detail)
+        super().__init__(self.status_code, detail=self.detail)

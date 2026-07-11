@@ -11,15 +11,15 @@ from .handlers import (
 )
 from .http import (
     AlreadyExistsError,
-    APIError,
+    BadRequestError,
     ConflictError,
     ForbiddenError,
     GoneError,
-    HTTPClientError,
     LockedError,
     NotFoundError,
     PaymentRequiredError,
     ServerError,
+    UnauthorizedError,
 )
 from .mongodb import (
     DocumentAlreadyExistsError,
@@ -55,9 +55,9 @@ from .responses import (
 __all__ = [
     "COMMON_ERROR_RESPONSES",
     "EXCEPTION_HANDLERS",
-    "APIError",
     "APIErrorResponseModel",
     "AlreadyExistsError",
+    "BadRequestError",
     "BaseHTTPException",
     "ConflictError",
     "DocumentAlreadyExistsError",
@@ -65,7 +65,6 @@ __all__ = [
     "DocumentNotFoundError",
     "ForbiddenError",
     "GoneError",
-    "HTTPClientError",
     "InternalErrorResponseModel",
     "LockedError",
     "MongoDBConnectionError",
@@ -84,6 +83,7 @@ __all__ = [
     "ResourceNotFoundError",
     "ResourcePaymentRequiredError",
     "ServerError",
+    "UnauthorizedError",
     "ValidationErrorResponseModel",
     "ValidationReason",
     "base_http_exception_handler",
