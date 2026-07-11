@@ -52,8 +52,6 @@ def health(request: fastapi.Request) -> dict[str, object]:
     """
     payload: dict[str, object] = {"status": "up"}
 
-    if request.app.version:
-        payload["version"] = request.app.version
     return payload
 
 
@@ -76,18 +74,12 @@ async def readiness(request: fastapi.Request) -> JSONResponse:
     checks: dict[str, str] = {}
     if datasources.get("mongodb"):
         checks["mongodb"] = await db.check_mongodb(mongo_client)
-    else:
-        checks["mongodb"] = "skipped"
 
     if datasources.get("redis"):
         checks["redis"] = await db.check_redis(redis_client)
-    else:
-        checks["redis"] = "skipped"
 
     if datasources.get("sql"):
         checks["sql"] = await db.check_sql(sql_session)
-    else:
-        checks["sql"] = "skipped"
 
     is_ready = "down" not in checks.values()
     payload: dict[str, object] = {
@@ -484,7 +476,7 @@ def configure_app(
     if health_route:
         app.get(f"{base_path}/health")(health)
     if readiness_route:
-        app.get(f"{base_path}/health/ready")(readiness)
+        app.get(f"{base_path}/ready")(readiness)
     if log_route:
         app.get(f"{base_path}/logs", include_in_schema=False)(logs)
     if index_route:
