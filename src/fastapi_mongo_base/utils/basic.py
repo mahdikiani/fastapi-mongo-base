@@ -351,6 +351,7 @@ def debug_mode_mock(
 
     Returns:
         A decorator that returns a mock response if debug is enabled.
+
     """
 
     def decorator(

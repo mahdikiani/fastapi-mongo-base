@@ -103,8 +103,11 @@ select = [
   "ERA", # remove commented code
   "RUF", # ruff-specific improvements
 ]
-per-file-ignores = { "tests/*" = ["G004", "S101", "ASYNC", "D", "ANN", "N806", "E501", "ERA001", "RUF029", "TRY300"], "server/db.py" = ["TRY"] }
 ignore = ["TRY003", "COM812", "B008", "D202", "D203", "D209", "D212", "D413"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+"server/db.py" = ["TRY"]
 
 [tool.ruff.format]
 quote-style = "double"

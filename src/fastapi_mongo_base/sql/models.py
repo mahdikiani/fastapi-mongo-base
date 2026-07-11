@@ -448,6 +448,7 @@ class TenantScopedEntity(BaseEntity):
 
         Returns:
             List of field names to exclude, including tenant_id.
+
         """
         return [*super().create_exclude_set(), "tenant_id"]
 
@@ -469,6 +470,7 @@ class TenantUserEntity(TenantScopedEntity, UserOwnedEntity):
 
         Returns:
             List of field names to exclude, including tenant_id and user_id.
+
         """
         return list({*super().create_exclude_set(), "tenant_id", "user_id"})
 
@@ -479,6 +481,7 @@ class TenantUserEntity(TenantScopedEntity, UserOwnedEntity):
 
         Returns:
             List of field names to exclude, including tenant_id and user_id.
+
         """
         return list({*super().update_exclude_set(), "tenant_id", "user_id"})
 
@@ -513,6 +516,7 @@ class TenantOwnedEntity(TenantScopedEntity, OwnedEntity):
 
         Returns:
             List of field names to exclude, including tenant_id and owner_id.
+
         """
         return list({*super().create_exclude_set(), "tenant_id", "owner_id"})
 
@@ -523,6 +527,7 @@ class TenantOwnedEntity(TenantScopedEntity, OwnedEntity):
 
         Returns:
             List of field names to exclude, including tenant_id and owner_id.
+
         """
         return list({*super().update_exclude_set(), "tenant_id", "owner_id"})
 

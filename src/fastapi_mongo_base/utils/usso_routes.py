@@ -64,6 +64,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
 
         Returns:
             The owner id to set on new items.
+
         """
         if self.get_owner_id_for_create is not None:
             return self.get_owner_id_for_create(user)
@@ -129,6 +130,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
                                  raise_exception is True.
             ForbiddenError: If the user is not authorized and
                             raise_exception is False.
+
         """
         if user is None:
             if raise_exception:
@@ -216,6 +218,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
 
         Raises:
             BaseHTTPException: If the user is not authorized to list the items.
+
         """
         user = await self.get_user(request)
         limit = max(1, min(limit, config.Settings.page_max_limit))
@@ -258,6 +261,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             BaseHTTPException: If the object is not found.
             ForbiddenError: If the user is not authorized
                             to retrieve the item.
+
         """
         user = await self.get_user(request)
         item = await self.get_item(
@@ -283,6 +287,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
 
         Raises:
             ForbiddenError: If the user is not authorized to create the item.
+
         """
         user = await self.get_user(request)
         if isinstance(data, BaseModel):
@@ -311,6 +316,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
         Raises:
             BaseHTTPException: If the object is not found.
             ForbiddenError: If the user is not authorized to update the item.
+
         """
         user = await self.get_user(request)
         if isinstance(data, BaseModel):
@@ -339,6 +345,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
         Raises:
             BaseHTTPException: If the object is not found.
             ForbiddenError: If the user is not authorized to delete the item.
+
         """
         user = await self.get_user(request)
         item = await self.get_item(
@@ -363,6 +370,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
 
         Returns:
             The items.
+
         """
         user = await self.get_user(request)
         owner_id = self._resolve_owner_id(user)
@@ -393,6 +401,7 @@ class AbstractTenantUSSORouter(AbstractUSSORouterBase):
         resource: The resource name.
         self_action: The action for owned resource (default "owner").
         self_access: Allow list access to own resources (default True).
+
     """
 
     owner_attr: str = "user_id"
@@ -417,6 +426,7 @@ class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
         workspace_only: When True, owner_id must be a workspace_id;
                         raises 400 if user has no workspace and no broad
                         resource scope (default False).
+
     """
 
     owner_attr: str = "owner_id"

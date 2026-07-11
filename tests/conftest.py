@@ -37,6 +37,7 @@ def mongo_client() -> Generator:
 
     Returns:
         AsyncMongoMockClient.
+
     """
     from mongomock_motor import AsyncMongoMockClient
 
@@ -53,6 +54,7 @@ async def init_db(mongo_client: object) -> None:
 
     Returns:
         None.
+
     """
     get_database = getattr(mongo_client, "get_database", None)
     if get_database is None:
@@ -87,6 +89,7 @@ async def db(mongo_client: object) -> AsyncGenerator[None]:
 
     Returns:
         None.
+
     """
     Settings.config_logger()
     logging.info("Initializing database")
@@ -109,6 +112,7 @@ async def client(
 
     Returns:
         AsyncClient.
+
     """
     from unittest.mock import AsyncMock, patch
 

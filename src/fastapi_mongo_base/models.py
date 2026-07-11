@@ -443,6 +443,7 @@ class BaseEntity(BaseEntitySchema, Document):
 
         Returns:
             Updated entity instance.
+
         """
         for key, value in data.items():
             if cls.update_field_set() and key not in cls.update_field_set():
@@ -468,6 +469,7 @@ class BaseEntity(BaseEntitySchema, Document):
 
         Returns:
             Deleted entity instance.
+
         """
         item.is_deleted = True
         await item.save()

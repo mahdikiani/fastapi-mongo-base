@@ -45,6 +45,7 @@ def test_resolve_owner_id_uses_workspace_id(router: _WorkspaceRouter) -> None:
 
     Returns:
         The owner ID.
+
     """
     user = UserData(
         sub="user-1",
@@ -66,6 +67,7 @@ def test_resolve_owner_id_raises_without_workspace_for_scoped_user(
 
     Returns:
         The owner ID.
+
     """
     user = UserData(
         sub="user-1",

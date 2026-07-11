@@ -20,6 +20,7 @@ class TestEntitySchema(BaseEntitySchema):
     Args:
         name: Name of the entity.
         number: Number of the entity.
+
     """
 
     name: str
@@ -36,6 +37,7 @@ class TestEntitySchema(BaseEntitySchema):
 
         Returns:
             Decimal value.
+
         """
         return bsontools.decimal_amount(v)
 
@@ -47,6 +49,7 @@ class TestEntity(TestEntitySchema, BaseEntity):
     Args:
         TestEntitySchema: Test entity schema.
         BaseEntity: Base entity.
+
     """
 
     pass
@@ -58,6 +61,7 @@ class TestRouter(AbstractBaseRouter):
 
     Args:
         prefix: Prefix of the router.
+
     """
 
     model = TestEntity
@@ -69,6 +73,7 @@ class TestRouter(AbstractBaseRouter):
 
         Args:
             prefix: Prefix of the router.
+
         """
         super().__init__(prefix="/test")
 
@@ -83,6 +88,7 @@ class Settings(config.Settings):
         base_dir: Directory of the project.
         base_path: Base path of the project.
         mongo_uri: URI of the MongoDB database.
+
     """
 
     project_name: str = "test"

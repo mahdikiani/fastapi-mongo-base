@@ -25,7 +25,6 @@ def as_page(
     limit: int = Settings.page_max_limit,
 ) -> PaginatedResponse:
     """Convert a list of items into a paginated response."""
-
     return PaginatedResponse(
         items=items,
         total_count=total_count or len(items),
@@ -67,6 +66,7 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
             prefix: URL prefix for routes.
             tags: OpenAPI tags for routes.
             **kwargs: Additional keyword arguments.
+
         """
         if model is None:
             if self.model is None:
@@ -590,6 +590,7 @@ class AbstractTaskRouter(AbstractBaseRouter):
 
         Args:
             **kwargs: Additional keyword arguments.
+
         """
         super().config_routes(**kwargs)
 
@@ -627,6 +628,7 @@ class AbstractTaskRouter(AbstractBaseRouter):
 
         Returns:
             Dictionary with statistics.
+
         """
         return await super().statistics(request)
 
@@ -648,6 +650,7 @@ class AbstractTaskRouter(AbstractBaseRouter):
 
         Returns:
             Created task entity instance.
+
         """
         if not self.draftable:
             data["task_status"] = "init"

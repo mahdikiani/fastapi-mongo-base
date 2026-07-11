@@ -16,6 +16,7 @@ async def test_empty(client: httpx.AsyncClient) -> None:
 
     Returns:
         None.
+
     """
     response = await client.get("/test")
     assert response.status_code == 200
@@ -32,6 +33,7 @@ async def test_create(client: httpx.AsyncClient) -> None:
 
     Returns:
         None.
+
     """
     response = await client.post("/test", json={"name": "test"})
     logging.info(response.json())
@@ -48,6 +50,7 @@ async def test_list(client: httpx.AsyncClient) -> None:
 
     Returns:
         None.
+
     """
     response = await client.get("/test")
     assert response.status_code == 200
@@ -69,6 +72,7 @@ async def test_update(client: httpx.AsyncClient) -> None:
 
     Returns:
         None.
+
     """
     response = await client.get("/test")
     assert response.status_code == 200
@@ -90,6 +94,7 @@ async def test_delete(client: httpx.AsyncClient) -> None:
 
     Returns:
         None.
+
     """
     response = await client.get("/test")
     assert response.status_code == 200

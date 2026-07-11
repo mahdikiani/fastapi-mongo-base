@@ -143,6 +143,7 @@ class ProjectSettings(BaseSettings):
 
         Returns:
             Dictionary with logging configuration.
+
         """
         resolved_format = log_format or getattr(cls, "log_format", "json")
 
@@ -274,6 +275,7 @@ class Settings(metaclass=Singleton):
 
         Returns:
             Dictionary with logging configuration.
+
         """
         return project_settings.get_log_config(
             console_level=console_level,

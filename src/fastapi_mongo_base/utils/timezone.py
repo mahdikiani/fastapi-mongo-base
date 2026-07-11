@@ -21,6 +21,7 @@ def iso_tz(dt: datetime, timezone: pytz.timezone = tz) -> str:
 
     Returns:
         The ISO string with the given timezone.
+
     """
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone)
@@ -39,6 +40,7 @@ def ensure_aware(dt: datetime, timezone: pytz.timezone = tz) -> datetime:
 
     Returns:
         The aware datetime object.
+
     """
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone)
@@ -54,6 +56,7 @@ def ensure_unaware(dt: datetime) -> datetime:
 
     Returns:
         The naive datetime object.
+
     """
     if dt.tzinfo is None:
         return dt
