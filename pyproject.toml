@@ -50,6 +50,8 @@ test = [
     "sqlalchemy>=2.0.43",
     "aiosqlite>=0.20.0",
     "greenlet>=3.0.0",
+    "prometheus-client>=0.25.0",
+    "redis>=8.0.0",
 ]
 monitoring = ["prometheus-client>=0.25.0"]
 prometheus = ["prometheus-client>=0.25.0"]
