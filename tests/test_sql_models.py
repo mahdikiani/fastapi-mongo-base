@@ -12,9 +12,9 @@ import pytest_asyncio
 pytest.importorskip("sqlalchemy")
 pytest.importorskip("aiosqlite")
 
-from sqlalchemy.orm import Mapped, mapped_column  # noqa: E402
+from sqlalchemy.orm import Mapped, mapped_column
 
-from src.fastapi_mongo_base.sql.models import (  # noqa: E402
+from src.fastapi_mongo_base.sql.models import (
     BaseEntity,
     ImmutableMixin,
     OwnedEntity,
@@ -23,7 +23,7 @@ from src.fastapi_mongo_base.sql.models import (  # noqa: E402
     TenantUserEntity,
     UserOwnedEntity,
 )
-from src.fastapi_mongo_base.utils import timezone  # noqa: E402
+from src.fastapi_mongo_base.utils import timezone
 
 # ── Concrete test subclasses ─────────────────────────────────────────────────
 
