@@ -13,6 +13,7 @@ __pycache__/
 .tox
 .cache
 .env
+uv.lock
 
 htmlcov/
 .pytest_cache/
