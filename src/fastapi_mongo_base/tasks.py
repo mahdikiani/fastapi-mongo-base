@@ -158,7 +158,30 @@ class TaskReferenceList(BaseModel):
                 ])
 
 
-class TaskMixin(BaseModel):
+class TaskCreateFieldsMixin(BaseModel):
+    """Common optional fields accepted when creating async tasks."""
+
+    user_id: str | None = Field(
+        None,
+        description="Target user id (omitted = authenticated user)",
+    )
+    webhook_url: str | None = Field(
+        None,
+        description="URL to notify when the task completes",
+    )
+    webhook_custom_headers: dict | None = Field(
+        None,
+        description="Custom headers to send in webhook requests",
+    )
+    meta_data: dict | None = Field(
+        None,
+        description=(
+            "Client metadata stored on the task and echoed in webhooks"
+        ),
+    )
+
+
+class TaskMixin(TaskCreateFieldsMixin):
     """Mixin class for entities with task processing capabilities."""
 
     task_status: TaskStatusEnum = TaskStatusEnum.draft
@@ -169,8 +192,6 @@ class TaskMixin(BaseModel):
     task_start_at: datetime | None = None
     task_end_at: datetime | None = None
     task_order_score: int = 0
-    webhook_custom_headers: dict | None = None
-    webhook_url: str | None = None
 
     @property
     def webhook_exclude_fields(self) -> set[str] | None:
