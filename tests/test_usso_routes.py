@@ -26,6 +26,8 @@ from src.fastapi_mongo_base.utils.usso_routes import (
     AbstractTenantUSSORouter,
 )
 
+_AUTH = "src.fastapi_mongo_base.utils.usso_routes.authorization"
+
 
 class _ItemSchema(BaseModel):
     uid: str = "item-1"
@@ -105,7 +107,7 @@ async def test_authorize_owner_authorization_short_circuit(
     """owner_authorization success skips scope checks."""
     user = UserData(sub="user-1", tenant_id="t1", scopes=[])
     with patch(
-        "src.fastapi_mongo_base.utils.usso_routes.authorization.owner_authorization",
+        f"{_AUTH}.owner_authorization",
         return_value=True,
     ):
         assert await tenant_router.authorize(action="read", user=user) is True
@@ -119,11 +121,11 @@ async def test_authorize_raises_forbidden_when_scopes_deny(
     user = UserData(sub="user-1", tenant_id="t1", scopes=["read:other"])
     with (
         patch(
-            "src.fastapi_mongo_base.utils.usso_routes.authorization.owner_authorization",
+            f"{_AUTH}.owner_authorization",
             return_value=False,
         ),
         patch(
-            "src.fastapi_mongo_base.utils.usso_routes.authorization.check_access",
+            f"{_AUTH}.check_access",
             return_value=False,
         ),
         pytest.raises(ForbiddenError),
@@ -139,11 +141,11 @@ async def test_authorize_returns_false_when_scopes_deny_and_no_raise(
     user = UserData(sub="user-1", tenant_id="t1", scopes=[])
     with (
         patch(
-            "src.fastapi_mongo_base.utils.usso_routes.authorization.owner_authorization",
+            f"{_AUTH}.owner_authorization",
             return_value=False,
         ),
         patch(
-            "src.fastapi_mongo_base.utils.usso_routes.authorization.check_access",
+            f"{_AUTH}.check_access",
             return_value=False,
         ),
     ):
@@ -164,11 +166,11 @@ def test_get_list_filter_queries_adds_owner_when_self_access(
     tenant_router.model.user_id = "user_id"
     with (
         patch(
-            "src.fastapi_mongo_base.utils.usso_routes.authorization.get_scope_filters",
+            f"{_AUTH}.get_scope_filters",
             return_value=[],
         ),
         patch(
-            "src.fastapi_mongo_base.utils.usso_routes.authorization.broadest_scope_filter",
+            f"{_AUTH}.broadest_scope_filter",
             side_effect=lambda scopes: scopes[0],
         ),
     ):
@@ -184,7 +186,7 @@ def test_get_list_filter_queries_denies_without_scopes(
     router.self_access = False
     user = UserData(sub="user-1", tenant_id="t1", scopes=[])
     with patch(
-        "src.fastapi_mongo_base.utils.usso_routes.authorization.get_scope_filters",
+        f"{_AUTH}.get_scope_filters",
         return_value=[],
     ):
         assert router.get_list_filter_queries(user=user) == {"__deny__": True}

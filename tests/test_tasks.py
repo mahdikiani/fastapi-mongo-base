@@ -125,10 +125,16 @@ class TestTaskLogRecord:
     def test_eq_equal(self) -> None:
         dt = datetime.now(timezone.tz)
         r1 = TaskLogRecord(
-            reported_at=dt, message="m", task_status=TaskStatusEnum.done, duration=5
+            reported_at=dt,
+            message="m",
+            task_status=TaskStatusEnum.done,
+            duration=5,
         )
         r2 = TaskLogRecord(
-            reported_at=dt, message="m", task_status=TaskStatusEnum.done, duration=5
+            reported_at=dt,
+            message="m",
+            task_status=TaskStatusEnum.done,
+            duration=5,
         )
         assert r1 == r2
 
@@ -144,10 +150,16 @@ class TestTaskLogRecord:
     def test_hash_equal_records(self) -> None:
         dt = datetime.now(timezone.tz)
         r1 = TaskLogRecord(
-            reported_at=dt, message="m", task_status=TaskStatusEnum.done, duration=5
+            reported_at=dt,
+            message="m",
+            task_status=TaskStatusEnum.done,
+            duration=5,
         )
         r2 = TaskLogRecord(
-            reported_at=dt, message="m", task_status=TaskStatusEnum.done, duration=5
+            reported_at=dt,
+            message="m",
+            task_status=TaskStatusEnum.done,
+            duration=5,
         )
         assert hash(r1) == hash(r2)
 
@@ -597,7 +609,10 @@ class TestTaskMixin:
     @pytest.mark.asyncio
     async def test_add_log_appends_and_emits(self) -> None:
         task = _SimpleTask()
-        record = TaskLogRecord(message="log me", task_status=TaskStatusEnum.draft)
+        record = TaskLogRecord(
+            message="log me",
+            task_status=TaskStatusEnum.draft,
+        )
 
         with patch.object(
             _SimpleTask, "save_and_emit", new_callable=AsyncMock
@@ -610,7 +625,10 @@ class TestTaskMixin:
     @pytest.mark.asyncio
     async def test_add_log_skips_emit_when_emit_false(self) -> None:
         task = _SimpleTask()
-        record = TaskLogRecord(message="silent", task_status=TaskStatusEnum.draft)
+        record = TaskLogRecord(
+            message="silent",
+            task_status=TaskStatusEnum.draft,
+        )
 
         with patch.object(
             _SimpleTask, "save_and_emit", new_callable=AsyncMock
@@ -627,7 +645,10 @@ class TestTaskMixin:
         task = _SimpleTask()
         assert task.task_references is None
 
-        with pytest.raises(NotImplementedError, match="Subclasses should implement"):
+        with pytest.raises(
+            NotImplementedError,
+            match="Subclasses should implement",
+        ):
             await task.start_processing()
 
     @pytest.mark.asyncio
