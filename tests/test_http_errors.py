@@ -4,11 +4,9 @@ import pytest
 from fastapi import HTTPException
 
 from src.fastapi_mongo_base.errors.base import BaseHTTPException
-from src.fastapi_mongo_base.errors.http import ServerError
 from src.fastapi_mongo_base.errors.resource import (
     AlreadyExistsError,
     ConflictError,
-    ForbiddenError,
     GoneError,
     LockedError,
     NotFoundError,
@@ -21,6 +19,23 @@ from src.fastapi_mongo_base.errors.resource import (
     ResourceNotFoundError,
     ResourcePaymentRequiredError,
 )
+from src.fastapi_mongo_base.errors.status import ForbiddenError, ServerError
+
+try:
+    from usso.exceptions import USSOException as _USSOException
+
+    _USSO_INSTALLED = True
+except ImportError:
+    _USSO_INSTALLED = False
+
+
+def _assert_http_error_base(exc_cls: type[BaseHTTPException]) -> None:
+    """Auth errors use USSO when installed; others extend BaseHTTPException."""
+    if _USSO_INSTALLED and exc_cls in {ForbiddenError}:
+        assert issubclass(exc_cls, _USSOException)
+        return
+    assert issubclass(exc_cls, BaseHTTPException)
+
 
 HTTP_ERROR_CASES = [
     pytest.param(
@@ -36,7 +51,7 @@ HTTP_ERROR_CASES = [
         404,
         "resource_not_found",
         "Resource not found",
-        "یافت نشد",
+        "نمونه یافت نشد",
         id="NotFoundError",
     ),
     pytest.param(
@@ -149,15 +164,16 @@ def test_api_error_detail_and_bilingual_message(
 def test_api_errors_inherit_from_api_error(
     exc_cls: type[BaseHTTPException],
 ) -> None:
-    """Every specialized API error extends APIError."""
-    assert issubclass(exc_cls, BaseHTTPException)
+    """Every specialized API error extends the shared HTTP error base."""
+    _assert_http_error_base(exc_cls)
 
 
 def test_api_error_inheritance() -> None:
     """API errors extend the shared HTTP exception hierarchy."""
     for exc_cls in ALL_HTTP_ERROR_CLASSES:
-        assert issubclass(exc_cls, BaseHTTPException)
-        assert issubclass(exc_cls, HTTPException)
+        _assert_http_error_base(exc_cls)
+        if not (_USSO_INSTALLED and exc_cls is ForbiddenError):
+            assert issubclass(exc_cls, HTTPException)
 
 
 @pytest.mark.parametrize(

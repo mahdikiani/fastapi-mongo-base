@@ -6,15 +6,21 @@ from collections.abc import Callable
 from fastapi import Request
 from pydantic import BaseModel
 
-from ..core import config, exceptions
+from ..core import config
+from ..errors.status import (
+    BadRequestError,
+    ForbiddenError,
+    NotFoundError,
+    UnauthorizedError,
+)
 from ..models import BaseEntity
 from ..routes import AbstractBaseRouter
 from ..schemas import PaginatedResponse
+from .usso.principals import is_service_user
 
 try:
     from usso import UserData, authorization
     from usso.config import APIHeaderConfig, AuthConfig
-    from usso.exceptions import PermissionDenied, USSOException
     from usso.integrations.fastapi import USSOAuthentication
 except ImportError as e:
     raise ImportError("USSO is not installed") from e
@@ -119,14 +125,14 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             True if the user is authorized, False otherwise.
 
         Raises:
-            USSOException: If the user is not authorized and
-                           raise_exception is True.
-            PermissionDenied: If the user is not authorized and
-                              raise_exception is False.
+            UnauthorizedError: If the user is not authorized and
+                                 raise_exception is True.
+            ForbiddenError: If the user is not authorized and
+                            raise_exception is False.
         """
         if user is None:
             if raise_exception:
-                raise USSOException(401, "unauthorized")
+                raise UnauthorizedError()
             return False
         owner_id = self._resolve_owner_id(user)
         if authorization.owner_authorization(
@@ -144,7 +150,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             filters=filter_data,
         ):
             if raise_exception:
-                raise PermissionDenied(
+                raise ForbiddenError(
                     detail=f"User {user.uid} is not authorized to "
                     f"{action} {self.resource_path}"
                 )
@@ -186,13 +192,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             **kwargs,
         )
         if item is None:
-            raise exceptions.BaseHTTPException(
-                status_code=404,
-                error_code="item_not_found",
-                message={
-                    "en": f"{self.model.__name__.capitalize()} not found"
-                },
-            )
+            raise NotFoundError()
         return item
 
     async def _list_items(
@@ -221,13 +221,8 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
         limit = max(1, min(limit, config.Settings.page_max_limit))
         filters = self.get_list_filter_queries(user=user)
         if filters.get("__deny__"):
-            raise exceptions.BaseHTTPException(
-                status_code=403,
-                error_code="forbidden",
-                message={
-                    "en": "You are not authorized to access this resource"
-                },
-            )
+            if kwargs.get("raise_exception", True):
+                raise ForbiddenError()
             return PaginatedResponse(
                 items=[], total=0, offset=offset, limit=limit
             )
@@ -261,8 +256,8 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
 
         Raises:
             BaseHTTPException: If the object is not found.
-            PermissionDenied: If the user is not authorized
-                              to retrieve the item.
+            ForbiddenError: If the user is not authorized
+                            to retrieve the item.
         """
         user = await self.get_user(request)
         item = await self.get_item(
@@ -287,7 +282,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             The item.
 
         Raises:
-            USSOException: If the user is not authorized to create the item.
+            ForbiddenError: If the user is not authorized to create the item.
         """
         user = await self.get_user(request)
         if isinstance(data, BaseModel):
@@ -315,7 +310,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
 
         Raises:
             BaseHTTPException: If the object is not found.
-            USSOException: If the user is not authorized to update the item.
+            ForbiddenError: If the user is not authorized to update the item.
         """
         user = await self.get_user(request)
         if isinstance(data, BaseModel):
@@ -343,7 +338,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
 
         Raises:
             BaseHTTPException: If the object is not found.
-            USSOException: If the user is not authorized to delete the item.
+            ForbiddenError: If the user is not authorized to delete the item.
         """
         user = await self.get_user(request)
         item = await self.get_item(
@@ -427,17 +422,23 @@ class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
     owner_attr: str = "owner_id"
     workspace_only: bool = False
 
-    get_owner_id: Callable[
-        [type["AbstractOwnedUSSORouter"], UserData], str
-    ] = lambda self, u: (
-        u.workspace_id
-        if self.workspace_only and u.claims.get("sub_type") != "agent"
-        else (u.workspace_id or u.user_id)
-    )
-
     get_owner_id_for_create: (
         Callable[[type["AbstractOwnedUSSORouter"], UserData], str] | None
     ) = None  # same as get_owner_id
+
+    def get_owner_id(self, user: UserData) -> str | None:
+        """
+        Resolve owner_id for workspace-scoped resources.
+
+        Service principals (agent, API key) may omit workspace_id; end users
+        on workspace-only resources must have a workspace unless they hold
+        a broad resource scope.
+        """
+        if is_service_user(user):
+            return user.workspace_id
+        if self.workspace_only:
+            return user.workspace_id
+        return user.workspace_id or user.user_id
 
     def _has_broad_resource_access(self, user: UserData) -> bool:
         """
@@ -453,20 +454,17 @@ class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
             filters=None,
         )
 
-    def _resolve_owner_id(self, user: UserData) -> str:
+    def _resolve_owner_id(self, user: UserData) -> str | None:
         """Resolve owner_id, raising a clear error if workspace is missing."""
         owner_id = self.get_owner_id(user)
         if (
             self.workspace_only
-            and user.claims.get("sub_type") != "agent"
+            and not is_service_user(user)
             and not owner_id
             and not self._has_broad_resource_access(user)
         ):
-            raise exceptions.BaseHTTPException(
-                status_code=400,
+            raise BadRequestError(
                 error_code="workspace_required",
-                message={
-                    "en": "User must belong to a workspace for this resource"
-                },
+                detail="User must belong to a workspace for this resource",
             )
         return owner_id

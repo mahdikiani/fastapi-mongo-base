@@ -4,6 +4,9 @@ import fastapi
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, ConfigDict, Field
 
+from . import status as _status_errors
+from .base import BaseHTTPException
+
 
 class APIErrorResponseModel(BaseModel):
     """Structured error response for BaseHTTPException handlers."""
@@ -43,47 +46,37 @@ class InternalErrorResponseModel(BaseModel):
     error: str = "Exception"
 
 
+def _status_error_descriptions() -> dict[int, str]:
+    """Map HTTP status codes to OpenAPI descriptions from status exceptions."""
+    descriptions: dict[int, set[str]] = {}
+    for name in dir(_status_errors):
+        exc_type = getattr(_status_errors, name)
+        if not (
+            isinstance(exc_type, type)
+            and issubclass(exc_type, BaseHTTPException)
+        ):
+            continue
+        code = exc_type.status_code
+        if not isinstance(code, int):
+            continue
+        label = exc_type.message_en or name
+        descriptions.setdefault(code, set()).add(label)
+    return {
+        code: " / ".join(sorted(labels))
+        for code, labels in descriptions.items()
+    }
+
+
 COMMON_ERROR_RESPONSES: dict[int, dict[str, object]] = {
-    400: {
+    code: {
         "model": APIErrorResponseModel,
-        "description": "Bad request",
-    },
-    401: {
-        "model": APIErrorResponseModel,
-        "description": "Unauthorized",
-    },
-    402: {
-        "model": APIErrorResponseModel,
-        "description": "Payment required",
-    },
-    403: {
-        "model": APIErrorResponseModel,
-        "description": "Forbidden",
-    },
-    404: {
-        "model": APIErrorResponseModel,
-        "description": "Not found",
-    },
-    409: {
-        "model": APIErrorResponseModel,
-        "description": "Conflict",
-    },
-    410: {
-        "model": APIErrorResponseModel,
-        "description": "Gone",
-    },
-    422: {
-        "model": ValidationErrorResponseModel,
-        "description": "Validation error",
-    },
-    423: {
-        "model": APIErrorResponseModel,
-        "description": "Locked",
-    },
-    500: {
-        "model": APIErrorResponseModel,
-        "description": "Internal server error",
-    },
+        "description": description,
+    }
+    for code, description in _status_error_descriptions().items()
+}
+COMMON_ERROR_RESPONSES[422] = {
+    "model": ValidationErrorResponseModel,
+    "description": "Validation error",
 }
 
 

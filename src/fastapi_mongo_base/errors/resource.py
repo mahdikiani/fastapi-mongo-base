@@ -1,6 +1,6 @@
 """Backward compatibility aliases for HTTP client errors."""
 
-from .http import (
+from .status import (
     AlreadyExistsError,
     ConflictError,
     ForbiddenError,

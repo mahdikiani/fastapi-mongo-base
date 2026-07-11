@@ -4,9 +4,13 @@ import pytest
 from pydantic import BaseModel
 
 try:
-    from usso.user import UserData
+    import usso  # noqa: F401
 except ImportError:
-    pytest.skip("usso not installed", allow_module_level=True)
+    from tests.helpers.usso_mock import install_usso_mock
+
+    install_usso_mock()
+
+from usso.user import UserData
 
 from src.fastapi_mongo_base.errors.base import BaseHTTPException
 from src.fastapi_mongo_base.utils.usso_routes import AbstractOwnedUSSORouter
@@ -72,6 +76,34 @@ def test_resolve_owner_id_raises_without_workspace_for_scoped_user(
     with pytest.raises(BaseHTTPException) as exc_info:
         router._resolve_owner_id(user)
     assert exc_info.value.error_code == "workspace_required"
+
+
+def test_resolve_owner_id_allows_agent_without_workspace(
+    router: _WorkspaceRouter,
+) -> None:
+    """Agent service principals skip workspace-only enforcement."""
+    user = UserData(
+        sub="agent-1",
+        tenant_id="tenant-1",
+        workspace_id=None,
+        scopes=["read:finance/accounting/wallet?workspace_id=ws-1"],
+        sub_type="agent",
+    )
+    assert router._resolve_owner_id(user) is None
+
+
+def test_resolve_owner_id_allows_api_key_without_workspace(
+    router: _WorkspaceRouter,
+) -> None:
+    """API key service principals skip workspace-only enforcement."""
+    user = UserData(
+        sub="service-1",
+        tenant_id="tenant-1",
+        workspace_id=None,
+        scopes=["read:finance/accounting/wallet?workspace_id=ws-1"],
+        sub_type="api_key",
+    )
+    assert router._resolve_owner_id(user) is None
 
 
 def test_resolve_owner_id_allows_admin_without_workspace(

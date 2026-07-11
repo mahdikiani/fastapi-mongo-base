@@ -1,7 +1,7 @@
 """Exceptions for the fastapi-mongo-base package."""
 
 from .base import BaseHTTPException
-from .http import (
+from .status import (
     AlreadyExistsError,
     BadRequestError,
     ConflictError,

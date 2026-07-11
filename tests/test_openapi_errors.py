@@ -2,13 +2,31 @@
 
 from fastapi.testclient import TestClient
 
+from src.fastapi_mongo_base.errors import status as status_errors
 from src.fastapi_mongo_base.errors.base import BaseHTTPException
 from src.fastapi_mongo_base.errors.responses import (
+    COMMON_ERROR_RESPONSES,
     APIErrorResponseModel,
     ValidationErrorResponseModel,
 )
 
 from .app.server import app as fastapi_app
+
+
+def test_common_error_responses_cover_status_exceptions() -> None:
+    """OpenAPI common responses include every status exception status code."""
+    expected_codes = {
+        exc_type.status_code
+        for name in dir(status_errors)
+        if isinstance(
+            (exc_type := getattr(status_errors, name)),
+            type,
+        )
+        and issubclass(exc_type, BaseHTTPException)
+        and isinstance(exc_type.status_code, int)
+    }
+    assert expected_codes <= set(COMMON_ERROR_RESPONSES)
+    assert COMMON_ERROR_RESPONSES[422]["model"] is ValidationErrorResponseModel
 
 
 def test_openapi_documents_error_schemas() -> None:

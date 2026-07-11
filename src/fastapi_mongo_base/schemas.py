@@ -103,6 +103,24 @@ class BaseEntitySchema(BaseModel):
         ])
 
 
+class OwnerOverrideCreateMixin(BaseModel):
+    """Optional user owner override on create payloads (service/admin)."""
+
+    user_id: str | None = Field(
+        None,
+        description="Target user id (omitted = authenticated user)",
+    )
+
+
+class OwnedOverrideCreateMixin(BaseModel):
+    """Optional owner override on create payloads (service/admin)."""
+
+    owner_id: str | None = Field(
+        None,
+        description="Target owner id (omitted = authenticated owner)",
+    )
+
+
 class UserOwnedEntitySchema(BaseEntitySchema):
     """Schema for entities owned by a user."""
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .base import BaseHTTPException
-from .http import (
+from .status import (
     AlreadyExistsError,
     NotFoundError,
 )

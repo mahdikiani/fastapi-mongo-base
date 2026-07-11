@@ -64,14 +64,12 @@ def test_select_localized_messages_filters_and_falls_back() -> None:
 
 def test_select_request_messages_uses_header() -> None:
     """Request helper reads Accept-Language from FastAPI request."""
-    request = Request(
-        {
-            "type": "http",
-            "headers": [(b"accept-language", b"fa-IR, en;q=0.5")],
-            "method": "GET",
-            "path": "/",
-        }
-    )
+    request = Request({
+        "type": "http",
+        "headers": [(b"accept-language", b"fa-IR, en;q=0.5")],
+        "method": "GET",
+        "path": "/",
+    })
 
     selected = select_request_messages(
         request,
