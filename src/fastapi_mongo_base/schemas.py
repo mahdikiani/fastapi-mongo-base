@@ -195,7 +195,11 @@ class PaginatedResponse(BaseModel, Generic[TSchema]):
 
 
 class MultiLanguageString(BaseModel):
-    """Model for multi-language string fields."""
+    """Localized string with default API locales."""
 
     en: str
     fa: str
+
+    def to_localized(self) -> dict[str, str]:
+        """Return locale-keyed values for API responses."""
+        return {"en": self.en, "fa": self.fa}

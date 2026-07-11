@@ -13,6 +13,10 @@ from fastapi.exceptions import (
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
+from ..i18n import (
+    VALIDATION_ERROR_MESSAGE,
+    select_request_messages,
+)
 from .base import BaseHTTPException
 from .mongodb import (
     convert_pymongo_error,
@@ -44,16 +48,7 @@ def base_http_exception_handler(
     """
     logging.debug("base_http_exception_handler: %s\n%s", request.url, exc)
 
-    if request.headers.get("accept-language"):
-        locales = request.headers.get("accept-language").split(",")
-        msg = {}
-        for locale in locales:
-            lang = locale.split("-")[0]
-            if lang in exc.message:
-                msg[lang] = exc.message.get(lang)
-        message = msg
-    else:
-        message = exc.message
+    message = select_request_messages(request, exc.message)
 
     content = APIErrorResponseModel(
         message=message,
@@ -65,19 +60,7 @@ def base_http_exception_handler(
 
 
 def _resolve_validation_message(request: Request) -> dict[str, str]:
-    message = {
-        "en": "Validation error",
-        "fa": "اطلاعات وارد شده صحیح نیست",
-    }
-    if request.headers.get("accept-language"):
-        locales = request.headers.get("accept-language").split(",")
-        filtered_message = {}
-        for locale in locales:
-            lang = locale.split("-")[0]
-            if lang in message:
-                filtered_message[lang] = message[lang]
-        return filtered_message or message
-    return message
+    return select_request_messages(request, VALIDATION_ERROR_MESSAGE)
 
 
 def _format_validation_reasons(errors: list[dict]) -> list[dict]:

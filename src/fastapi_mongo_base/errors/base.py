@@ -2,6 +2,8 @@
 
 from fastapi.exceptions import HTTPException
 
+from ..i18n import localized
+
 
 class BaseHTTPException(HTTPException):
     """
@@ -44,14 +46,9 @@ class BaseHTTPException(HTTPException):
         self.error_code = error_code
         if message is None:
             if self.message_en and self.message_fa:
-                self.message = {
-                    "en": self.message_en,
-                    "fa": self.message_fa,
-                }
+                self.message = localized(self.message_en, self.message_fa)
             else:
-                self.message = {
-                    "en": detail,
-                }
+                self.message = localized(detail or self.message_en)
         else:
             if isinstance(message, str):
                 message = {"en": message}
