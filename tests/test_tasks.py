@@ -121,17 +121,13 @@ class TestTaskLogRecord:
 
     def test_defaults(self) -> None:
         """Test defaults."""
-        record = TaskLogRecord(
-            message="test", task_status=TaskStatusEnum.init
-        )
+        record = TaskLogRecord(message="test", task_status=TaskStatusEnum.init)
         assert record.duration == 0
         assert record.log_type is None
 
     def test_reported_at_has_timezone(self) -> None:
         """Test reported_at has timezone."""
-        record = TaskLogRecord(
-            message="now", task_status=TaskStatusEnum.draft
-        )
+        record = TaskLogRecord(message="now", task_status=TaskStatusEnum.draft)
         assert record.reported_at.tzinfo is not None
 
     def test_eq_equal(self) -> None:
@@ -475,6 +471,7 @@ class TestTaskMixin:
 
     def test_add_signal_appends_handler(self) -> None:
         """Test add_signal appends handler."""
+
         async def handler(instance: object) -> None:
             pass
 
@@ -517,9 +514,7 @@ class TestTaskMixin:
             patch.object(
                 _SimpleTask, "save", new_callable=AsyncMock, create=True
             ),
-            patch.object(
-                _SimpleTask, "save_report", new_callable=AsyncMock
-            ),
+            patch.object(_SimpleTask, "save_report", new_callable=AsyncMock),
         ):
             mock_post.return_value = mock_response
             await _SimpleTask.emit_signals(task)
@@ -554,9 +549,7 @@ class TestTaskMixin:
             patch.object(
                 _SimpleTask, "save", new_callable=AsyncMock, create=True
             ),
-            patch.object(
-                _SimpleTask, "save_report", new_callable=AsyncMock
-            ),
+            patch.object(_SimpleTask, "save_report", new_callable=AsyncMock),
         ):
             mock_post.return_value = mock_response
             await _SimpleTask.emit_signals(task)
@@ -584,9 +577,7 @@ class TestTaskMixin:
             patch.object(
                 _SimpleTask, "save", new_callable=AsyncMock, create=True
             ),
-            patch.object(
-                _SimpleTask, "save_report", new_callable=AsyncMock
-            ),
+            patch.object(_SimpleTask, "save_report", new_callable=AsyncMock),
         ):
             await _SimpleTask.emit_signals(task)
 
@@ -621,9 +612,7 @@ class TestTaskMixin:
         task = _SimpleTask()
         assert task.task_references is None
 
-        with patch.object(
-            _SimpleTask, "add_log", new_callable=AsyncMock
-        ):
+        with patch.object(_SimpleTask, "add_log", new_callable=AsyncMock):
             await task.add_reference(task_id="ref-1")
 
         assert task.task_references is not None
@@ -640,9 +629,7 @@ class TestTaskMixin:
             tasks=[TaskReference(task_id="existing", task_type="Other")]
         )
 
-        with patch.object(
-            _SimpleTask, "add_log", new_callable=AsyncMock
-        ):
+        with patch.object(_SimpleTask, "add_log", new_callable=AsyncMock):
             await task.add_reference(task_id="new-ref")
 
         assert len(task.task_references.tasks) == 2
@@ -800,12 +787,8 @@ class TestTaskMixin:
         task = _SimpleTask()
 
         with (
-            patch.object(
-                _SimpleTask, "save_and_emit", new_callable=AsyncMock
-            ),
-            patch.object(
-                _SimpleTask, "add_log", new_callable=AsyncMock
-            ),
+            patch.object(_SimpleTask, "save_and_emit", new_callable=AsyncMock),
+            patch.object(_SimpleTask, "add_log", new_callable=AsyncMock),
         ):
             await task.update_and_emit(
                 task_status=TaskStatusEnum.processing,
@@ -823,12 +806,8 @@ class TestTaskMixin:
         task = _SimpleTask()
 
         with (
-            patch.object(
-                _SimpleTask, "save_and_emit", new_callable=AsyncMock
-            ),
-            patch.object(
-                _SimpleTask, "add_log", new_callable=AsyncMock
-            ),
+            patch.object(_SimpleTask, "save_and_emit", new_callable=AsyncMock),
+            patch.object(_SimpleTask, "add_log", new_callable=AsyncMock),
         ):
             await task.update_and_emit(task_status=TaskStatusEnum.done)
 
@@ -842,12 +821,8 @@ class TestTaskMixin:
         task = _SimpleTask()
 
         with (
-            patch.object(
-                _SimpleTask, "save_and_emit", new_callable=AsyncMock
-            ),
-            patch.object(
-                _SimpleTask, "add_log", new_callable=AsyncMock
-            ),
+            patch.object(_SimpleTask, "save_and_emit", new_callable=AsyncMock),
+            patch.object(_SimpleTask, "add_log", new_callable=AsyncMock),
         ):
             await task.update_and_emit(
                 task_status=TaskStatusEnum.error,
@@ -889,9 +864,7 @@ class TestTaskMixin:
             patch.object(
                 _SimpleTask, "save_and_emit", new_callable=AsyncMock
             ) as mock_sae,
-            patch.object(
-                _SimpleTask, "add_log", new_callable=AsyncMock
-            ),
+            patch.object(_SimpleTask, "add_log", new_callable=AsyncMock),
         ):
             await task.update_and_emit(task_status=TaskStatusEnum.paused)
 
