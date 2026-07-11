@@ -1,11 +1,16 @@
 """Tests for MongoDB pool monitoring metrics."""
 
+import importlib.util
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
 
-pytest.importorskip("prometheus_client")
+if importlib.util.find_spec("prometheus_client") is None:
+    pytest.skip(
+        "prometheus_client is required for monitoring tests",
+        allow_module_level=True,
+    )
 
 from src.fastapi_mongo_base.monitoring import mongo as mongo_metrics
 from src.fastapi_mongo_base.monitoring.mongo import DatabasePoolMonitor
