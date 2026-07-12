@@ -24,16 +24,29 @@ def _is_configured_uri(value: str | None) -> bool:
 def _use_mongodb(settings: config.Settings | None) -> bool:
     if settings is None:
         return False
+    try:
+        import beanie  # noqa: F401
+    except ImportError:
+        return False
     return _is_configured_uri(getattr(settings, "mongo_uri", None))
 
 
 def _use_redis(settings: config.Settings | None) -> bool:
     if settings is None:
         return False
+    try:
+        import redis  # noqa: F401
+    except ImportError:
+        return False
     return _is_configured_uri(getattr(settings, "redis_uri", None))
 
 
 def _use_sql(settings: config.Settings | None) -> bool:
+    try:
+        import sqlalchemy  # noqa: F401
+    except ImportError:
+        return False
+
     if settings is None:
         return False
     return _is_configured_uri(getattr(settings, "database_uri", None))
