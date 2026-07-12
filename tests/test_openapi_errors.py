@@ -63,6 +63,11 @@ def test_openapi_error_models_match_handler_output() -> None:
     assert validation_schema["properties"]["error_code"]["default"] == (
         "validation_error"
     )
+    detail_schema = validation_schema["properties"]["detail"]
+    assert "type" not in detail_schema or detail_schema["type"] != "null"
+    assert "anyOf" in detail_schema
+    assert {"type": "string"} in detail_schema["anyOf"]
+    assert {"type": "null"} in detail_schema["anyOf"]
 
 
 def test_runtime_validation_error_matches_openapi_schema() -> None:

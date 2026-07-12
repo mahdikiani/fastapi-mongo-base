@@ -35,7 +35,7 @@ class ValidationErrorResponseModel(BaseModel):
 
     message: dict[str, str]
     error_code: str = "validation_error"
-    detail: None = None
+    detail: str | None = None
     reasons: list[ValidationReason] = Field(default_factory=list)
 
 
