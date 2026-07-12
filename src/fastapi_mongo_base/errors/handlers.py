@@ -77,7 +77,7 @@ def _format_validation_reasons(errors: list[dict]) -> list[dict]:
 def _validation_error_response(
     request: Request,
     errors: list[dict],
-    status_code: int = 422,
+    status_code: int,
 ) -> JSONResponse:
     content = ValidationErrorResponseModel(
         message=_resolve_validation_message(request),
@@ -85,7 +85,7 @@ def _validation_error_response(
             ValidationReason(**reason)
             for reason in _format_validation_reasons(errors)
         ],
-    ).model_dump()
+    ).model_dump(mode="json")
     return JSONResponse(status_code=status_code, content=content)
 
 
@@ -143,7 +143,7 @@ async def request_validation_exception_handler(
         dict(request.headers),
     )
 
-    return _validation_error_response(request, exc.errors())
+    return _validation_error_response(request, exc.errors(), 422)
 
 
 def mongodb_exception_handler(
@@ -196,12 +196,14 @@ def general_exception_handler(
             logging.exception("Redis error on %s", request.url)
             content = InternalErrorResponseModel(
                 message="A Redis error occurred",
-            ).model_dump()
+            ).model_dump(mode="json")
             return JSONResponse(status_code=503, content=content)
     except ImportError:
         pass
 
-    content = InternalErrorResponseModel(message=str(exc)).model_dump()
+    content = InternalErrorResponseModel(message=str(exc)).model_dump(
+        mode="json"
+    )
     return JSONResponse(status_code=500, content=content)
 
 
