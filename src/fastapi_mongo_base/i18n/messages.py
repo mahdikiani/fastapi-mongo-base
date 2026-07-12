@@ -75,7 +75,7 @@ def resolve_request_locales(request: "Request") -> list[str]:
 
 
 def select_request_messages(
-    request: Request, messages: LocalizedMessage
+    request: "Request", messages: LocalizedMessage
 ) -> LocalizedMessage:
     """Select localized messages based on request Accept-Language."""
     return select_localized_messages(
