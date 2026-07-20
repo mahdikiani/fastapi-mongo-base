@@ -14,6 +14,7 @@ from singleton import Singleton
 from typing_extensions import Self
 
 from .schemas import BaseEntitySchema
+from .i18n.timezone import serialize_response_datetime
 from .utils import basic, timezone
 
 
@@ -85,6 +86,11 @@ class TaskLogRecord(BaseModel):
             self.task_status,
             self.duration,
         ))
+
+    @field_serializer("reported_at", when_used="json")
+    def serialize_reported_at(self, dt: datetime) -> str:
+        """Serialize log timestamps in the request timezone."""
+        return serialize_response_datetime(dt)
 
 
 class TaskReference(BaseModel):
@@ -239,6 +245,16 @@ class TaskMixin(TaskCreateFieldsMixin):
         if isinstance(value, TaskStatusEnum):
             return value.value
         return value
+
+    @field_serializer("task_start_at", "task_end_at", when_used="json")
+    def serialize_task_datetimes(
+        self,
+        dt: datetime | None,
+    ) -> str | None:
+        """Serialize task timestamps in the request timezone."""
+        if dt is None:
+            return None
+        return serialize_response_datetime(dt)
 
     @classmethod
     def signals(cls) -> list[basic.FunctionOrCoroutine]:

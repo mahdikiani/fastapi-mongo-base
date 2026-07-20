@@ -24,8 +24,11 @@ from .schemas import (
     OwnedEntitySchema,
     TenantOwnedEntitySchema,
     TenantScopedEntitySchema,
+    TenantSubjectEntitySchema,
     TenantUserEntitySchema,
+    TenantWorkspaceEntitySchema,
     UserOwnedEntitySchema,
+    WorkspaceOwnedEntitySchema,
 )
 from .utils import basic, timezone
 
@@ -730,11 +733,149 @@ class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
         )
 
 
+class WorkspaceOwnedEntity(WorkspaceOwnedEntitySchema, BaseEntity):
+    """Base entity class for workspace-owned resources."""
+
+    class Settings(BaseEntity.Settings):
+        """Beanie document settings with workspace_id index."""
+
+        __abstract__ = True
+
+        indexes: ClassVar[list[IndexModel]] = [
+            *BaseEntity.Settings.indexes,
+            IndexModel([
+                ("workspace_id", ASCENDING),
+                ("uid", ASCENDING),
+                ("is_deleted", ASCENDING),
+            ]),
+        ]
+
+    @classmethod
+    async def get_item(
+        cls,
+        uid: str,
+        *,
+        workspace_id: str | None = None,
+        ignore_workspace_id: bool = False,
+        **kwargs: object,
+    ) -> Self | None:
+        """Get an item by UID and workspace ID."""
+        if workspace_id is None and not ignore_workspace_id:
+            raise ValueError("workspace_id is required")
+        return cast(
+            Self | None,
+            await super().get_item(
+                uid=uid,
+                workspace_id=workspace_id,
+                **kwargs,
+            ),
+        )
+
+
+class TenantWorkspaceEntity(TenantWorkspaceEntitySchema, BaseEntity):
+    """Base entity for tenant + workspace scoped resources."""
+
+    class Settings(TenantScopedEntity.Settings):
+        """Beanie indexes for tenant_id and workspace_id."""
+
+        __abstract__ = True
+
+        indexes: ClassVar[list[IndexModel]] = [
+            *WorkspaceOwnedEntity.Settings.indexes,
+            IndexModel([
+                ("tenant_id", ASCENDING),
+                ("workspace_id", ASCENDING),
+                ("uid", ASCENDING),
+                ("is_deleted", ASCENDING),
+            ]),
+        ]
+
+    @classmethod
+    async def get_item(
+        cls,
+        uid: str,
+        *,
+        tenant_id: str,
+        workspace_id: str | None = None,
+        ignore_workspace_id: bool = False,
+        **kwargs: object,
+    ) -> Self | None:
+        """Get an item by UID, tenant ID, and workspace ID."""
+        if tenant_id is None:
+            raise ValueError("tenant_id is required")
+        if workspace_id is None and not ignore_workspace_id:
+            raise ValueError("workspace_id is required")
+        return cast(
+            Self | None,
+            await super().get_item(
+                uid=uid,
+                tenant_id=tenant_id,
+                workspace_id=workspace_id,
+                **kwargs,
+            ),
+        )
+
+
+class TenantSubjectEntity(TenantSubjectEntitySchema, BaseEntity):
+    """Base entity for tenant resources with user XOR workspace ownership."""
+
+    class Settings(TenantScopedEntity.Settings):
+        """Beanie indexes for tenant and subject fields."""
+
+        __abstract__ = True
+
+        indexes: ClassVar[list[IndexModel]] = [
+            *TenantScopedEntity.Settings.indexes,
+            IndexModel([
+                ("tenant_id", ASCENDING),
+                ("user_id", ASCENDING),
+                ("uid", ASCENDING),
+                ("is_deleted", ASCENDING),
+            ]),
+            IndexModel([
+                ("tenant_id", ASCENDING),
+                ("workspace_id", ASCENDING),
+                ("uid", ASCENDING),
+                ("is_deleted", ASCENDING),
+            ]),
+        ]
+
+    @classmethod
+    async def get_item(
+        cls,
+        uid: str,
+        *,
+        tenant_id: str,
+        user_id: str | None = None,
+        workspace_id: str | None = None,
+        ignore_subject: bool = False,
+        **kwargs: object,
+    ) -> Self | None:
+        """Get an item by UID, tenant, and subject id."""
+        if tenant_id is None:
+            raise ValueError("tenant_id is required")
+        if not ignore_subject and user_id is None and workspace_id is None:
+            raise ValueError("user_id or workspace_id is required")
+        return cast(
+            Self | None,
+            await super().get_item(
+                uid=uid,
+                tenant_id=tenant_id,
+                user_id=user_id,
+                workspace_id=workspace_id,
+                **kwargs,
+            ),
+        )
+
+
 class TenantOwnedEntity(TenantOwnedEntitySchema, BaseEntity):
     """
     Base entity class for tenant-owned resources.
 
     Automatically filters queries by both tenant_id and owner_id.
+
+    .. deprecated::
+        Prefer :class:`TenantWorkspaceEntity` or :class:`TenantSubjectEntity`.
     """
 
     class Settings(TenantScopedEntity.Settings):

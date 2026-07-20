@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from .core.config import Settings
 from .errors.base import BaseHTTPException
 from .errors.responses import COMMON_ERROR_RESPONSES
+from .i18n.timezone import apply_user_timezone
 from .models import BaseEntity
 from .schemas import BaseEntitySchema, PaginatedResponse
 from .tasks import TaskStatusEnum
@@ -295,8 +296,11 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         if self.user_dependency is None:
             return None
         if inspect.iscoroutinefunction(self.user_dependency):
-            return await self.user_dependency(request)
-        return self.user_dependency(request)
+            user = await self.user_dependency(request)
+        else:
+            user = self.user_dependency(request)
+        apply_user_timezone(request, user)
+        return user
 
     async def get_user_id(
         self, request: Request, **kwargs: object

@@ -504,6 +504,79 @@ class OwnedEntity(BaseEntity):
         return [*super().update_exclude_set(), "owner_id"]
 
 
+class WorkspaceOwnedEntity(BaseEntity):
+    """Base entity class for workspace-owned SQL resources."""
+
+    __abstract__ = True
+
+    workspace_id: Mapped[str] = mapped_column(index=True)
+
+    @classmethod
+    def create_exclude_set(cls) -> list[str]:
+        """Get fields to exclude during creation, including workspace_id."""
+        return [*super().create_exclude_set(), "workspace_id"]
+
+    @classmethod
+    def update_exclude_set(cls) -> list[str]:
+        """Get fields to exclude during update, including workspace_id."""
+        return [*super().update_exclude_set(), "workspace_id"]
+
+
+class TenantWorkspaceEntity(TenantScopedEntity, WorkspaceOwnedEntity):
+    """Base entity class for tenant + workspace scoped SQL resources."""
+
+    __abstract__ = True
+
+    @classmethod
+    def create_exclude_set(cls) -> list[str]:
+        """Exclude tenant_id and workspace_id on create."""
+        return list({
+            *super().create_exclude_set(),
+            "tenant_id",
+            "workspace_id",
+        })
+
+    @classmethod
+    def update_exclude_set(cls) -> list[str]:
+        """Exclude tenant_id and workspace_id on update."""
+        return list({
+            *super().update_exclude_set(),
+            "tenant_id",
+            "workspace_id",
+        })
+
+
+class TenantSubjectEntity(TenantScopedEntity):
+    """SQL base for tenant resources with user XOR workspace ownership."""
+
+    __abstract__ = True
+
+    user_id: Mapped[str | None] = mapped_column(index=True, nullable=True)
+    workspace_id: Mapped[str | None] = mapped_column(
+        index=True, nullable=True
+    )
+
+    @classmethod
+    def create_exclude_set(cls) -> list[str]:
+        """Exclude tenant and subject fields on create."""
+        return list({
+            *super().create_exclude_set(),
+            "tenant_id",
+            "user_id",
+            "workspace_id",
+        })
+
+    @classmethod
+    def update_exclude_set(cls) -> list[str]:
+        """Exclude tenant and subject fields on update."""
+        return list({
+            *super().update_exclude_set(),
+            "tenant_id",
+            "user_id",
+            "workspace_id",
+        })
+
+
 class TenantOwnedEntity(TenantScopedEntity, OwnedEntity):
     """Base entity class for tenant-owned SQL resources."""
 

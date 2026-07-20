@@ -13,6 +13,7 @@ from ..errors.status import (
     NotFoundError,
     UnauthorizedError,
 )
+from ..i18n.timezone import apply_user_timezone
 from ..models import BaseEntity
 from ..routes import AbstractBaseRouter
 from ..schemas import PaginatedResponse
@@ -102,7 +103,9 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             ),
             from_usso_base_url=usso_base_url,
         )
-        return usso(request)
+        user = usso(request)
+        apply_user_timezone(request, user)
+        return user
 
     async def authorize(
         self,
@@ -478,3 +481,43 @@ class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
                 detail="User must belong to a workspace for this resource",
             )
         return owner_id
+
+
+class AbstractWorkspaceUSSORouter(AbstractUSSORouterBase):
+    """
+    USSO router where resources are scoped by workspace_id.
+
+    Requires JWT ``workspace_id`` for end users unless they hold a broad
+    resource scope or are a service principal.
+    """
+
+    owner_attr: str = "workspace_id"
+
+    def get_owner_id(self, user: UserData) -> str | None:
+        """Resolve workspace_id from the authenticated user."""
+        if is_service_user(user):
+            return user.workspace_id
+        return user.workspace_id
+
+    def _has_broad_resource_access(self, user: UserData) -> bool:
+        """Return True for unfiltered scope on this resource."""
+        return authorization.check_access(
+            user_scopes=user.scopes or [],
+            resource_path=self.resource_path,
+            action="read",
+            filters=None,
+        )
+
+    def _resolve_owner_id(self, user: UserData) -> str | None:
+        """Resolve workspace_id, raising if missing for scoped users."""
+        workspace_id = self.get_owner_id(user)
+        if (
+            not is_service_user(user)
+            and not workspace_id
+            and not self._has_broad_resource_access(user)
+        ):
+            raise BadRequestError(
+                error_code="workspace_required",
+                detail="User must belong to a workspace for this resource",
+            )
+        return workspace_id

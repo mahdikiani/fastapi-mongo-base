@@ -228,18 +228,28 @@ def setup_exception_handlers(
 
 
 def setup_middlewares(
-    *, app: fastapi.FastAPI, origins: list | None = None, **kwargs: object
+    *,
+    app: fastapi.FastAPI,
+    origins: list | None = None,
+    timezone_middleware: bool = True,
+    **kwargs: object,
 ) -> None:
     """
-    Configure CORS middleware for the FastAPI application.
+    Configure middleware for the FastAPI application.
 
     Args:
         app: FastAPI application instance.
         origins: Optional list of allowed CORS origins.
+        timezone_middleware: Whether to enable request timezone middleware.
         **kwargs: Additional keyword arguments.
 
     """
     from fastapi.middleware.cors import CORSMiddleware
+
+    if timezone_middleware:
+        from ..middlewares.timezone import TimezoneMiddleware
+
+        app.add_middleware(TimezoneMiddleware)
 
     if origins:
         app.add_middleware(

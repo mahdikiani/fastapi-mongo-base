@@ -4,10 +4,11 @@ from datetime import datetime
 from typing import Generic, TypeVar
 
 import uuid6
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, model_validator
 from typing_extensions import Self
 
 from .core.config import Settings
+from .i18n.timezone import serialize_response_datetime
 from .utils import timezone
 
 
@@ -39,6 +40,11 @@ class BaseEntitySchema(BaseModel):
     )
 
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
+
+    @field_serializer("created_at", "updated_at", when_used="json")
+    def serialize_datetimes(self, dt: datetime) -> str:
+        """Serialize entity timestamps in the request timezone."""
+        return serialize_response_datetime(dt)
 
     def __hash__(self) -> int:
         """Compute hash based on serialized model."""
@@ -121,6 +127,15 @@ class OwnedOverrideCreateMixin(BaseModel):
     )
 
 
+class WorkspaceOverrideCreateMixin(BaseModel):
+    """Optional workspace override on create payloads (service/admin)."""
+
+    workspace_id: str | None = Field(
+        None,
+        description="Target workspace id (omitted = authenticated workspace)",
+    )
+
+
 class UserOwnedEntitySchema(BaseEntitySchema):
     """Schema for entities owned by a user."""
 
@@ -163,8 +178,68 @@ class TenantUserEntitySchema(TenantScopedEntitySchema, UserOwnedEntitySchema):
         return list({*super().update_exclude_set(), "tenant_id", "user_id"})
 
 
+class WorkspaceOwnedEntitySchema(BaseEntitySchema):
+    """Schema for entities owned by a workspace."""
+
+    workspace_id: str
+
+    @classmethod
+    def update_exclude_set(cls) -> list[str]:
+        """Fields excluded on update for workspace-owned entities."""
+        return [*super().update_exclude_set(), "workspace_id"]
+
+
+class TenantWorkspaceEntitySchema(
+    TenantScopedEntitySchema, WorkspaceOwnedEntitySchema
+):
+    """Schema for entities scoped to tenant and workspace."""
+
+    @classmethod
+    def update_exclude_set(cls) -> list[str]:
+        """Fields excluded on update for tenant-workspace entities."""
+        return list({
+            *super().update_exclude_set(),
+            "tenant_id",
+            "workspace_id",
+        })
+
+
+class TenantSubjectEntitySchema(TenantScopedEntitySchema):
+    """Tenant resource owned by exactly one of user or workspace."""
+
+    user_id: str | None = None
+    workspace_id: str | None = None
+
+    @model_validator(mode="after")
+    def validate_subject_xor(self) -> Self:
+        """Require exactly one of user_id or workspace_id."""
+        has_user = self.user_id is not None
+        has_workspace = self.workspace_id is not None
+        if has_user == has_workspace:
+            msg = "Exactly one of user_id or workspace_id must be set"
+            raise ValueError(msg)
+        return self
+
+    @classmethod
+    def update_exclude_set(cls) -> list[str]:
+        """Fields excluded on update for tenant-subject entities."""
+        return list({
+            *super().update_exclude_set(),
+            "tenant_id",
+            "user_id",
+            "workspace_id",
+        })
+
+
 class TenantOwnedEntitySchema(TenantScopedEntitySchema, OwnedEntitySchema):
-    """Schema for entities scoped to both tenant and owned by an entity."""
+    """
+    Schema for entities scoped to both tenant and owned by an entity.
+
+    .. deprecated::
+        Use :class:`TenantWorkspaceEntitySchema` or
+        :class:`TenantSubjectEntitySchema` instead. ``owner_id`` is ambiguous
+        (user vs workspace vs tenant).
+    """
 
     @classmethod
     def update_exclude_set(cls) -> list[str]:
