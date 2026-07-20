@@ -552,9 +552,7 @@ class TenantSubjectEntity(TenantScopedEntity):
     __abstract__ = True
 
     user_id: Mapped[str | None] = mapped_column(index=True, nullable=True)
-    workspace_id: Mapped[str | None] = mapped_column(
-        index=True, nullable=True
-    )
+    workspace_id: Mapped[str | None] = mapped_column(index=True, nullable=True)
 
     @classmethod
     def create_exclude_set(cls) -> list[str]:

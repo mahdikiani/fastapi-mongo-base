@@ -78,7 +78,7 @@ preview = true
 [tool.ruff.lint]
 select = [
   "F",     # Pyflakes: critical errors and unused code
-  "E",
+  "E",     # Ruff: errors
   "W",     # PEP8: formatting issues
   "I",     # isort: import sorting
   "UP",    # pyupgrade: modern syntax
@@ -100,8 +100,8 @@ select = [
   "ISC",   # implicit string concatenation
   "G",     # misuse of logging string interpolation
   "D",     # docstrings: docstring checking
-  "ERA", # remove commented code
-  "RUF", # ruff-specific improvements
+  "ERA",   # remove commented code
+  "RUF",   # ruff-specific improvements
 ]
 ignore = ["TRY003", "COM812", "B008", "D202", "D203", "D209", "D212", "D413"]
 
