@@ -4,7 +4,13 @@ from datetime import datetime
 from typing import Generic, TypeVar
 
 import uuid6
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    model_validator,
+)
 from typing_extensions import Self
 
 from .core.config import Settings

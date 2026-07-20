@@ -13,8 +13,8 @@ from pydantic import BaseModel, Field, field_serializer, field_validator
 from singleton import Singleton
 from typing_extensions import Self
 
-from .schemas import BaseEntitySchema
 from .i18n.timezone import serialize_response_datetime
+from .schemas import BaseEntitySchema
 from .utils import basic, timezone
 
 

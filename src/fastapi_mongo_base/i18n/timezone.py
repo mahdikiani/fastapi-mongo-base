@@ -85,10 +85,7 @@ def apply_user_timezone(
 def serialize_response_datetime(dt: datetime) -> str:
     """Serialize a datetime for API responses in the request timezone."""
     target_tz = request_timezone.get() or tz_util.tz
-    if dt.tzinfo is None:
-        aware = tz_util.utc.localize(dt)
-    else:
-        aware = dt
+    aware = tz_util.utc.localize(dt) if dt.tzinfo is None else dt
     return tz_util.iso_tz(aware, target_tz)
 
 
@@ -99,8 +96,5 @@ def localize_filter_datetime(
 ) -> datetime:
     """Convert a naive or aware filter datetime to UTC for storage queries."""
     active_tz = source_tz or request_timezone.get() or tz_util.tz
-    if dt.tzinfo is None:
-        aware = active_tz.localize(dt)
-    else:
-        aware = dt
+    aware = active_tz.localize(dt) if dt.tzinfo is None else dt
     return aware.astimezone(tz_util.utc)

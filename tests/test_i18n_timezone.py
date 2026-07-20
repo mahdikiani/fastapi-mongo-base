@@ -116,7 +116,9 @@ def test_localize_filter_datetime_converts_to_utc() -> None:
         request_timezone.reset(token)
 
 
-def test_base_entity_schema_serializes_created_at_in_request_timezone() -> None:
+def test_base_entity_schema_serializes_created_at_in_request_timezone() -> (
+    None
+):
     """BaseEntitySchema JSON output uses request timezone."""
     token = request_timezone.set(pytz.timezone("Asia/Tehran"))
     try:
