@@ -11,7 +11,11 @@ def test_middlewares_package_exports_timer() -> None:
     """Public middleware package should export TimerMiddleware."""
     from src.fastapi_mongo_base import middlewares
 
-    assert middlewares.__all__ == ["TimerMiddleware", "TimezoneMiddleware"]
+    assert middlewares.__all__ == [
+        "TimerMiddleware",
+        "TimezoneMiddleware",
+        "TraceMiddleware",
+    ]
     assert middlewares.TimerMiddleware is TimerMiddleware
 
 

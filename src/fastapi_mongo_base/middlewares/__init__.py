@@ -2,5 +2,6 @@
 
 from .timer import TimerMiddleware
 from .timezone import TimezoneMiddleware
+from .trace import TraceMiddleware
 
-__all__ = ["TimerMiddleware", "TimezoneMiddleware"]
+__all__ = ["TimerMiddleware", "TimezoneMiddleware", "TraceMiddleware"]

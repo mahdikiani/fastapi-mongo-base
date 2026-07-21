@@ -232,6 +232,7 @@ def setup_middlewares(
     app: fastapi.FastAPI,
     origins: list | None = None,
     timezone_middleware: bool = True,
+    trace_middleware: bool = True,
     **kwargs: object,
 ) -> None:
     """
@@ -241,6 +242,7 @@ def setup_middlewares(
         app: FastAPI application instance.
         origins: Optional list of allowed CORS origins.
         timezone_middleware: Whether to enable request timezone middleware.
+        trace_middleware: Whether to enable ``X-Trace-ID`` middleware.
         **kwargs: Additional keyword arguments.
 
     """
@@ -250,6 +252,11 @@ def setup_middlewares(
         from ..middlewares.timezone import TimezoneMiddleware
 
         app.add_middleware(TimezoneMiddleware)
+
+    if trace_middleware:
+        from ..middlewares.trace import TraceMiddleware
+
+        app.add_middleware(TraceMiddleware)
 
     if origins:
         app.add_middleware(
