@@ -83,7 +83,7 @@ async def init_mongo_db(
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
 
-            AsyncMongoClient = AsyncIOMotorClient  # noqa: N806
+            AsyncMongoClient = AsyncIOMotorClient  # ruff:ignore[non-lowercase-variable-in-function]
         except ImportError as e:
             raise ImportError("MongoDB is not installed") from e
 

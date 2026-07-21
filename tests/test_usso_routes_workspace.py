@@ -4,7 +4,7 @@ import pytest
 from pydantic import BaseModel
 
 try:
-    import usso  # noqa: F401
+    import usso  # ruff:ignore[unused-import]
 except ImportError:
     from tests.helpers.usso_mock import install_usso_mock
 

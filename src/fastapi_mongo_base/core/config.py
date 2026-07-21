@@ -151,7 +151,7 @@ class ProjectSettings(BaseSettings):
             formatter_config: dict[str, object] = {"()": JsonFormatter}
         else:
             formatter_config = {
-                "format": "[{levelname} : {filename}:{lineno} : {asctime} -> {funcName:10}] {message}",  # noqa: E501
+                "format": "[{levelname} : {filename}:{lineno} : {asctime} -> {funcName:10}] {message}",  # ruff:ignore[line-too-long]
                 "style": "{",
             }
 
@@ -193,7 +193,7 @@ project_settings = ProjectSettings()
 class Settings(metaclass=Singleton):
     """Server config settings."""
 
-    # base_dir: Path = Path(__file__).resolve().parent.parent  # noqa: ERA001
+    # base_dir: Path = Path(__file__).resolve().parent.parent  # ruff:ignore[commented-out-code]
     root_url: str = project_settings.root_url
     project_name: str = project_settings.project_name
     base_path: str = project_settings.base_path

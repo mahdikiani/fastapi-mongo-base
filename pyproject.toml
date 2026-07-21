@@ -52,6 +52,9 @@ test = [
     "greenlet>=3.0.0",
     "prometheus-client>=0.25.0",
     "redis>=8.0.0",
+    "ruff>=0.15.22",
+    "httpx2>=2.7.0",
+    "ty>=0.0.61",
 ]
 monitoring = ["prometheus-client>=0.25.0"]
 prometheus = ["prometheus-client>=0.25.0"]
@@ -103,10 +106,10 @@ select = [
   "ERA",   # remove commented code
   "RUF",   # ruff-specific improvements
 ]
-ignore = ["TRY003", "COM812", "B008", "D202", "D203", "D209", "D212", "D413"]
+ignore = ["raise-vanilla-args", "missing-trailing-comma", "function-call-in-default-argument", "blank-line-after-function", "incorrect-blank-line-before-class", "new-line-after-last-paragraph", "multi-line-summary-first-line", "missing-blank-line-after-last-section"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]
+"tests/*" = ["assert"]
 "server/db.py" = ["TRY"]
 
 [tool.ruff.format]

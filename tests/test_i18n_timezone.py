@@ -7,7 +7,11 @@ from datetime import datetime
 import pytest
 import pytz
 from fastapi import FastAPI, Request
-from starlette.testclient import TestClient
+
+try:
+    import httpx2 as httpx
+except ImportError:
+    import httpx
 
 from src.fastapi_mongo_base.i18n.context import request_timezone
 from src.fastapi_mongo_base.i18n.timezone import (
@@ -168,7 +172,8 @@ def test_task_log_record_serializes_reported_at() -> None:
         request_timezone.reset(token)
 
 
-def test_timezone_middleware_binds_request_timezone() -> None:
+@pytest.mark.asyncio
+async def test_timezone_middleware_binds_request_timezone() -> None:
     """Middleware resolves timezone from X-Timezone header."""
     app = FastAPI()
     app.add_middleware(TimezoneMiddleware)
@@ -177,8 +182,15 @@ def test_timezone_middleware_binds_request_timezone() -> None:
     def read_timezone(request: Request) -> dict[str, str]:
         return {"timezone": str(request.state.timezone)}
 
-    client = TestClient(app)
-    response = client.get("/tz", headers={"X-Timezone": "Asia/Tehran"})
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://test",
+    ) as client:
+        response = await client.get(
+            "/tz",
+            headers={"X-Timezone": "Asia/Tehran"},
+        )
 
     assert response.status_code == 200
     assert response.json()["timezone"] == "Asia/Tehran"

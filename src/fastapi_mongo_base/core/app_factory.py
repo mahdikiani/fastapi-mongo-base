@@ -25,7 +25,7 @@ def _use_mongodb(settings: config.Settings | None) -> bool:
     if settings is None:
         return False
     try:
-        import beanie  # noqa: F401
+        import beanie  # ruff:ignore[unused-import]
     except ImportError:
         return False
     return _is_configured_uri(getattr(settings, "mongo_uri", None))
@@ -35,7 +35,7 @@ def _use_redis(settings: config.Settings | None) -> bool:
     if settings is None:
         return False
     try:
-        import redis  # noqa: F401
+        import redis  # ruff:ignore[unused-import]
     except ImportError:
         return False
     return _is_configured_uri(getattr(settings, "redis_uri", None))
@@ -43,7 +43,7 @@ def _use_redis(settings: config.Settings | None) -> bool:
 
 def _use_sql(settings: config.Settings | None) -> bool:
     try:
-        import sqlalchemy  # noqa: F401
+        import sqlalchemy  # ruff:ignore[unused-import]
     except ImportError:
         return False
 

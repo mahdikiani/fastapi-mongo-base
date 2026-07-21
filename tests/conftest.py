@@ -23,11 +23,11 @@ from .app.server import app as fastapi_app
 def pytest_configure(config: pytest.Config) -> None:
     """Set up debugpy when DEBUGPY env var is enabled."""
     if os.getenv("DEBUGPY", "False").lower() in ("true", "1", "yes"):
-        import debugpy  # noqa: T100
+        import debugpy  # ruff:ignore[debugger]
 
-        debugpy.listen(("127.0.0.1", 3020))  # noqa: T100
+        debugpy.listen(("127.0.0.1", 3020))  # ruff:ignore[debugger]
         logging.info("Waiting for debugpy client")
-        debugpy.wait_for_client()  # noqa: T100
+        debugpy.wait_for_client()  # ruff:ignore[debugger]
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -66,7 +66,7 @@ async def init_db(mongo_client: object) -> None:
     orig_list_collection_names = database.delegate.list_collection_names
 
     def _patched_list_collection_names(
-        filter: dict | None = None,  # noqa: A002
+        filter: dict | None = None,  # ruff:ignore[builtin-argument-shadowing]
         session: object | None = None,
         **kwargs: object,
     ) -> list[str]:
