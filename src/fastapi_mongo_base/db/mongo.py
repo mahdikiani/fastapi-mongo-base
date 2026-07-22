@@ -104,6 +104,21 @@ async def init_mongo_db(
         connectTimeoutMS=settings.mongo_connect_timeout_ms,
     )
     models = document_models or discover_beanie_document_models()
+    if getattr(settings, "audit_log_enabled", False):
+        from ..audit.context import set_audit_enabled
+        from ..audit.models import AuditLog, activate_mongo_audit_log
+
+        activate_mongo_audit_log()
+        set_audit_enabled(True)
+        if AuditLog not in models:
+            models = [*models, AuditLog]
+    else:
+        from ..audit.context import set_audit_enabled
+        from ..audit.models import deactivate_mongo_audit_log
+
+        deactivate_mongo_audit_log()
+        set_audit_enabled(False)
+
     try:
         await client.server_info()
         db = client.get_database(settings.project_name)

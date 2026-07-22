@@ -482,7 +482,10 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         user_id = await self.get_user_id(request)
         if isinstance(data, BaseModel):
             data = data.model_dump()
-        item = await self.model.create_item({**data, "user_id": user_id})
+        from .audit.context import audit_actor_scope
+
+        with audit_actor_scope(user_id=user_id):
+            item = await self.model.create_item({**data, "user_id": user_id})
         return item
 
     async def update_item(
@@ -507,7 +510,10 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         if isinstance(data, BaseModel):
             data = data.model_dump(exclude_unset=True)
         item = await self.get_item(uid=uid, user_id=user_id)
-        item = await self.model.update_item(item, data)
+        from .audit.context import audit_actor_scope
+
+        with audit_actor_scope(user_id=user_id):
+            item = await self.model.update_item(item, data)
         return item
 
     async def delete_item(
@@ -529,7 +535,10 @@ class AbstractBaseRouter(metaclass=singleton.Singleton):
         user_id = await self.get_user_id(request)
         item = await self.get_item(uid=uid, user_id=user_id)
 
-        item = await self.model.delete_item(item)
+        from .audit.context import audit_actor_scope
+
+        with audit_actor_scope(user_id=user_id):
+            item = await self.model.delete_item(item)
         return item
 
     async def mine_items(

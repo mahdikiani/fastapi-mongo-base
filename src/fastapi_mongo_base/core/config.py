@@ -110,6 +110,10 @@ class ProjectSettings(BaseSettings):
         default="json",
         validation_alias="LOG_FORMAT",
     )
+    audit_log_enabled: bool = Field(
+        default=False,
+        validation_alias="AUDIT_LOG_ENABLED",
+    )
 
     @classmethod
     def get_coverage_dir(cls) -> str:
@@ -242,6 +246,7 @@ class Settings(metaclass=Singleton):
     database_pool_pre_ping: bool = project_settings.database_pool_pre_ping
     database_pool_recycle: int | None = project_settings.database_pool_recycle
     log_format: str = project_settings.log_format
+    audit_log_enabled: bool = project_settings.audit_log_enabled
 
     @classmethod
     def get_coverage_dir(cls) -> str:

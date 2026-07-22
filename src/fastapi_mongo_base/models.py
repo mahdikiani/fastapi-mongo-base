@@ -433,6 +433,10 @@ class BaseEntity(BaseEntitySchema, Document):
 
         item = cls(**data)
         await item.save()
+        from .audit.emit import maybe_record_audit
+        from .audit.schemas import AuditAction
+
+        await maybe_record_audit(action=AuditAction.create, item=item)
         return item
 
     @classmethod
@@ -448,6 +452,12 @@ class BaseEntity(BaseEntitySchema, Document):
             Updated entity instance.
 
         """
+        from .audit.context import is_audit_enabled
+        from .audit.emit import maybe_record_audit, snapshot_for_audit
+        from .audit.schemas import AuditAction
+
+        before = snapshot_for_audit(item) if is_audit_enabled() else None
+
         for key, value in data.items():
             if cls.update_field_set() and key not in cls.update_field_set():
                 logging.warning("Key %s is not in update_field_set", key)
@@ -460,6 +470,11 @@ class BaseEntity(BaseEntitySchema, Document):
                 setattr(item, key, value)
 
         await item.save()
+        await maybe_record_audit(
+            action=AuditAction.update,
+            item=item,
+            before=before,
+        )
         return item
 
     @classmethod
@@ -474,8 +489,18 @@ class BaseEntity(BaseEntitySchema, Document):
             Deleted entity instance.
 
         """
+        from .audit.context import is_audit_enabled
+        from .audit.emit import maybe_record_audit, snapshot_for_audit
+        from .audit.schemas import AuditAction
+
+        before = snapshot_for_audit(item) if is_audit_enabled() else None
         item.is_deleted = True
         await item.save()
+        await maybe_record_audit(
+            action=AuditAction.delete,
+            item=item,
+            before=before,
+        )
         return item
 
 

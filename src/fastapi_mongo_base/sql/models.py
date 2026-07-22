@@ -386,11 +386,20 @@ class BaseEntity:
             session.add(item)
             await session.commit()
             await session.refresh(item)
+        from ..audit.emit import maybe_record_audit
+        from ..audit.schemas import AuditAction
+
+        await maybe_record_audit(action=AuditAction.create, item=item)
         return item
 
     @classmethod
     async def update_item(cls, item: Self, data: dict) -> Self:
         """Update an existing item."""
+        from ..audit.context import is_audit_enabled
+        from ..audit.emit import maybe_record_audit, snapshot_for_audit
+        from ..audit.schemas import AuditAction
+
+        before = snapshot_for_audit(item) if is_audit_enabled() else None
         for key, value in data.items():
             if cls.update_field_set() and key not in cls.update_field_set():
                 continue
@@ -403,16 +412,31 @@ class BaseEntity:
             session.add(item)
             await session.commit()
             await session.refresh(item)
+        await maybe_record_audit(
+            action=AuditAction.update,
+            item=item,
+            before=before,
+        )
         return item
 
     @classmethod
     async def delete_item(cls, item: Self) -> Self:
         """Soft delete an item by setting is_deleted to True."""
+        from ..audit.context import is_audit_enabled
+        from ..audit.emit import maybe_record_audit, snapshot_for_audit
+        from ..audit.schemas import AuditAction
+
+        before = snapshot_for_audit(item) if is_audit_enabled() else None
         item.is_deleted = True
         async with async_session() as session:
             session.add(item)
             await session.commit()
             await session.refresh(item)
+        await maybe_record_audit(
+            action=AuditAction.delete,
+            item=item,
+            before=before,
+        )
         return item
 
 

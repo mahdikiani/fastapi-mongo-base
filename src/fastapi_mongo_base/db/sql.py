@@ -46,6 +46,8 @@ def _build_engine_kwargs(settings: Settings) -> dict[str, object]:
 async def create_sql_tables(
     engine: object,
     metadata: object | None = None,
+    *,
+    include_audit_log: bool = False,
 ) -> None:
     """
     Create SQL tables for the provided metadata.
@@ -54,6 +56,7 @@ async def create_sql_tables(
         engine: Async SQLAlchemy engine instance.
         metadata: Optional metadata object. Defaults to ``BaseEntity``
             ``.metadata``.
+        include_audit_log: Whether to create the audit_logs table.
 
     """
     if metadata is None:
@@ -61,8 +64,24 @@ async def create_sql_tables(
 
         metadata = BaseEntity.metadata
 
+    if include_audit_log:
+        from ..audit.sql import activate_sql_audit_log
+
+        activate_sql_audit_log()
+
+    def _create_all(connection: object) -> None:
+        if include_audit_log:
+            metadata.create_all(connection)
+            return
+        tables = [
+            table
+            for table in metadata.sorted_tables
+            if table.name != "audit_logs"
+        ]
+        metadata.create_all(connection, tables=tables)
+
     async with engine.begin() as connection:
-        await connection.run_sync(metadata.create_all)
+        await connection.run_sync(_create_all)
 
 
 async def init_sql(
@@ -113,6 +132,16 @@ async def init_sql(
             "Install with: pip install 'fastapi-mongo-base[sql]'"
         ) from e
 
+    audit_enabled = bool(getattr(settings, "audit_log_enabled", False))
+    from ..audit.context import set_audit_enabled
+    from ..audit.sql import activate_sql_audit_log, deactivate_sql_audit_log
+
+    if audit_enabled:
+        activate_sql_audit_log()
+    else:
+        deactivate_sql_audit_log()
+    set_audit_enabled(audit_enabled)
+
     try:
         engine = create_async_engine(
             database_uri,
@@ -126,14 +155,20 @@ async def init_sql(
         async with engine.connect() as connection:
             await connection.execute(text("SELECT 1"))
         if create_tables:
-            await create_sql_tables(engine, metadata=metadata)
+            await create_sql_tables(
+                engine,
+                metadata=metadata,
+                include_audit_log=audit_enabled,
+            )
     except Exception as e:
         logging.exception("SQL connection error at %s", database_uri)
         raise SQLConnectionError("Failed to connect to SQL database") from e
 
+    from ..sql import models as sql_models
     from ..sql import session as sql_session_module
 
     sql_session_module.async_session = session_factory
+    sql_models.async_session = session_factory
     _sql_engine = engine
     _sql_session_factory = session_factory
     return engine, session_factory
@@ -182,8 +217,10 @@ async def close_sql(engine: object | None = None) -> None:
             if hasattr(result, "__await__"):
                 await result
 
+    from ..sql import models as sql_models
     from ..sql import session as sql_session_module
 
     sql_session_module.async_session = None
+    sql_models.async_session = None
     _sql_engine = None
     _sql_session_factory = None

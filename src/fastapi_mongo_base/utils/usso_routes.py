@@ -296,11 +296,14 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
         if isinstance(data, BaseModel):
             data = data.model_dump()
         await self.authorize(action="create", user=user, filter_data=data)
-        return await self.model.create_item({
-            **data,
-            self.owner_attr: self._owner_id_for_create(user),
-            "tenant_id": user.tenant_id,
-        })
+        from ..audit.context import audit_actor_scope
+
+        with audit_actor_scope(user):
+            return await self.model.create_item({
+                **data,
+                self.owner_attr: self._owner_id_for_create(user),
+                "tenant_id": user.tenant_id,
+            })
 
     async def update_item(
         self, request: Request, uid: str, data: dict
@@ -332,7 +335,10 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             user=user,
             filter_data=item.model_dump(),
         )
-        return await self.model.update_item(item, data)
+        from ..audit.context import audit_actor_scope
+
+        with audit_actor_scope(user):
+            return await self.model.update_item(item, data)
 
     async def delete_item(self, request: Request, uid: str) -> BaseEntity:
         """
@@ -359,7 +365,10 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             user=user,
             filter_data=item.model_dump(),
         )
-        return await self.model.delete_item(item)
+        from ..audit.context import audit_actor_scope
+
+        with audit_actor_scope(user):
+            return await self.model.delete_item(item)
 
     async def mine_items(
         self,
