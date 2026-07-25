@@ -23,14 +23,15 @@ class ProjectSettings(BaseSettings):
         case_sensitive=False,
     )
 
-    root_url: str = Field(
+    domain: str = Field(
         default="http://localhost:8000",
         validation_alias="DOMAIN",
     )
+    root_url: str = domain
     project_name: str = Field(
         default="PROJECT", validation_alias="PROJECT_NAME"
     )
-    base_path: str = "/api/v1"
+    base_path: str = f"/api/{project_name}/v1"
     worker_update_time: int = 180
     debug: bool = False
 
@@ -198,6 +199,7 @@ class Settings(metaclass=Singleton):
     """Server config settings."""
 
     # base_dir: Path = Path(__file__).resolve().parent.parent  # ruff:ignore[commented-out-code]
+    domain: str = project_settings.domain
     root_url: str = project_settings.root_url
     project_name: str = project_settings.project_name
     base_path: str = project_settings.base_path
