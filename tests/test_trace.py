@@ -304,9 +304,12 @@ def test_merge_trace_event_hooks_is_idempotent() -> None:
         async_once,
         is_async=True,
     )
-    assert async_twice["request"].count(
-        trace_util.ainject_trace_header,
-    ) == 1
+    assert (
+        async_twice["request"].count(
+            trace_util.ainject_trace_header,
+        )
+        == 1
+    )
 
 
 @pytest.mark.asyncio

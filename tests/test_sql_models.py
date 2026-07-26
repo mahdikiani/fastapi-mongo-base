@@ -22,7 +22,9 @@ from src.fastapi_mongo_base.sql.models import (
     TenantOwnedEntity,
     TenantScopedEntity,
     TenantUserEntity,
+    TenantWorkspaceEntity,
     UserOwnedEntity,
+    WorkspaceOwnedEntity,
 )
 from src.fastapi_mongo_base.utils import timezone
 
@@ -58,6 +60,18 @@ class _TestTenantUserEntity(TenantUserEntity):
 
 class _TestOwnedEntity(OwnedEntity):
     __tablename__ = "test_owned_entities"
+
+    name: Mapped[str] = mapped_column(default="")
+
+
+class _TestWorkspaceEntity(WorkspaceOwnedEntity):
+    __tablename__ = "test_workspace_entities"
+
+    name: Mapped[str] = mapped_column(default="")
+
+
+class _TestTenantWorkspaceEntity(TenantWorkspaceEntity):
+    __tablename__ = "test_tenant_workspace_entities"
 
     name: Mapped[str] = mapped_column(default="")
 
@@ -427,6 +441,24 @@ class TestGetQueryset:
         qs = _TestOwnedEntity.get_queryset(owner_id="owner-1")
         assert len(qs) == 2
 
+    def test_with_workspace_id_on_workspace_entity(self) -> None:
+        """Verify workspace_id works on WorkspaceOwnedEntity."""
+        qs = _TestWorkspaceEntity.get_queryset(workspace_id="ws-1")
+        assert len(qs) == 2
+
+    def test_with_workspace_id_skipped_when_no_column(self) -> None:
+        """Verify workspace_id is skipped when column missing."""
+        qs = _TestEntity.get_queryset(workspace_id="ws-1")
+        assert len(qs) == 1
+
+    def test_with_workspace_id_on_tenant_workspace_entity(self) -> None:
+        """Verify workspace_id works on TenantWorkspaceEntity."""
+        qs = _TestTenantWorkspaceEntity.get_queryset(
+            tenant_id="tenant-1",
+            workspace_id="ws-1",
+        )
+        assert len(qs) == 3
+
 
 # ── BaseEntity: get_query ────────────────────────────────────────────────────
 
@@ -479,6 +511,20 @@ class TestSubclassFieldSets:
         """Verify OwnedEntity excludes owner_id."""
         assert "owner_id" in _TestOwnedEntity.create_exclude_set()
         assert "owner_id" in _TestOwnedEntity.update_exclude_set()
+
+    def test_workspace_owned_entity(self) -> None:
+        """Verify WorkspaceOwnedEntity excludes workspace_id."""
+        assert "workspace_id" in _TestWorkspaceEntity.create_exclude_set()
+        assert "workspace_id" in _TestWorkspaceEntity.update_exclude_set()
+
+    def test_tenant_workspace_entity(self) -> None:
+        """Verify TenantWorkspaceEntity excludes tenant_id and workspace_id."""
+        exclude = _TestTenantWorkspaceEntity.create_exclude_set()
+        assert "tenant_id" in exclude
+        assert "workspace_id" in exclude
+        exclude = _TestTenantWorkspaceEntity.update_exclude_set()
+        assert "tenant_id" in exclude
+        assert "workspace_id" in exclude
 
     def test_tenant_owned_entity(self) -> None:
         """Verify TenantOwnedEntity excludes tenant_id and owner_id."""

@@ -75,6 +75,14 @@ class BaseEntity(BaseEntitySchema, Document):
         self.updated_at = datetime.now(timezone.tz)
 
     @classmethod
+    def _has_field(cls, name: str) -> bool:
+        """Return True if the model declares ``name`` as a field."""
+        model_fields = getattr(cls, "model_fields", None)
+        if model_fields is not None and name in model_fields:
+            return True
+        return hasattr(cls, name)
+
+    @classmethod
     def _build_extra_filters(cls, **kwargs: dict[str, object]) -> dict:
         """
         Build MongoDB filter dictionary from keyword arguments.
@@ -106,7 +114,7 @@ class BaseEntity(BaseEntitySchema, Document):
             ):
                 logger.warning("Key %s is in search_exclude_set", key)
                 continue
-            if not hasattr(cls, base_field):
+            if not cls._has_field(base_field):
                 continue
             if key.endswith(("_from", "_to")):
                 if basic.is_valid_range_value(value):
@@ -130,6 +138,7 @@ class BaseEntity(BaseEntitySchema, Document):
         *,
         user_id: str | None = None,
         tenant_id: str | None = None,
+        workspace_id: str | None = None,
         owner_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
@@ -138,11 +147,13 @@ class BaseEntity(BaseEntitySchema, Document):
         """Build a MongoDB query filter based on provided parameters."""
         base_query = {}
         base_query.update({"is_deleted": is_deleted})
-        if hasattr(cls, "tenant_id") and tenant_id:
+        if cls._has_field("tenant_id") and tenant_id:
             base_query.update({"tenant_id": tenant_id})
-        if hasattr(cls, "user_id") and user_id:
+        if cls._has_field("user_id") and user_id:
             base_query.update({"user_id": user_id})
-        if hasattr(cls, "owner_id") and owner_id:
+        if cls._has_field("workspace_id") and workspace_id:
+            base_query.update({"workspace_id": workspace_id})
+        if cls._has_field("owner_id") and owner_id:
             base_query.update({"owner_id": owner_id})
         if uid:
             base_query.update({"uid": uid})
@@ -157,6 +168,7 @@ class BaseEntity(BaseEntitySchema, Document):
         *,
         user_id: str | None = None,
         tenant_id: str | None = None,
+        workspace_id: str | None = None,
         owner_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
@@ -170,6 +182,7 @@ class BaseEntity(BaseEntitySchema, Document):
         Args:
             user_id: Optional user ID filter.
             tenant_id: Optional tenant ID filter.
+            workspace_id: Optional workspace ID filter.
             owner_id: Optional owner ID filter.
             is_deleted: Filter by deletion status.
             uid: Optional unique identifier filter.
@@ -184,6 +197,7 @@ class BaseEntity(BaseEntitySchema, Document):
         base_query = cls.get_queryset(
             user_id=user_id,
             tenant_id=tenant_id,
+            workspace_id=workspace_id,
             owner_id=owner_id,
             is_deleted=is_deleted,
             uid=uid,
@@ -201,6 +215,7 @@ class BaseEntity(BaseEntitySchema, Document):
         *,
         user_id: str | None = None,
         tenant_id: str | None = None,
+        workspace_id: str | None = None,
         owner_id: str | None = None,
         is_deleted: bool = False,
         **kwargs: object,
@@ -212,6 +227,7 @@ class BaseEntity(BaseEntitySchema, Document):
             uid: Unique identifier of the item.
             user_id: Optional user ID filter.
             tenant_id: Optional tenant ID filter.
+            workspace_id: Optional workspace ID filter.
             owner_id: Optional owner ID filter.
             is_deleted: Filter by deletion status.
             **kwargs: Additional filter parameters.
@@ -226,6 +242,7 @@ class BaseEntity(BaseEntitySchema, Document):
         query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
+            workspace_id=workspace_id,
             owner_id=owner_id,
             is_deleted=is_deleted,
             uid=uid,

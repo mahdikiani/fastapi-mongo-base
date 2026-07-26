@@ -209,6 +209,7 @@ class BaseEntity:
         user_id: str | None = None,
         tenant_id: str | None = None,
         owner_id: str | None = None,
+        workspace_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
         **kwargs: object,
@@ -222,6 +223,8 @@ class BaseEntity:
             base_query.append(cls.tenant_id == tenant_id)  # type: ignore
         if hasattr(cls, "owner_id") and owner_id:
             base_query.append(cls.owner_id == owner_id)  # type: ignore
+        if hasattr(cls, "workspace_id") and workspace_id:
+            base_query.append(cls.workspace_id == workspace_id)  # type: ignore
         if uid:
             base_query.append(cls.uid == uid)
         # Extract extra filters from kwargs
@@ -235,6 +238,7 @@ class BaseEntity:
         user_id: str | None = None,
         tenant_id: str | None = None,
         owner_id: str | None = None,
+        workspace_id: str | None = None,
         is_deleted: bool = False,
         uid: str | None = None,
         created_at_from: datetime | None = None,
@@ -246,6 +250,7 @@ class BaseEntity:
             user_id=user_id,
             tenant_id=tenant_id,
             owner_id=owner_id,
+            workspace_id=workspace_id,
             is_deleted=is_deleted,
             uid=uid,
             created_at_from=created_at_from,
@@ -262,6 +267,7 @@ class BaseEntity:
         user_id: str | None = None,
         tenant_id: str | None = None,
         owner_id: str | None = None,
+        workspace_id: str | None = None,
         is_deleted: bool = False,
         **kwargs: object,
     ) -> Self | None:
@@ -270,6 +276,7 @@ class BaseEntity:
             user_id=user_id,
             tenant_id=tenant_id,
             owner_id=owner_id,
+            workspace_id=workspace_id,
             is_deleted=is_deleted,
             **kwargs,
         )

@@ -95,9 +95,7 @@ def merge_trace_event_hooks(
     Use ``is_async=True`` for ``AsyncClient`` (hooks are awaited). Safe to
     call multiple times; the matching hook is added at most once.
     """
-    hook: object = (
-        ainject_trace_header if is_async else inject_trace_header
-    )
+    hook: object = ainject_trace_header if is_async else inject_trace_header
     hooks: dict[str, list[object]] = {
         key: list(value) for key, value in (event_hooks or {}).items()
     }
@@ -120,9 +118,7 @@ def install_trace(
 
     """
     is_async = isinstance(client, httpx.AsyncClient)
-    hook: object = (
-        ainject_trace_header if is_async else inject_trace_header
-    )
+    hook: object = ainject_trace_header if is_async else inject_trace_header
     request_hooks = client.event_hooks.setdefault("request", [])
     if hook not in request_hooks:
         request_hooks.insert(0, hook)
