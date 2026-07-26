@@ -53,7 +53,7 @@ test = [
     "greenlet>=3.0.0",
     "prometheus-client>=0.25.0",
     "redis>=8.0.0",
-    "ruff>=0.15.22",
+    "ruff>=0.16.0",
     "httpx2>=2.7.0",
     "ty>=0.0.61",
 ]
