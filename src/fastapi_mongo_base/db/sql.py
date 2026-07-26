@@ -7,6 +7,8 @@ import logging
 from ..core.config import Settings
 from ..errors.sql import SQLConnectionError
 
+logger = logging.getLogger(__name__)
+
 _sql_engine: object | None = None
 _sql_session_factory: object | None = None
 
@@ -161,7 +163,7 @@ async def init_sql(
                 include_audit_log=audit_enabled,
             )
     except Exception as e:
-        logging.exception("SQL connection error at %s", database_uri)
+        logger.exception("SQL connection error at %s", database_uri)
         raise SQLConnectionError("Failed to connect to SQL database") from e
 
     from ..sql import models as sql_models
@@ -193,7 +195,7 @@ async def check_sql(session_factory: object | None) -> str:
         async with session_factory() as session:
             await session.execute(text("SELECT 1"))
     except Exception:
-        logging.exception("SQL readiness check failed")
+        logger.exception("SQL readiness check failed")
         return "down"
     else:
         return "up"

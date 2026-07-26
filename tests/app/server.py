@@ -52,8 +52,6 @@ class TestEntity(TestEntitySchema, BaseEntity):
 
     """
 
-    pass
-
 
 class TestRouter(AbstractBaseRouter):
     """

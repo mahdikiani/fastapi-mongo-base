@@ -32,6 +32,8 @@ from .schemas import (
 )
 from .utils import basic, timezone
 
+logger = logging.getLogger(__name__)
+
 
 class BaseEntity(BaseEntitySchema, Document):
     """
@@ -96,23 +98,23 @@ class BaseEntity(BaseEntitySchema, Document):
                 cls.search_field_set()
                 and base_field not in cls.search_field_set()
             ):
-                logging.warning("Key %s is not in search_field_set", key)
+                logger.warning("Key %s is not in search_field_set", key)
                 continue
             if (
                 cls.search_exclude_set()
                 and base_field in cls.search_exclude_set()
             ):
-                logging.warning("Key %s is in search_exclude_set", key)
+                logger.warning("Key %s is in search_exclude_set", key)
                 continue
             if not hasattr(cls, base_field):
                 continue
-            if key.endswith("_from") or key.endswith("_to"):
+            if key.endswith(("_from", "_to")):
                 if basic.is_valid_range_value(value):
                     op = "$gte" if key.endswith("_from") else "$lte"
                     extra_filters.setdefault(base_field, {}).update({
                         op: value
                     })
-            elif key.endswith("_in") or key.endswith("_nin"):
+            elif key.endswith(("_in", "_nin")):
                 value_list = basic.parse_array_parameter(value)
                 operator = "$in" if key.endswith("_in") else "$nin"
                 extra_filters.update({base_field: {operator: value_list}})
@@ -419,10 +421,10 @@ class BaseEntity(BaseEntitySchema, Document):
         pop_keys = []
         for key in data:
             if cls.create_field_set() and key not in cls.create_field_set():
-                logging.warning("Key %s is not in create_field_set", key)
+                logger.warning("Key %s is not in create_field_set", key)
                 pop_keys.append(key)
             elif cls.create_exclude_set() and key in cls.create_exclude_set():
-                logging.warning("Key %s is in create_exclude_set", key)
+                logger.warning("Key %s is in create_exclude_set", key)
                 pop_keys.append(key)
 
         for key in pop_keys:
@@ -460,10 +462,10 @@ class BaseEntity(BaseEntitySchema, Document):
 
         for key, value in data.items():
             if cls.update_field_set() and key not in cls.update_field_set():
-                logging.warning("Key %s is not in update_field_set", key)
+                logger.warning("Key %s is not in update_field_set", key)
                 continue
             if cls.update_exclude_set() and key in cls.update_exclude_set():
-                logging.warning("Key %s is in update_exclude_set", key)
+                logger.warning("Key %s is in update_exclude_set", key)
                 continue
 
             if hasattr(item, key):

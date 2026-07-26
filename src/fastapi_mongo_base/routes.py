@@ -1,6 +1,7 @@
 """Abstract routers for CRUD operations with FastAPI."""
 
 import inspect
+import logging
 from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
@@ -17,6 +18,8 @@ from .i18n.timezone import apply_user_timezone
 from .models import BaseEntity
 from .schemas import BaseEntitySchema, PaginatedResponse
 from .tasks import TaskStatusEnum
+
+logger = logging.getLogger(__name__)
 
 
 def as_page(
@@ -715,9 +718,8 @@ class AbstractTaskRouter(AbstractBaseRouter):
             Response dictionary with webhook confirmation.
 
         """
-        import logging
 
-        logging.info("Webhook received for %s with data %s", uid, data)
+        logger.info("Webhook received for %s with data %s", uid, data)
         return {"message": f"Webhook received for {uid} with data", **data}
 
 

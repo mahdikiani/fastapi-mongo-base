@@ -12,6 +12,8 @@ from ..errors.mongodb import MongoDBConnectionError
 from ..models import BaseEntity
 from ..utils import basic
 
+logger = logging.getLogger(__name__)
+
 _registered_pool_monitors: set[str] = set()
 
 
@@ -124,17 +126,17 @@ async def init_mongo_db(
         db = client.get_database(settings.project_name)
         await init_beanie(database=db, document_models=models)
     except ServerSelectionTimeoutError as e:
-        logging.exception(
+        logger.exception(
             "MongoDB connection timeout at %s", settings.mongo_uri
         )
         raise MongoDBConnectionError("Failed to connect to MongoDB") from e
 
     except PyMongoError as e:
-        logging.exception("MongoDB error at %s", settings.mongo_uri)
+        logger.exception("MongoDB error at %s", settings.mongo_uri)
         raise MongoDBConnectionError("Failed to connect to MongoDB") from e
 
     except Exception as e:
-        logging.exception("Unexpected failure initializing MongoDB")
+        logger.exception("Unexpected failure initializing MongoDB")
         raise MongoDBConnectionError("Failed to connect to MongoDB") from e
 
     return db, client
@@ -159,7 +161,7 @@ async def check_mongodb(client: object | None) -> str:
             return "down"
         await admin.command("ping")
     except Exception:
-        logging.exception("MongoDB readiness check failed")
+        logger.exception("MongoDB readiness check failed")
         return "down"
     else:
         return "up"

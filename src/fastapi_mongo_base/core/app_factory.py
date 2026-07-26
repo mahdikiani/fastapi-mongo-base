@@ -16,6 +16,8 @@ from ..errors.responses import COMMON_ERROR_RESPONSES, setup_openapi_errors
 from ..monitoring.sentry import setup_sentry
 from . import config, db
 
+logger = logging.getLogger(__name__)
+
 
 def _is_configured_uri(value: str | None) -> bool:
     return bool(value and str(value).strip())
@@ -197,14 +199,14 @@ async def lifespan(
         else:
             function()
 
-    logging.info("Startup complete")
+    logger.info("Startup complete")
     try:
         yield
     finally:
         if worker:
             app.state.worker.cancel()
         await _shutdown_datasources(app)
-        logging.info("Shutdown complete")
+        logger.info("Shutdown complete")
 
 
 def setup_exception_handlers(

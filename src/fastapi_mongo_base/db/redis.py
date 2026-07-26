@@ -10,6 +10,7 @@ from ..errors.redis import RedisConnectionError
 
 _redis_sync_client: object | None = None
 _redis_async_client: object | None = None
+logger = logging.getLogger(__name__)
 
 
 def get_redis_sync_client() -> object | None:
@@ -84,7 +85,7 @@ def init_redis(
         )
         redis_sync.ping()
     except RedisError as e:
-        logging.exception("Redis connection error at %s", redis_uri)
+        logger.exception("Redis connection error at %s", redis_uri)
         raise RedisConnectionError("Failed to connect to Redis") from e
 
     _redis_sync_client = redis_sync
@@ -108,7 +109,7 @@ async def check_redis(client: object | None) -> str:
     try:
         await client.ping()
     except Exception:
-        logging.exception("Redis readiness check failed")
+        logger.exception("Redis readiness check failed")
         return "down"
     else:
         return "up"

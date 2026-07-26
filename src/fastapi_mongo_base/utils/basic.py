@@ -18,6 +18,9 @@ try:
 except ImportError:
     import json as json_advanced
 
+logger = logging.getLogger(__name__)
+
+
 FunctionOrCoroutine = (
     Callable[..., None] | Callable[..., Coroutine[object, object, None]]
 )
@@ -141,7 +144,7 @@ def _exception_handler(
         class_name = args[0].__class__.__name__
         func_name = f"{class_name}.{func_name}"
     traceback_str = "".join(traceback.format_tb(e.__traceback__))
-    logging.error(
+    logger.error(
         "An error occurred in %s (%s=, %s):\n%s\n%s: %s",
         func_name,
         args,
@@ -243,7 +246,7 @@ def _async_retry_wrapper(
                 return await asyncio.to_thread(func, *args, **kwargs)
             except Exception as e:  # ruff:ignore[try-except-in-loop]
                 last_exception = e
-                logging.warning(
+                logger.warning(
                     "Attempt %d failed for %s: %s",
                     attempt + 1,
                     func.__name__,
@@ -251,7 +254,7 @@ def _async_retry_wrapper(
                 )
                 if delay > 0 and attempt < attempts - 1:
                     await asyncio.sleep(delay)
-        logging.error("All %d attempts failed for %s", attempts, func.__name__)
+        logger.error("All %d attempts failed for %s", attempts, func.__name__)
         raise last_exception
 
     return wrapper
@@ -266,7 +269,7 @@ def _sync_retry_wrapper(func: Callable, attempts: int, delay: int) -> Callable:
                 return func(*args, **kwargs)
             except Exception as e:  # ruff:ignore[try-except-in-loop]
                 last_exception = e
-                logging.warning(
+                logger.warning(
                     "Attempt %d failed for %s: %s",
                     attempt + 1,
                     func.__name__,
@@ -274,7 +277,7 @@ def _sync_retry_wrapper(func: Callable, attempts: int, delay: int) -> Callable:
                 )
                 if delay > 0 and attempt < attempts - 1:
                     time.sleep(delay)
-        logging.error("All %d attempts failed for %s", attempts, func.__name__)
+        logger.error("All %d attempts failed for %s", attempts, func.__name__)
         raise last_exception
 
     return wrapper

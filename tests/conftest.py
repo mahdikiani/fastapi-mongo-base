@@ -19,6 +19,8 @@ from src.fastapi_mongo_base.utils import basic
 from .app.server import Settings
 from .app.server import app as fastapi_app
 
+logger = logging.getLogger(__name__)
+
 
 def pytest_configure(config: pytest.Config) -> None:
     """Set up debugpy when DEBUGPY env var is enabled."""
@@ -26,7 +28,7 @@ def pytest_configure(config: pytest.Config) -> None:
         import debugpy  # ruff:ignore[debugger]
 
         debugpy.listen(("127.0.0.1", 3020))  # ruff:ignore[debugger]
-        logging.info("Waiting for debugpy client")
+        logger.info("Waiting for debugpy client")
         debugpy.wait_for_client()  # ruff:ignore[debugger]
 
 
@@ -92,11 +94,11 @@ async def db(mongo_client: object) -> AsyncGenerator[None]:
 
     """
     Settings.config_logger()
-    logging.info("Initializing database")
+    logger.info("Initializing database")
     await init_db(mongo_client)
-    logging.info("Database initialized")
+    logger.info("Database initialized")
     yield
-    logging.info("Cleaning up database")
+    logger.info("Cleaning up database")
 
 
 @pytest_asyncio.fixture(scope="session")

@@ -39,7 +39,7 @@ def test_implements_all_connection_pool_listener_methods(
     listener_methods = [
         name
         for name in dir(monitoring.ConnectionPoolListener)
-        if name.startswith("connection_") or name.startswith("pool_")
+        if name.startswith(("connection_", "pool_"))
     ]
 
     event = SimpleNamespace(

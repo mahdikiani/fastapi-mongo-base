@@ -190,11 +190,11 @@ class BaseEntity:
             if not hasattr(cls, base_field):
                 continue
             field = getattr(cls, base_field)
-            if key.endswith("_from") or key.endswith("_to"):
+            if key.endswith(("_from", "_to")):
                 filt = cls._range_filter(field, key, value)
                 if filt is not None:
                     extra_filters.append(filt)
-            elif key.endswith("_in") or key.endswith("_nin"):
+            elif key.endswith(("_in", "_nin")):
                 filt = cls._in_nin_filter(field, key, value)
                 if filt is not None:
                     extra_filters.append(filt)

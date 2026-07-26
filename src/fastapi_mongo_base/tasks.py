@@ -17,6 +17,8 @@ from .i18n.timezone import serialize_response_datetime
 from .schemas import BaseEntitySchema
 from .utils import basic, timezone
 
+logger = logging.getLogger(__name__)
+
 
 class TaskStatusEnum(StrEnum):
     """Enumeration of task status values."""
@@ -296,7 +298,7 @@ class TaskMixin(TaskCreateFieldsMixin):
                     log_type="webhook_error",
                 )
                 await task_instance.save()  # type: ignore
-                logging.exception("An error occurred in webhook_call")
+                logger.exception("An error occurred in webhook_call")
             except Exception as e:
                 await task_instance.save_report(
                     f"An error occurred in webhook_call: {type(e)}: {e}",
@@ -304,7 +306,7 @@ class TaskMixin(TaskCreateFieldsMixin):
                     log_type="webhook_error",
                 )
                 await task_instance.save()  # type: ignore
-                logging.exception("An error occurred in webhook_call")
+                logger.exception("An error occurred in webhook_call")
 
         signals: list[Coroutine[object, object, None]] = []
         meta_data = getattr(task_instance, "meta_data", {}) or {}

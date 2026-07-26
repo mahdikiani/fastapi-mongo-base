@@ -29,6 +29,8 @@ from .responses import (
     ValidationReason,
 )
 
+logger = logging.getLogger(__name__)
+
 error_messages = {}
 
 
@@ -46,7 +48,7 @@ def base_http_exception_handler(
         JSONResponse with error details.
 
     """
-    logging.debug("base_http_exception_handler: %s\n%s", request.url, exc)
+    logger.debug("base_http_exception_handler: %s\n%s", request.url, exc)
 
     message = select_request_messages(request, exc.message)
 
@@ -103,7 +105,7 @@ def pydantic_exception_handler(
         JSONResponse with validation error details.
 
     """
-    logging.debug("pydantic_exception_handler: %s\n%s", request.url, exc)
+    logger.debug("pydantic_exception_handler: %s\n%s", request.url, exc)
 
     status_code = 500 if isinstance(exc, ResponseValidationError) else 422
     return _validation_error_response(request, exc.errors(), status_code)
@@ -133,7 +135,7 @@ async def request_validation_exception_handler(
         except RuntimeError:
             body_preview = b"<stream consumed>"
 
-    logging.error(
+    logger.error(
         "request_validation_exception: %s %s\n"
         "Body preview: %s\nValidation errors: %s\nHeaders: %s",
         request.url,
@@ -160,7 +162,7 @@ def mongodb_exception_handler(
         JSONResponse with MongoDB error details.
 
     """
-    logging.error("MongoDB error on %s: %s", request.url, exc)
+    logger.error("MongoDB error on %s: %s", request.url, exc)
     return base_http_exception_handler(request, convert_pymongo_error(exc))
 
 
@@ -179,12 +181,12 @@ def general_exception_handler(
 
     """
     traceback_str = "".join(traceback.format_tb(exc.__traceback__))
-    logging.error("Exception: %s %s", traceback_str, exc)
-    logging.error("Exception on request: %s", request.url)
+    logger.error("Exception: %s %s", traceback_str, exc)
+    logger.error("Exception on request: %s", request.url)
 
     pymongo_exc = find_pymongo_error(exc)
     if pymongo_exc is not None:
-        logging.error("MongoDB error (from exception chain): %s", pymongo_exc)
+        logger.error("MongoDB error (from exception chain): %s", pymongo_exc)
         return base_http_exception_handler(
             request, convert_pymongo_error(pymongo_exc)
         )
@@ -193,7 +195,7 @@ def general_exception_handler(
         from redis.exceptions import RedisError
 
         if isinstance(exc, RedisError):
-            logging.exception("Redis error on %s", request.url)
+            logger.error("Redis error on %s", request.url)
             content = InternalErrorResponseModel(
                 message="A Redis error occurred",
             ).model_dump(mode="json")

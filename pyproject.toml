@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastapi-mongo-base"
-version = "1.8.1"
+version = "1.8.2"
 description = "A simple boilerplate application, including models and schemas and abstract router, for FastAPI with MongoDB"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -95,6 +95,8 @@ select = [
   "TRY",   # better try/excepts
   "N",     # naming conventions
   "S",     # security checks
+  "PIE",   # pie: pie checking
+  "LOG",   # logging: logging checking
   "ANN",   # type annotation checks
   "T20",   # no print()
   "C4",    # comprehension: better loops
