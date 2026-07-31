@@ -9,10 +9,13 @@ from pydantic import BaseModel
 
 try:
     import usso  # ruff:ignore[unused-import]
+
+    _USSO_IS_REAL = True
 except ImportError:
     from tests.helpers.usso_mock import install_usso_mock
 
     install_usso_mock()
+    _USSO_IS_REAL = False
 
 from usso.user import UserData
 
@@ -25,6 +28,16 @@ from src.fastapi_mongo_base.utils.usso_routes import (
     AbstractOwnedUSSORouter,
     AbstractTenantUSSORouter,
 )
+
+_requires_real_usso = pytest.mark.skipif(
+    not _USSO_IS_REAL,
+    reason=(
+        "exercises real usso.authorization semantics; the fallback stub's "
+        "owner_authorization/broadest_scope_filter are no-ops, not a "
+        "faithful reimplementation"
+    ),
+)
+
 
 _AUTH = "src.fastapi_mongo_base.utils.usso_routes.authorization"
 
@@ -150,6 +163,7 @@ async def test_authorize_workspace_access_false_omits_workspace_kwargs(
     assert "workspace_id" not in mock_owner_auth.call_args.kwargs
 
 
+@_requires_real_usso
 @pytest.mark.asyncio
 async def test_authorize_grants_workspace_member_read_end_to_end(
     tenant_router: _TenantRouter,
@@ -170,6 +184,7 @@ async def test_authorize_grants_workspace_member_read_end_to_end(
     )
 
 
+@_requires_real_usso
 @pytest.mark.asyncio
 async def test_authorize_denies_workspace_member_write_by_default(
     tenant_router: _TenantRouter,
@@ -270,6 +285,7 @@ def test_get_list_filter_queries_denies_without_scopes(
         assert router.get_list_filter_queries(user=user) == {"__deny__": True}
 
 
+@_requires_real_usso
 def test_get_list_filter_queries_prefers_workspace_over_user(
     tenant_router: _TenantRouter,
 ) -> None:
