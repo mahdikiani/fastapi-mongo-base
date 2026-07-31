@@ -114,6 +114,84 @@ async def test_authorize_owner_authorization_short_circuit(
 
 
 @pytest.mark.asyncio
+async def test_authorize_forwards_workspace_id_and_action(
+    tenant_router: _TenantRouter,
+) -> None:
+    """
+    Test that authorize() forwards workspace_id/workspace_action.
+
+    This is the wiring that lets a workspace member's request be granted
+    for resources they didn't create.
+    """
+    user = UserData(
+        sub="user-1", tenant_id="t1", workspace_id="ws-1", scopes=[]
+    )
+    with patch(
+        f"{_AUTH}.owner_authorization", return_value=True
+    ) as mock_owner_auth:
+        await tenant_router.authorize(action="read", user=user)
+    assert mock_owner_auth.call_args.kwargs["workspace_id"] == "ws-1"
+    assert mock_owner_auth.call_args.kwargs["workspace_action"] == "read"
+
+
+@pytest.mark.asyncio
+async def test_authorize_workspace_access_false_omits_workspace_kwargs(
+    tenant_router: _TenantRouter,
+) -> None:
+    """workspace_access=False disables the workspace_id passthrough."""
+    tenant_router.workspace_access = False
+    user = UserData(
+        sub="user-1", tenant_id="t1", workspace_id="ws-1", scopes=[]
+    )
+    with patch(
+        f"{_AUTH}.owner_authorization", return_value=True
+    ) as mock_owner_auth:
+        await tenant_router.authorize(action="read", user=user)
+    assert "workspace_id" not in mock_owner_auth.call_args.kwargs
+
+
+@pytest.mark.asyncio
+async def test_authorize_grants_workspace_member_read_end_to_end(
+    tenant_router: _TenantRouter,
+) -> None:
+    """
+    Test end-to-end (real owner_authorization, not mocked).
+
+    A workspace member can read a resource created by someone else in
+    the same workspace, up to the router's workspace_action (default
+    "read").
+    """
+    user = UserData(
+        sub="user-2", tenant_id="t1", workspace_id="ws-1", scopes=[]
+    )
+    resource_filter = {"user_id": "user-1", "workspace_id": "ws-1"}
+    assert await tenant_router.authorize(
+        action="read", user=user, filter_data=resource_filter
+    )
+
+
+@pytest.mark.asyncio
+async def test_authorize_denies_workspace_member_write_by_default(
+    tenant_router: _TenantRouter,
+) -> None:
+    """
+    Test end-to-end (real owner_authorization).
+
+    A workspace member cannot update/delete another member's resource
+    under the default read-only workspace_action, and falls through to
+    the (failing) scope check.
+    """
+    user = UserData(
+        sub="user-2", tenant_id="t1", workspace_id="ws-1", scopes=[]
+    )
+    resource_filter = {"user_id": "user-1", "workspace_id": "ws-1"}
+    with pytest.raises(ForbiddenError):
+        await tenant_router.authorize(
+            action="update", user=user, filter_data=resource_filter
+        )
+
+
+@pytest.mark.asyncio
 async def test_authorize_raises_forbidden_when_scopes_deny(
     tenant_router: _TenantRouter,
 ) -> None:
@@ -190,6 +268,60 @@ def test_get_list_filter_queries_denies_without_scopes(
         return_value=[],
     ):
         assert router.get_list_filter_queries(user=user) == {"__deny__": True}
+
+
+def test_get_list_filter_queries_prefers_workspace_over_user(
+    tenant_router: _TenantRouter,
+) -> None:
+    """
+    Test that a workspace member's list filter becomes workspace-wide.
+
+    Not just their own items -- broadest_scope_filter (real, not mocked
+    here) already scores workspace_id as less restrictive than user_id,
+    so no extra query-builder support is needed for shared visibility.
+    """
+    user = UserData(
+        sub="user-1", tenant_id="t1", workspace_id="ws-1", scopes=[]
+    )
+    with patch(f"{_AUTH}.get_scope_filters", return_value=[]):
+        filters = tenant_router.get_list_filter_queries(user=user)
+    assert filters == {"workspace_id": "ws-1"}
+
+
+def test_get_list_filter_queries_workspace_access_false(
+    tenant_router: _TenantRouter,
+) -> None:
+    """workspace_access=False omits the workspace candidate entirely."""
+    tenant_router.workspace_access = False
+    user = UserData(
+        sub="user-1", tenant_id="t1", workspace_id="ws-1", scopes=[]
+    )
+    with patch(f"{_AUTH}.get_scope_filters", return_value=[]):
+        filters = tenant_router.get_list_filter_queries(user=user)
+    assert filters == {"user_id": "user-1"}
+
+
+def test_get_list_filter_queries_skips_workspace_without_field(
+    tenant_router: _TenantRouter,
+) -> None:
+    """Models without a workspace_id field are unaffected."""
+    tenant_router.model = MagicMock(spec=["uid", "user_id", "tenant_id"])
+    user = UserData(
+        sub="user-1", tenant_id="t1", workspace_id="ws-1", scopes=[]
+    )
+    with patch(f"{_AUTH}.get_scope_filters", return_value=[]):
+        filters = tenant_router.get_list_filter_queries(user=user)
+    assert filters == {"user_id": "user-1"}
+
+
+def test_get_list_filter_queries_no_workspace_id_on_user(
+    tenant_router: _TenantRouter,
+) -> None:
+    """A user with no current workspace_id gets the plain owner filter."""
+    user = UserData(sub="user-1", tenant_id="t1", workspace_id=None, scopes=[])
+    with patch(f"{_AUTH}.get_scope_filters", return_value=[]):
+        filters = tenant_router.get_list_filter_queries(user=user)
+    assert filters == {"user_id": "user-1"}
 
 
 @pytest.mark.asyncio

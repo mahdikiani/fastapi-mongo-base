@@ -46,6 +46,15 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
     self_action: str = "owner"
     self_access: bool = True
 
+    # When True (default), being a member of the requester's own
+    # workspace_id also grants access to resources tagged with that same
+    # workspace_id (up to workspace_action's privilege level), independent
+    # of who within the workspace owns them -- enables shared, Slack-like
+    # visibility for workspace-scoped resources. No-op for models without
+    # a workspace_id field.
+    workspace_access: bool = True
+    workspace_action: str = "read"
+
     # Override in subclasses: "user_id" or "owner_id"
     owner_attr: str = "user_id"
 
@@ -140,10 +149,19 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
                 raise UnauthorizedError()
             return False
         owner_id = self._resolve_owner_id(user)
+        # owner_attr == "workspace_id" routers already match workspace_id
+        # as their primary owner check below; avoid passing it twice.
+        workspace_kwargs = {}
+        if self.workspace_access and self.owner_attr != "workspace_id":
+            workspace_kwargs = {
+                "workspace_id": getattr(user, "workspace_id", None),
+                "workspace_action": self.workspace_action,
+            }
         if authorization.owner_authorization(
             requested_filter=filter_data,
             self_action=self.self_action,
             action=action,
+            **workspace_kwargs,
             **{self.owner_attr: owner_id},
         ):
             return True
@@ -173,7 +191,14 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             matched_scopes.append({
                 self.owner_attr: self._resolve_owner_id(user)
             })
-        elif not matched_scopes:
+        if (
+            self.workspace_access
+            and self.owner_attr != "workspace_id"
+            and hasattr(self.model, "workspace_id")
+            and getattr(user, "workspace_id", None)
+        ):
+            matched_scopes.append({"workspace_id": user.workspace_id})
+        if not matched_scopes:
             return {"__deny__": True}
         return authorization.broadest_scope_filter(matched_scopes)
 
