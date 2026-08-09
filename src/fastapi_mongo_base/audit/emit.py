@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from .context import get_audit_actor, is_audit_enabled
 from .diff import compute_changes, serialize_value
@@ -193,6 +192,6 @@ async def maybe_record_audit(
         return None
 
 
-def snapshot_for_audit(item: object) -> dict[str, Any]:
+def snapshot_for_audit(item: object) -> dict[str, object]:
     """Public helper to capture pre-mutation state for updates/deletes."""
     return dump_entity(item)

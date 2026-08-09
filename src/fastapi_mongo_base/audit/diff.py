@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import json_advanced as json
 
 
@@ -26,8 +24,8 @@ _DEFAULT_EXCLUDE = frozenset({
 
 
 def compute_changes(
-    before: dict[str, Any] | None,
-    after: dict[str, Any] | None,
+    before: dict[str, object] | None,
+    after: dict[str, object] | None,
     *,
     exclude_fields: set[str] | frozenset[str] | None = None,
 ) -> dict[str, dict[str, object]]:

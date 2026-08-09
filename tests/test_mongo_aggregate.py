@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -42,7 +41,7 @@ async def test_aggregate_to_list_beanie1_motor_fallback() -> None:
     model.get_motor_collection.return_value = collection
     model.__name__ = "Doc"
 
-    pipeline: list[dict[str, Any]] = [{"$group": {"_id": None}}]
+    pipeline: list[dict[str, object]] = [{"$group": {"_id": None}}]
     result = await aggregate_to_list(
         model, pipeline, length=None, allowDiskUse=True
     )
