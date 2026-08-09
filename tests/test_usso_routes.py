@@ -17,6 +17,8 @@ except ImportError:
     install_usso_mock()
     _USSO_IS_REAL = False
 
+import contextlib
+
 from usso.user import UserData
 
 from src.fastapi_mongo_base.errors.status import (
@@ -131,7 +133,7 @@ async def test_authorize_forwards_workspace_id_and_action(
     tenant_router: _TenantRouter,
 ) -> None:
     """
-    Test that authorize() forwards workspace_id/workspace_action.
+    Test authorize() workspace forwarding when primary check fails.
 
     This is the wiring that lets a workspace member's request be granted
     for resources they didn't create.
@@ -140,26 +142,31 @@ async def test_authorize_forwards_workspace_id_and_action(
         sub="user-1", tenant_id="t1", workspace_id="ws-1", scopes=[]
     )
     with patch(
-        f"{_AUTH}.owner_authorization", return_value=True
+        f"{_AUTH}.owner_authorization", side_effect=[False, True]
     ) as mock_owner_auth:
         await tenant_router.authorize(action="read", user=user)
-    assert mock_owner_auth.call_args.kwargs["workspace_id"] == "ws-1"
-    assert mock_owner_auth.call_args.kwargs["workspace_action"] == "read"
+    assert mock_owner_auth.call_count == 2
+    assert mock_owner_auth.call_args_list[1].kwargs["workspace_id"] == "ws-1"
+    assert mock_owner_auth.call_args_list[1].kwargs["self_action"] == "read"
 
 
 @pytest.mark.asyncio
 async def test_authorize_workspace_access_false_omits_workspace_kwargs(
     tenant_router: _TenantRouter,
 ) -> None:
-    """workspace_access=False disables the workspace_id passthrough."""
+    """workspace_access=False disables the workspace_id check."""
     tenant_router.workspace_access = False
     user = UserData(
         sub="user-1", tenant_id="t1", workspace_id="ws-1", scopes=[]
     )
-    with patch(
-        f"{_AUTH}.owner_authorization", return_value=True
-    ) as mock_owner_auth:
+    with (
+        patch(
+            f"{_AUTH}.owner_authorization", return_value=False
+        ) as mock_owner_auth,
+        contextlib.suppress(Exception),
+    ):
         await tenant_router.authorize(action="read", user=user)
+    assert mock_owner_auth.call_count == 1
     assert "workspace_id" not in mock_owner_auth.call_args.kwargs
 
 

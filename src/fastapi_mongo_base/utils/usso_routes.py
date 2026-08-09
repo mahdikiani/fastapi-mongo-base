@@ -149,20 +149,24 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
                 raise UnauthorizedError()
             return False
         owner_id = self._resolve_owner_id(user)
-        # owner_attr == "workspace_id" routers already match workspace_id
-        # as their primary owner check below; avoid passing it twice.
-        workspace_kwargs = {}
-        if self.workspace_access and self.owner_attr != "workspace_id":
-            workspace_kwargs = {
-                "workspace_id": getattr(user, "workspace_id", None),
-                "workspace_action": self.workspace_action,
-            }
         if authorization.owner_authorization(
             requested_filter=filter_data,
             self_action=self.self_action,
             action=action,
-            **workspace_kwargs,
             **{self.owner_attr: owner_id},
+        ):
+            return True
+
+        workspace_id = getattr(user, "workspace_id", None)
+        if (
+            self.workspace_access
+            and self.owner_attr != "workspace_id"
+            and workspace_id
+        ) and authorization.owner_authorization(
+            requested_filter=filter_data,
+            self_action=self.workspace_action,
+            action=action,
+            workspace_id=workspace_id,
         ):
             return True
         user_scopes = user.scopes or []
