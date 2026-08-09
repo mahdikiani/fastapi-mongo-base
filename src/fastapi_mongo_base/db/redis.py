@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import inspect
 import logging
+import os
+from typing import Any
 
 from ..core.config import Settings
 from ..errors.redis import RedisConnectionError
@@ -11,6 +13,84 @@ from ..errors.redis import RedisConnectionError
 _redis_sync_client: object | None = None
 _redis_async_client: object | None = None
 logger = logging.getLogger(__name__)
+
+
+def _redis_fatal_exceptions() -> tuple[type[BaseException], ...]:
+    """Connection-related and script errors that should kill the process."""
+    try:
+        from redis.exceptions import ConnectionError, NoScriptError, TimeoutError
+    except ImportError:  # redis not installed; nothing to guard against
+        return ()
+    return (ConnectionError, NoScriptError, TimeoutError, OSError)
+
+
+def _force_exit(exc: BaseException, method_name: str) -> None:
+    """Log and forcefully terminate the process."""
+    logger.critical(
+        "Fatal Redis error on %s; forcing process exit",
+        method_name,
+        exc_info=exc,
+    )
+    os._exit(1)  # noqa: PLR1722 - deliberate hard exit, skips atexit/SystemExit handlers
+
+
+class _SyncRedisGuard:
+    """Proxy that force-exits on fatal Redis errors for sync calls."""
+
+    def __init__(self, client: Any) -> None:
+        self._client = client
+        self._fatal = _redis_fatal_exceptions()
+
+    def __getattr__(self, name: str) -> Any:
+        attr = getattr(self._client, name)
+        if not callable(attr):
+            return attr
+
+        def guarded(*args: Any, **kwargs: Any) -> Any:
+            try:
+                return attr(*args, **kwargs)
+            except self._fatal as e:
+                _force_exit(e, name)
+                raise  # pragma: no cover - unreachable after os._exit
+
+        return guarded
+
+    def __getitem__(self, key: Any) -> Any:
+        return self._client[key]
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        self._client[key] = value
+
+
+class _AsyncRedisGuard:
+    """Proxy that force-exits on fatal Redis errors for async calls."""
+
+    def __init__(self, client: Any) -> None:
+        self._client = client
+        self._fatal = _redis_fatal_exceptions()
+
+    def __getattr__(self, name: str) -> Any:
+        attr = getattr(self._client, name)
+        if not callable(attr):
+            return attr
+
+        async def guarded(*args: Any, **kwargs: Any) -> Any:
+            try:
+                result = attr(*args, **kwargs)
+                if inspect.isawaitable(result):
+                    result = await result
+                return result
+            except self._fatal as e:
+                _force_exit(e, name)
+                raise  # pragma: no cover - unreachable after os._exit
+
+        return guarded
+
+    def __getitem__(self, key: Any) -> Any:
+        return self._client[key]
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        self._client[key] = value
 
 
 def get_redis_sync_client() -> object | None:
@@ -88,9 +168,9 @@ def init_redis(
         logger.exception("Redis connection error at %s", redis_uri)
         raise RedisConnectionError("Failed to connect to Redis") from e
 
-    _redis_sync_client = redis_sync
-    _redis_async_client = redis_async
-    return redis_sync, redis_async
+    _redis_sync_client = _SyncRedisGuard(redis_sync)
+    _redis_async_client = _AsyncRedisGuard(redis_async)
+    return _redis_sync_client, _redis_async_client
 
 
 async def check_redis(client: object | None) -> str:
@@ -129,12 +209,8 @@ async def close_redis(
     """
     global _redis_sync_client, _redis_async_client
 
-    sync_client = (
-        sync_client if sync_client is not None else _redis_sync_client
-    )
-    async_client = (
-        async_client if async_client is not None else _redis_async_client
-    )
+    sync_client = sync_client if sync_client is not None else _redis_sync_client
+    async_client = async_client if async_client is not None else _redis_async_client
 
     if async_client is not None:
         for name in ("aclose", "close"):
