@@ -437,44 +437,36 @@ def create_app(
     return app
 
 
-def configure_app(
+def _register_probe_route(
+    app: fastapi.FastAPI,
+    path: str,
+    handler: Callable[..., object],
+    *,
+    root_alias: bool,
+) -> None:
+    """Register a probe endpoint and optional root-path alias."""
+    app.get(path)(handler)
+    if root_alias:
+        # Keep k8s aliases out of OpenAPI to avoid duplicate operation IDs.
+        app.get(
+            f"/{path.rsplit('/', 1)[-1]}",
+            include_in_schema=False,
+        )(handler)
+
+
+def _register_utility_routes(
     app: fastapi.FastAPI,
     settings: config.Settings,
     *,
-    serve_coverage: bool = False,
-    origins: list | None = None,
-    exception_handlers: dict | None = None,
     log_route: bool = False,
     health_route: bool = True,
     readiness_route: bool = True,
+    kubernetes_route: bool = True,
     index_route: bool = True,
-    **kwargs: object,
-) -> fastapi.FastAPI:
-    """
-    Configure routes and middleware for a FastAPI application.
-
-    Args:
-        app: FastAPI application instance to configure.
-        settings: Application settings instance.
-        serve_coverage: Whether to serve coverage reports.
-        origins: Optional list of allowed CORS origins.
-        exception_handlers: Optional exception handlers dictionary.
-        log_route: Whether to enable log viewing route.
-        health_route: Whether to enable liveness health check route.
-        readiness_route: Whether to enable readiness health check route.
-        index_route: Whether to enable index redirect route.
-        **kwargs: Additional keyword arguments.
-
-    Returns:
-        Configured FastAPI application instance.
-
-    """
+    serve_coverage: bool = False,
+) -> None:
+    """Register health, readiness, logs, index, and coverage routes."""
     base_path: str = settings.base_path
-    if origins is None:
-        origins = settings.cors_origins
-
-    setup_exception_handlers(app=app, handlers=exception_handlers, **kwargs)
-    setup_middlewares(app=app, origins=origins, **kwargs)
 
     async def logs() -> list[str]:
         """
@@ -506,22 +498,75 @@ def configure_app(
         return RedirectResponse(url=f"{base_path}/docs")
 
     if health_route:
-        app.get(f"{base_path}/health")(health)
+        _register_probe_route(
+            app, f"{base_path}/health", health, root_alias=kubernetes_route
+        )
     if readiness_route:
-        app.get(f"{base_path}/ready")(readiness)
+        _register_probe_route(
+            app, f"{base_path}/ready", readiness, root_alias=kubernetes_route
+        )
     if log_route:
         app.get(f"{base_path}/logs", include_in_schema=False)(logs)
     if index_route:
         app.get("/", include_in_schema=False)(index)
         app.get(base_path, include_in_schema=False)(index)
-
     if serve_coverage:
         app.mount(
-            f"{settings.base_path}/coverage",
+            f"{base_path}/coverage",
             StaticFiles(directory=settings.get_coverage_dir()),
             name="coverage",
         )
 
+
+def configure_app(
+    app: fastapi.FastAPI,
+    settings: config.Settings,
+    *,
+    serve_coverage: bool = False,
+    origins: list | None = None,
+    exception_handlers: dict | None = None,
+    log_route: bool = False,
+    health_route: bool = True,
+    readiness_route: bool = True,
+    kubernetes_route: bool = True,
+    index_route: bool = True,
+    **kwargs: object,
+) -> fastapi.FastAPI:
+    """
+    Configure routes and middleware for a FastAPI application.
+
+    Args:
+        app: FastAPI application instance to configure.
+        settings: Application settings instance.
+        serve_coverage: Whether to serve coverage reports.
+        origins: Optional list of allowed CORS origins.
+        exception_handlers: Optional exception handlers dictionary.
+        log_route: Whether to enable log viewing route.
+        health_route: Whether to enable liveness health check route.
+        readiness_route: Whether to enable readiness health check route.
+        kubernetes_route: Whether to also expose health/ready at root paths.
+        index_route: Whether to enable index redirect route.
+        **kwargs: Additional keyword arguments.
+
+    Returns:
+        Configured FastAPI application instance.
+
+    """
+    if origins is None:
+        origins = settings.cors_origins
+
+    setup_exception_handlers(app=app, handlers=exception_handlers, **kwargs)
+    setup_middlewares(app=app, origins=origins, **kwargs)
+    _register_utility_routes(
+        app,
+        settings,
+        log_route=log_route,
+        health_route=health_route,
+        readiness_route=readiness_route,
+        kubernetes_route=kubernetes_route,
+        index_route=index_route,
+        serve_coverage=serve_coverage,
+    )
     setup_openapi_errors(app)
 
     return app
