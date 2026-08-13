@@ -119,6 +119,8 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             from_usso_base_url=usso_base_url,
         )
         user = usso(request)
+        if user is None:
+            raise UnauthorizedError()
         apply_user_timezone(request, user)
         return user
 
