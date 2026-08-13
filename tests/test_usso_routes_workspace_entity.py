@@ -12,8 +12,8 @@ except ImportError:
 
 from usso.user import UserData
 
-from src.fastapi_mongo_base.errors.base import BaseHTTPException
-from src.fastapi_mongo_base.utils.usso_routes import (
+from fastapi_mongo_base.errors.base import BaseHTTPException
+from fastapi_mongo_base.utils.usso_routes import (
     AbstractWorkspaceUSSORouter,
 )
 
@@ -30,7 +30,7 @@ class _WorkspaceEntityRouter(AbstractWorkspaceUSSORouter):
     schema = _DummySchema
 
 
-@pytest.fixture()
+@pytest.fixture
 def router() -> _WorkspaceEntityRouter:
     """Fixture for workspace entity router."""
     return object.__new__(_WorkspaceEntityRouter)

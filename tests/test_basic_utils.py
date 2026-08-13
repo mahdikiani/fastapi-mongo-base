@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
 
-from src.fastapi_mongo_base.utils import basic
+from fastapi_mongo_base.utils import basic
 
 
 class _ChildEntity:
@@ -64,7 +64,10 @@ def test_is_valid_range_value() -> None:
     """Range queries accept numeric and temporal types."""
     assert basic.is_valid_range_value(1) is True
     assert basic.is_valid_range_value(Decimal("1.5")) is True
-    assert basic.is_valid_range_value(datetime(2024, 1, 1)) is True
+    assert (
+        basic.is_valid_range_value(datetime(2024, 1, 1, tzinfo=timezone.utc))
+        is True
+    )
     assert basic.is_valid_range_value(date(2024, 1, 1)) is True
     assert basic.is_valid_range_value("x") is True
     assert basic.is_valid_range_value([]) is False
@@ -159,7 +162,7 @@ async def test_debug_mode_mock_returns_mock_when_debug_enabled() -> None:
         await asyncio.sleep(0)
         return "real"
 
-    with patch("src.fastapi_mongo_base.core.config.Settings.debug", True):
+    with patch("fastapi_mongo_base.core.config.Settings.debug", True):
         assert await real() == "mocked"
 
 
@@ -172,7 +175,7 @@ async def test_debug_mode_mock_calls_real_when_debug_disabled() -> None:
         await asyncio.sleep(0)
         return "real"
 
-    with patch("src.fastapi_mongo_base.core.config.Settings.debug", False):
+    with patch("fastapi_mongo_base.core.config.Settings.debug", False):
         assert await real() == "real"
 
 
@@ -183,7 +186,7 @@ def test_debug_mode_mock_sync_wrapper() -> None:
     def real() -> str:
         return "real"
 
-    with patch("src.fastapi_mongo_base.core.config.Settings.debug", True):
+    with patch("fastapi_mongo_base.core.config.Settings.debug", True):
         assert real() == "from-callable"
 
 

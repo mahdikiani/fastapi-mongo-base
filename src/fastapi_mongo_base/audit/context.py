@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar, Token
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,14 +31,21 @@ _audit_enabled: ContextVar[bool | None] = ContextVar(
     default=None,
 )
 
+
+@dataclass
+class _ProcessAuditState:
+    """Mutable process-level audit flag (avoids ``global``)."""
+
+    enabled: bool = False
+
+
 # Process-level default, synced from settings at DB init.
-_process_audit_enabled: bool = False
+_process_audit = _ProcessAuditState()
 
 
 def set_audit_enabled(enabled: bool) -> None:
     """Set the process-level audit enable flag (from settings)."""
-    global _process_audit_enabled
-    _process_audit_enabled = enabled
+    _process_audit.enabled = enabled
 
 
 def is_audit_enabled() -> bool:
@@ -43,7 +53,7 @@ def is_audit_enabled() -> bool:
     override = _audit_enabled.get()
     if override is not None:
         return override
-    return _process_audit_enabled
+    return _process_audit.enabled
 
 
 def get_audit_actor() -> AuditActor | None:

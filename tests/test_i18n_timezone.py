@@ -13,8 +13,8 @@ try:
 except ImportError:
     import httpx
 
-from src.fastapi_mongo_base.i18n.context import request_timezone
-from src.fastapi_mongo_base.i18n.timezone import (
+from fastapi_mongo_base.i18n.context import request_timezone
+from fastapi_mongo_base.i18n.timezone import (
     apply_user_timezone,
     localize_filter_datetime,
     parse_timezone,
@@ -22,10 +22,10 @@ from src.fastapi_mongo_base.i18n.timezone import (
     serialize_response_datetime,
     set_request_timezone,
 )
-from src.fastapi_mongo_base.middlewares.timezone import TimezoneMiddleware
-from src.fastapi_mongo_base.schemas import BaseEntitySchema
-from src.fastapi_mongo_base.tasks import TaskLogRecord, TaskMixin
-from src.fastapi_mongo_base.utils import timezone as tz_util
+from fastapi_mongo_base.middlewares.timezone import TimezoneMiddleware
+from fastapi_mongo_base.schemas import BaseEntitySchema
+from fastapi_mongo_base.tasks import TaskLogRecord, TaskMixin
+from fastapi_mongo_base.utils import timezone as tz_util
 
 
 def _request(headers: list[tuple[bytes, bytes]] | None = None) -> Request:
@@ -103,7 +103,7 @@ def test_serialize_response_datetime_treats_naive_as_utc() -> None:
     """Naive datetimes are interpreted as UTC before conversion."""
     token = request_timezone.set(pytz.UTC)
     try:
-        dt = datetime(2024, 6, 1, 12, 0, 0)
+        dt = datetime.fromisoformat("2024-06-01T12:00:00")
         assert serialize_response_datetime(dt) == "2024-06-01T12:00:00Z"
     finally:
         request_timezone.reset(token)
@@ -113,7 +113,7 @@ def test_localize_filter_datetime_converts_to_utc() -> None:
     """Filter datetimes are converted from request timezone to UTC."""
     token = request_timezone.set(pytz.timezone("Asia/Tehran"))
     try:
-        local = datetime(2024, 6, 1, 15, 30, 0)
+        local = datetime.fromisoformat("2024-06-01T15:30:00")
         utc_dt = localize_filter_datetime(local)
         assert utc_dt == datetime(2024, 6, 1, 12, 0, 0, tzinfo=pytz.UTC)
     finally:

@@ -12,8 +12,8 @@ if importlib.util.find_spec("prometheus_client") is None:
         allow_module_level=True,
     )
 
-from src.fastapi_mongo_base.monitoring import mongo as mongo_metrics
-from src.fastapi_mongo_base.monitoring.mongo import DatabasePoolMonitor
+from fastapi_mongo_base.monitoring import mongo as mongo_metrics
+from fastapi_mongo_base.monitoring.mongo import DatabasePoolMonitor
 
 
 def _counter_value(counter: object, **labels: str) -> float:
@@ -24,7 +24,7 @@ def _gauge_value(gauge: object, **labels: str) -> float:
     return gauge.labels(**labels)._value.get()  # type: ignore[union-attr]
 
 
-@pytest.fixture()
+@pytest.fixture
 def monitor() -> DatabasePoolMonitor:
     """Return a pool monitor with a unique database label per test."""
     return DatabasePoolMonitor(database_name="monitoring-test-db")

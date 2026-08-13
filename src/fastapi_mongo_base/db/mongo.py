@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import inspect
 import logging
+from typing import Any, cast
 
 from beanie import init_beanie
 
-from ..core.config import Settings
-from ..errors.mongodb import MongoDBConnectionError
-from ..models import BaseEntity
-from ..utils import basic
+from fastapi_mongo_base.core.config import Settings
+from fastapi_mongo_base.errors.mongodb import MongoDBConnectionError
+from fastapi_mongo_base.models import BaseEntity
+from fastapi_mongo_base.utils import basic
 
 logger = logging.getLogger(__name__)
 
@@ -27,14 +28,15 @@ def discover_beanie_document_models() -> list[type]:
         List of Beanie document model classes.
 
     """
-    return [
-        cls
-        for cls in basic.get_all_subclasses(BaseEntity)
-        if not (
-            "Settings" in cls.__dict__
-            and getattr(cls.Settings, "__abstract__", False)
-        )
-    ]
+    models: list[type] = []
+    for cls in basic.get_all_subclasses(BaseEntity):
+        settings_cls = cls.__dict__.get("Settings")
+        if settings_cls is not None and getattr(
+            settings_cls, "__abstract__", False
+        ):
+            continue
+        models.append(cls)
+    return models
 
 
 def _register_pool_monitor(settings: Settings) -> None:
@@ -44,7 +46,7 @@ def _register_pool_monitor(settings: Settings) -> None:
     try:
         from pymongo import monitoring
 
-        from ..monitoring.mongo import DatabasePoolMonitor
+        from fastapi_mongo_base.monitoring.mongo import DatabasePoolMonitor
 
         pool_monitor = DatabasePoolMonitor(
             database_name=settings.project_name,
@@ -78,61 +80,75 @@ async def init_mongo_db(
         MongoDBConnectionError: If MongoDB connection or initialization fails.
 
     """
+    client_cls: type[Any]
     try:
         from pymongo import AsyncMongoClient
         from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
+
+        client_cls = AsyncMongoClient
     except ImportError:
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
+            from pymongo.errors import (
+                PyMongoError,
+                ServerSelectionTimeoutError,
+            )
 
-            AsyncMongoClient = AsyncIOMotorClient  # ruff:ignore[non-lowercase-variable-in-function]
+            client_cls = AsyncIOMotorClient
         except ImportError as e:
             raise ImportError("MongoDB is not installed") from e
 
-    if settings is None:
-        settings = Settings()
+    resolved: Settings = (
+        settings if settings is not None else cast("Settings", Settings())
+    )
 
-    mongo_uri = getattr(settings, "mongo_uri", None)
+    mongo_uri = getattr(resolved, "mongo_uri", None)
     if not mongo_uri or not str(mongo_uri).strip():
         raise MongoDBConnectionError(
             "MongoDB is not configured. Set MONGO_URI to initialize."
         )
 
-    _register_pool_monitor(settings)
+    _register_pool_monitor(resolved)
 
-    client = AsyncMongoClient(
-        settings.mongo_uri,
-        serverSelectionTimeoutMS=settings.mongo_server_selection_timeout_ms,
-        connectTimeoutMS=settings.mongo_connect_timeout_ms,
+    client = client_cls(
+        resolved.mongo_uri,
+        serverSelectionTimeoutMS=resolved.mongo_server_selection_timeout_ms,
+        connectTimeoutMS=resolved.mongo_connect_timeout_ms,
     )
     models = document_models or discover_beanie_document_models()
-    if getattr(settings, "audit_log_enabled", False):
-        from ..audit.context import set_audit_enabled
-        from ..audit.models import AuditLog, activate_mongo_audit_log
+    if getattr(resolved, "audit_log_enabled", False):
+        from fastapi_mongo_base.audit.context import set_audit_enabled
+        from fastapi_mongo_base.audit.models import (
+            AuditLog,
+            activate_mongo_audit_log,
+        )
 
         activate_mongo_audit_log()
         set_audit_enabled(True)
         if AuditLog not in models:
             models = [*models, AuditLog]
     else:
-        from ..audit.context import set_audit_enabled
-        from ..audit.models import deactivate_mongo_audit_log
+        from fastapi_mongo_base.audit.context import set_audit_enabled
+        from fastapi_mongo_base.audit.models import deactivate_mongo_audit_log
 
         deactivate_mongo_audit_log()
         set_audit_enabled(False)
 
     try:
         await client.server_info()
-        db = client.get_database(settings.project_name)
-        await init_beanie(database=db, document_models=models)
+        db = client.get_database(resolved.project_name)
+        await init_beanie(
+            database=cast("Any", db),
+            document_models=cast("list[type[Any]]", models),
+        )
     except ServerSelectionTimeoutError as e:
         logger.exception(
-            "MongoDB connection timeout at %s", settings.mongo_uri
+            "MongoDB connection timeout at %s", resolved.mongo_uri
         )
         raise MongoDBConnectionError("Failed to connect to MongoDB") from e
 
     except PyMongoError as e:
-        logger.exception("MongoDB error at %s", settings.mongo_uri)
+        logger.exception("MongoDB error at %s", resolved.mongo_uri)
         raise MongoDBConnectionError("Failed to connect to MongoDB") from e
 
     except Exception as e:

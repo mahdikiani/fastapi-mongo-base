@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any, cast
 
 from .context import get_audit_actor, is_audit_enabled
 from .diff import compute_changes, serialize_value
@@ -25,12 +26,14 @@ def _is_sql_entity(item: object) -> bool:
     return hasattr(type(item), "__tablename__")
 
 
-def dump_entity(item: object) -> dict[str, object]:
+def dump_entity(item: object) -> dict[str, Any]:
     """Serialize an entity to a plain dict for snapshots/diffs."""
-    if hasattr(item, "model_dump"):
-        data = item.model_dump()
-    elif hasattr(item, "dump"):
-        data = item.dump()
+    model_dump = getattr(item, "model_dump", None)
+    dump = getattr(item, "dump", None)
+    if callable(model_dump):
+        data = model_dump()
+    elif callable(dump):
+        data = dump()
     else:
         data = {
             key: getattr(item, key)
@@ -66,7 +69,7 @@ def _resolve_tenant_id(item: object) -> str:
 
 def _trace_id() -> str | None:
     try:
-        from ..utils.trace import get_trace_id
+        from fastapi_mongo_base.utils.trace import get_trace_id
 
         return get_trace_id()
     except Exception:
@@ -77,9 +80,9 @@ def build_audit_payload(
     *,
     action: AuditAction | str,
     item: object,
-    before: dict[str, object] | None = None,
-    after: dict[str, object] | None = None,
-) -> dict[str, object]:
+    before: dict[str, Any] | None = None,
+    after: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Build the keyword payload for an AuditLog create."""
     action_value = (
         action.value if isinstance(action, AuditAction) else str(action)
@@ -132,8 +135,8 @@ async def record_audit(
     *,
     action: AuditAction | str,
     item: object,
-    before: dict[str, object] | None = None,
-    after: dict[str, object] | None = None,
+    before: dict[str, Any] | None = None,
+    after: dict[str, Any] | None = None,
 ) -> object | None:
     """
     Persist an audit log row for ``item``.
@@ -159,7 +162,7 @@ async def record_audit(
                 "SQL audit enabled but AuditLog model is not activated",
             )
             return None
-        return await model.create_item(payload)
+        return await cast("Any", model).create_item(payload)
 
     from .models import AuditLog
 
@@ -170,8 +173,8 @@ async def maybe_record_audit(
     *,
     action: AuditAction | str,
     item: object,
-    before: dict[str, object] | None = None,
-    after: dict[str, object] | None = None,
+    before: dict[str, Any] | None = None,
+    after: dict[str, Any] | None = None,
 ) -> object | None:
     """Record an audit row when auditing is enabled; never raise."""
     if not is_audit_enabled():
@@ -192,6 +195,6 @@ async def maybe_record_audit(
         return None
 
 
-def snapshot_for_audit(item: object) -> dict[str, object]:
+def snapshot_for_audit(item: object) -> dict[str, Any]:
     """Public helper to capture pre-mutation state for updates/deletes."""
     return dump_entity(item)

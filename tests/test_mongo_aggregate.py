@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.fastapi_mongo_base.utils.mongo_aggregate import aggregate_to_list
+from fastapi_mongo_base.utils.mongo_aggregate import aggregate_to_list
 
 
 @pytest.mark.asyncio

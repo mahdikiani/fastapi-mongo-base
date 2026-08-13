@@ -10,20 +10,26 @@ import inspect
 import json
 import logging
 import time
-from collections.abc import Awaitable, Callable, Coroutine
-from typing import TypeVar
+from collections.abc import Awaitable, Callable
+from types import ModuleType
+from typing import Any, TypeVar, cast
 
-try:
-    import json_advanced
-except ImportError:
-    import json as json_advanced
+
+def _json_codec() -> ModuleType:
+    """Return json_advanced when installed, otherwise stdlib json."""
+    try:
+        import json_advanced
+    except ImportError:
+        return json
+    return json_advanced
+
+
+json_codec = _json_codec()
 
 logger = logging.getLogger(__name__)
 
 
-FunctionOrCoroutine = (
-    Callable[..., None] | Callable[..., Coroutine[object, object, None]]
-)
+FunctionOrCoroutine = Callable[..., object]
 
 
 def get_all_subclasses(cls: type) -> list[type]:
@@ -65,7 +71,7 @@ def parse_array_parameter(value: object) -> list:
     value = value.strip()
     try:
         if value.startswith("[") and value.endswith("]"):
-            parsed = json_advanced.loads(value)
+            parsed = json_codec.loads(value)
             if isinstance(parsed, list):
                 return list(set(parsed))
             return [parsed]
@@ -101,7 +107,7 @@ def get_base_field_name(field: str) -> str:
         "_like",
     ]
     if "." in field:
-        field = field.split(".")[0]
+        field = field.split(".", maxsplit=1)[0]
     for suffix in suffixes:
         if field.endswith(suffix):
             return field[: -len(suffix)]
@@ -127,15 +133,15 @@ def is_valid_range_value(value: object) -> bool:
 
 
 def _exception_handler(
-    func: Callable,
+    func: Callable[..., Any],
     e: Exception,
     args: tuple[object, ...],
-    kwargs: dict[str, object],
+    kwargs: dict[str, Any],
 ) -> None:
     import inspect
     import traceback
 
-    func_name = func.__name__
+    func_name = getattr(func, "__name__", repr(func))
     if (
         len(args) > 0
         and (inspect.ismethod(func) or inspect.isfunction(func))
@@ -153,7 +159,6 @@ def _exception_handler(
         type(e),
         e,
     )
-    return None
 
 
 def _async_try_except_wrapper(func: Callable) -> Callable:
@@ -161,10 +166,11 @@ def _async_try_except_wrapper(func: Callable) -> Callable:
     async def wrapper(*args: object, **kwargs: object) -> object:
         try:
             if inspect.iscoroutinefunction(func):
-                return await func(*args, **kwargs)
-            return await asyncio.to_thread(func, *args, **kwargs)
+                return await func(*args, **cast("Any", kwargs))
+            return await asyncio.to_thread(func, *args, **cast("Any", kwargs))
         except Exception as e:
-            return _exception_handler(func, e, args, kwargs)
+            _exception_handler(func, e, args, kwargs)
+            return None
 
     return wrapper
 
@@ -173,15 +179,16 @@ def _sync_try_except_wrapper(func: Callable) -> Callable:
     @functools.wraps(func)
     def wrapper(*args: object, **kwargs: object) -> object:
         try:
-            return func(*args, **kwargs)
+            return func(*args, **cast("Any", kwargs))
         except Exception as e:
-            return _exception_handler(func, e, args, kwargs)
+            _exception_handler(func, e, args, kwargs)
+            return None
 
     return wrapper
 
 
 def try_except_wrapper(
-    func: Callable,
+    func: Callable[..., Any],
     sync_to_thread: bool = False,
 ) -> Callable:
     """
@@ -218,13 +225,13 @@ def delay_execution(seconds: int, sync_to_thread: bool = False) -> Callable:
         async def awrapped_func(*args: object, **kwargs: object) -> object:
             await asyncio.sleep(seconds)
             if inspect.iscoroutinefunction(func):
-                return await func(*args, **kwargs)
-            return await asyncio.to_thread(func, *args, **kwargs)
+                return await func(*args, **cast("Any", kwargs))
+            return await asyncio.to_thread(func, *args, **cast("Any", kwargs))
 
         @functools.wraps(func)
         def wrapped_func(*args: object, **kwargs: object) -> object:
             time.sleep(seconds)
-            return func(*args, **kwargs)
+            return func(*args, **cast("Any", kwargs))
 
         if sync_to_thread or inspect.iscoroutinefunction(func):
             return awrapped_func
@@ -233,51 +240,107 @@ def delay_execution(seconds: int, sync_to_thread: bool = False) -> Callable:
     return decorator
 
 
+async def _run_async_attempt(
+    func: Callable[..., Any],
+    args: tuple[object, ...],
+    kwargs: dict[str, object],
+) -> object:
+    if inspect.iscoroutinefunction(func):
+        return await func(*args, **cast("Any", kwargs))
+    return await asyncio.to_thread(func, *args, **cast("Any", kwargs))
+
+
 def _async_retry_wrapper(
-    func: Callable, attempts: int, delay: int
+    func: Callable[..., Any], attempts: int, delay: int
 ) -> Callable:
     @functools.wraps(func)
     async def wrapper(*args: object, **kwargs: object) -> object:
-        last_exception = None
+        last_exception: Exception | None = None
         for attempt in range(attempts):
-            try:
-                if inspect.iscoroutinefunction(func):
-                    return await func(*args, **kwargs)
-                return await asyncio.to_thread(func, *args, **kwargs)
-            except Exception as e:  # ruff:ignore[try-except-in-loop]
-                last_exception = e
-                logger.warning(
-                    "Attempt %d failed for %s: %s",
-                    attempt + 1,
-                    func.__name__,
-                    e,
-                )
-                if delay > 0 and attempt < attempts - 1:
-                    await asyncio.sleep(delay)
-        logger.error("All %d attempts failed for %s", attempts, func.__name__)
+            result, last_exception = await _async_attempt_once(
+                func, args, kwargs, attempt, attempts, delay
+            )
+            if result is not _RETRY_SENTINEL:
+                return result
+        logger.error(
+            "All %d attempts failed for %s",
+            attempts,
+            getattr(func, "__name__", repr(func)),
+        )
+        if last_exception is None:
+            raise RuntimeError("Retry failed without capturing an exception")
         raise last_exception
 
     return wrapper
 
 
-def _sync_retry_wrapper(func: Callable, attempts: int, delay: int) -> Callable:
+_RETRY_SENTINEL = object()
+
+
+async def _async_attempt_once(
+    func: Callable[..., Any],
+    args: tuple[object, ...],
+    kwargs: dict[str, object],
+    attempt: int,
+    attempts: int,
+    delay: int,
+) -> tuple[object, Exception | None]:
+    try:
+        return await _run_async_attempt(func, args, kwargs), None
+    except Exception as e:
+        logger.warning(
+            "Attempt %d failed for %s: %s",
+            attempt + 1,
+            getattr(func, "__name__", repr(func)),
+            e,
+        )
+        if delay > 0 and attempt < attempts - 1:
+            await asyncio.sleep(delay)
+        return _RETRY_SENTINEL, e
+
+
+def _sync_attempt_once(
+    func: Callable[..., Any],
+    args: tuple[object, ...],
+    kwargs: dict[str, object],
+    attempt: int,
+    attempts: int,
+    delay: int,
+) -> tuple[object, Exception | None]:
+    try:
+        return func(*args, **cast("Any", kwargs)), None
+    except Exception as e:
+        logger.warning(
+            "Attempt %d failed for %s: %s",
+            attempt + 1,
+            getattr(func, "__name__", repr(func)),
+            e,
+        )
+        if delay > 0 and attempt < attempts - 1:
+            time.sleep(delay)
+        return _RETRY_SENTINEL, e
+
+
+def _sync_retry_wrapper(
+    func: Callable[..., Any], attempts: int, delay: int
+) -> Callable:
     @functools.wraps(func)
     def wrapper(*args: object, **kwargs: object) -> object:
-        last_exception = None
+        last_exception: Exception | None = None
         for attempt in range(attempts):
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:  # ruff:ignore[try-except-in-loop]
-                last_exception = e
-                logger.warning(
-                    "Attempt %d failed for %s: %s",
-                    attempt + 1,
-                    func.__name__,
-                    e,
-                )
-                if delay > 0 and attempt < attempts - 1:
-                    time.sleep(delay)
-        logger.error("All %d attempts failed for %s", attempts, func.__name__)
+            result, err = _sync_attempt_once(
+                func, args, kwargs, attempt, attempts, delay
+            )
+            if err is None:
+                return result
+            last_exception = err
+        logger.error(
+            "All %d attempts failed for %s",
+            attempts,
+            getattr(func, "__name__", repr(func)),
+        )
+        if last_exception is None:
+            raise RuntimeError("Retry failed without capturing an exception")
         raise last_exception
 
     return wrapper
@@ -308,15 +371,15 @@ def retry_execution(
 
 
 async def gather_sync(
-    coroutines: list[Callable[..., Coroutine[object, object, object]]],
+    coroutines: list[Awaitable[Any]],
     /,
     sync: bool = False,
-) -> list[object]:
+) -> list[Any]:
     """
     Execute coroutines in parallel or sequentially.
 
     Args:
-        coroutines: List of coroutines to execute.
+        coroutines: List of awaitables to execute.
         sync: If True, execute sequentially; if False, execute in parallel.
 
     Returns:
@@ -325,7 +388,7 @@ async def gather_sync(
     """
     if sync:
         return [await coroutine for coroutine in coroutines]
-    return await asyncio.gather(*coroutines)
+    return list(await asyncio.gather(*coroutines))
 
 
 R = TypeVar("R")
@@ -337,7 +400,9 @@ def _resolve_mock(
     **kwargs: object,
 ) -> R | Awaitable[R]:
     if callable(return_value):
-        return return_value(*args, **kwargs)
+        return cast("Callable[..., R | Awaitable[R]]", return_value)(
+            *args, **cast("Any", kwargs)
+        )
     return return_value
 
 
@@ -361,29 +426,36 @@ def debug_mode_mock(
         func: Callable[..., R | Awaitable[R]],
     ) -> Callable[..., R | Awaitable[R]]:
 
-        from ..core.config import Settings
+        from fastapi_mongo_base.core.config import Settings
 
         @functools.wraps(func)
         async def async_wrapper(*args: object, **kwargs: object) -> R:
             if Settings.debug:
-                result = _resolve_mock(return_value, *args, **kwargs)
-                if isinstance(result, Awaitable):
-                    return await result
-                return result
-            return await func(*args, **kwargs)
+                result = _resolve_mock(
+                    return_value, *args, **cast("Any", kwargs)
+                )
+                if inspect.isawaitable(result):
+                    return cast("R", await result)
+                return cast("R", result)
+            result = func(*args, **cast("Any", kwargs))
+            if inspect.isawaitable(result):
+                return cast("R", await result)
+            return cast("R", result)
 
         @functools.wraps(func)
         def sync_wrapper(*args: object, **kwargs: object) -> R:
             if Settings.debug:
-                result = _resolve_mock(return_value, *args, **kwargs)
+                result = _resolve_mock(
+                    return_value, *args, **cast("Any", kwargs)
+                )
                 if isinstance(result, Awaitable):
                     msg = (
                         "debug_mode_mock callable returned "
                         "Awaitable for sync function"
                     )
                     raise TypeError(msg)
-                return result
-            return func(*args, **kwargs)
+                return cast("R", result)
+            return cast("R", func(*args, **cast("Any", kwargs)))
 
         return (
             async_wrapper

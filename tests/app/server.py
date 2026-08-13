@@ -3,14 +3,15 @@
 import dataclasses
 from decimal import Decimal
 from pathlib import Path
+from typing import ClassVar
 
 from pydantic import field_validator
 
-from src.fastapi_mongo_base.core import app_factory, config
-from src.fastapi_mongo_base.models import BaseEntity
-from src.fastapi_mongo_base.routes import AbstractBaseRouter
-from src.fastapi_mongo_base.schemas import BaseEntitySchema
-from src.fastapi_mongo_base.utils import bsontools
+from fastapi_mongo_base.core import app_factory, config
+from fastapi_mongo_base.models import BaseEntity
+from fastapi_mongo_base.routes import AbstractBaseRouter
+from fastapi_mongo_base.schemas import BaseEntitySchema
+from fastapi_mongo_base.utils import bsontools
 
 
 class TestEntitySchema(BaseEntitySchema):
@@ -22,6 +23,9 @@ class TestEntitySchema(BaseEntitySchema):
         number: Number of the entity.
 
     """
+
+    # pytest collects ``Test*`` classes; this is an app model.
+    __test__: ClassVar[bool] = False
 
     name: str
     number: Decimal = Decimal(8)
@@ -39,7 +43,10 @@ class TestEntitySchema(BaseEntitySchema):
             Decimal value.
 
         """
-        return bsontools.decimal_amount(v)
+        amount = bsontools.decimal_amount(v)
+        if amount is None:
+            raise ValueError("number is required")
+        return amount
 
 
 class TestEntity(TestEntitySchema, BaseEntity):
@@ -52,6 +59,8 @@ class TestEntity(TestEntitySchema, BaseEntity):
 
     """
 
+    __test__: ClassVar[bool] = False
+
 
 class TestRouter(AbstractBaseRouter):
     """
@@ -62,6 +71,7 @@ class TestRouter(AbstractBaseRouter):
 
     """
 
+    __test__ = False
     model = TestEntity
     schema = TestEntitySchema
 

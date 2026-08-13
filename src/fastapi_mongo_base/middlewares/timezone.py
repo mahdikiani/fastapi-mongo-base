@@ -6,8 +6,8 @@ from starlette.middleware.base import (
     RequestResponseEndpoint,
 )
 
-from ..i18n.context import request_timezone
-from ..i18n.timezone import resolve_request_timezone
+from fastapi_mongo_base.i18n.context import request_timezone
+from fastapi_mongo_base.i18n.timezone import resolve_request_timezone
 
 
 class TimezoneMiddleware(BaseHTTPMiddleware):

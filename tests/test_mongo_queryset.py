@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.fastapi_mongo_base.models import (
+from fastapi_mongo_base.models import (
     BaseEntity,
     OwnedEntity,
     WorkspaceOwnedEntity,

@@ -1,19 +1,26 @@
 """FastAPI application factory and configuration."""
 
 import asyncio
+import importlib.util
 import inspect
 import logging
+import pathlib
 from collections import deque
 from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
+from typing import Any, cast
 
 import fastapi
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from ..errors.handlers import EXCEPTION_HANDLERS
-from ..errors.responses import COMMON_ERROR_RESPONSES, setup_openapi_errors
-from ..monitoring.sentry import setup_sentry
+from fastapi_mongo_base.errors.handlers import EXCEPTION_HANDLERS
+from fastapi_mongo_base.errors.responses import (
+    COMMON_ERROR_RESPONSES,
+    setup_openapi_errors,
+)
+from fastapi_mongo_base.monitoring.sentry import setup_sentry
+
 from . import config, db
 
 logger = logging.getLogger(__name__)
@@ -26,9 +33,7 @@ def _is_configured_uri(value: str | None) -> bool:
 def _use_mongodb(settings: config.Settings | None) -> bool:
     if settings is None:
         return False
-    try:
-        import beanie  # ruff:ignore[unused-import]
-    except ImportError:
+    if importlib.util.find_spec("beanie") is None:
         return False
     return _is_configured_uri(getattr(settings, "mongo_uri", None))
 
@@ -36,25 +41,20 @@ def _use_mongodb(settings: config.Settings | None) -> bool:
 def _use_redis(settings: config.Settings | None) -> bool:
     if settings is None:
         return False
-    try:
-        import redis  # ruff:ignore[unused-import]
-    except ImportError:
+    if importlib.util.find_spec("redis") is None:
         return False
     return _is_configured_uri(getattr(settings, "redis_uri", None))
 
 
 def _use_sql(settings: config.Settings | None) -> bool:
-    try:
-        import sqlalchemy  # ruff:ignore[unused-import]
-    except ImportError:
+    if importlib.util.find_spec("sqlalchemy") is None:
         return False
-
     if settings is None:
         return False
     return _is_configured_uri(getattr(settings, "database_uri", None))
 
 
-def health(request: fastapi.Request) -> dict[str, object]:
+def health(_request: fastapi.Request) -> dict[str, Any]:
     """
     Liveness probe endpoint handler.
 
@@ -65,7 +65,7 @@ def health(request: fastapi.Request) -> dict[str, object]:
         Dictionary with status and optional version.
 
     """
-    payload: dict[str, object] = {"status": "up"}
+    payload: dict[str, Any] = {"status": "up"}
 
     return payload
 
@@ -97,7 +97,7 @@ async def readiness(request: fastapi.Request) -> JSONResponse:
         checks["sql"] = await db.check_sql(sql_session)
 
     is_ready = "down" not in checks.values()
-    payload: dict[str, object] = {
+    payload: dict[str, Any] = {
         "status": "up" if is_ready else "degraded",
         "checks": checks,
     }
@@ -191,7 +191,9 @@ async def lifespan(
     await _startup_datasources(app, settings)
 
     if worker:
-        app.state.worker = asyncio.create_task(worker())
+        worker_result = worker()
+        if inspect.iscoroutine(worker_result):
+            app.state.worker = asyncio.create_task(worker_result)
 
     for function in init_functions:
         if inspect.iscoroutinefunction(function):
@@ -210,7 +212,7 @@ async def lifespan(
 
 
 def setup_exception_handlers(
-    *, app: fastapi.FastAPI, handlers: dict | None = None, **kwargs: object
+    *, app: fastapi.FastAPI, handlers: dict | None = None, **_kwargs: object
 ) -> None:
     """
     Configure exception handlers for the FastAPI application.
@@ -218,7 +220,7 @@ def setup_exception_handlers(
     Args:
         app: FastAPI application instance.
         handlers: Optional dictionary of custom exception handlers.
-        **kwargs: Additional keyword arguments.
+        **_kwargs: Additional keyword arguments.
 
     """
     exception_handlers = EXCEPTION_HANDLERS
@@ -235,7 +237,7 @@ def setup_middlewares(
     origins: list | None = None,
     timezone_middleware: bool = True,
     trace_middleware: bool = True,
-    **kwargs: object,
+    **_kwargs: object,
 ) -> None:
     """
     Configure middleware for the FastAPI application.
@@ -245,18 +247,18 @@ def setup_middlewares(
         origins: Optional list of allowed CORS origins.
         timezone_middleware: Whether to enable request timezone middleware.
         trace_middleware: Whether to enable ``X-Trace-ID`` middleware.
-        **kwargs: Additional keyword arguments.
+        **_kwargs: Additional keyword arguments.
 
     """
     from fastapi.middleware.cors import CORSMiddleware
 
     if timezone_middleware:
-        from ..middlewares.timezone import TimezoneMiddleware
+        from fastapi_mongo_base.middlewares.timezone import TimezoneMiddleware
 
         app.add_middleware(TimezoneMiddleware)
 
     if trace_middleware:
-        from ..middlewares.trace import TraceMiddleware
+        from fastapi_mongo_base.middlewares.trace import TraceMiddleware
 
         app.add_middleware(TraceMiddleware)
 
@@ -281,8 +283,8 @@ def get_app_kwargs(
     init_functions: list | None = None,
     contact: dict[str, str] | None = None,
     license_info: dict[str, str] | None = None,
-    **kwargs: object,
-) -> dict[str, object]:
+    **_kwargs: object,
+) -> dict[str, Any]:
     """
     Generate keyword arguments for FastAPI app creation.
 
@@ -296,7 +298,7 @@ def get_app_kwargs(
         init_functions: Optional list of initialization functions.
         contact: Optional contact information dictionary.
         license_info: Optional license information dictionary.
-        **kwargs: Additional keyword arguments.
+        **_kwargs: Additional keyword arguments.
 
     Returns:
         Dictionary of keyword arguments for FastAPI app creation.
@@ -317,7 +319,7 @@ def get_app_kwargs(
     setup_sentry(settings)
 
     if settings is None:
-        settings = config.Settings()
+        settings = cast("config.Settings", config.Settings())
     if title is None:
         title = settings.project_name.replace("-", " ").title()
     if description is None:
@@ -329,7 +331,7 @@ def get_app_kwargs(
 
     if lifespan_func is None:
 
-        def lf(app: fastapi.FastAPI) -> AsyncGenerator[None]:
+        def lf(app: fastapi.FastAPI) -> object:
             return lifespan(
                 app=app,
                 worker=worker,
@@ -408,7 +410,6 @@ def create_app(
         title=title,
         description=description,
         version=version,
-        origins=origins,
         lifespan_func=lifespan_func,
         worker=worker,
         init_functions=init_functions,
@@ -416,12 +417,11 @@ def create_app(
         license_info=license_info,
     )
 
-    app = fastapi.FastAPI(
-        **data,
-        responses=kwargs.pop("responses", COMMON_ERROR_RESPONSES),
-    )
+    app_kwargs: dict[str, Any] = dict(data)
+    app_kwargs["responses"] = kwargs.pop("responses", COMMON_ERROR_RESPONSES)
+    app = fastapi.FastAPI(**cast("Any", app_kwargs))
 
-    app = configure_app(
+    return configure_app(
         app=app,
         settings=settings,
         origins=origins,
@@ -431,10 +431,8 @@ def create_app(
         health_route=health_route,
         readiness_route=readiness_route,
         index_route=index_route,
-        **kwargs,
+        **cast("Any", kwargs),
     )
-
-    return app
 
 
 def _register_probe_route(
@@ -452,6 +450,20 @@ def _register_probe_route(
             f"/{path.rsplit('/', 1)[-1]}",
             include_in_schema=False,
         )(handler)
+
+
+def _read_last_log_lines(
+    settings: config.Settings, limit: int = 100
+) -> list[str]:
+    """Read the last *limit* lines from the configured info log file."""
+    log_path = settings.get_log_config().get("info_log_path")
+    if isinstance(log_path, bytes):
+        log_path = log_path.decode("utf-8")
+    if not isinstance(log_path, str):
+        return []
+    with pathlib.Path(log_path).open("rb") as f:
+        last_lines = deque(f, maxlen=limit)
+    return [line.decode("utf-8") for line in last_lines]
 
 
 def _register_utility_routes(
@@ -476,15 +488,9 @@ def _register_utility_routes(
             List of log lines as strings.
 
         """
+        return await asyncio.to_thread(_read_last_log_lines, settings)
 
-        def read_logs() -> list[str]:
-            with open(settings.get_log_config()["info_log_path"], "rb") as f:
-                last_100_lines = deque(f, maxlen=100)
-            return [line.decode("utf-8") for line in last_100_lines]
-
-        return await asyncio.to_thread(read_logs)
-
-    def index(request: fastapi.Request) -> RedirectResponse:
+    def index(_request: fastapi.Request) -> RedirectResponse:
         """
         Redirect root path to API documentation.
 
@@ -555,8 +561,10 @@ def configure_app(
     if origins is None:
         origins = settings.cors_origins
 
-    setup_exception_handlers(app=app, handlers=exception_handlers, **kwargs)
-    setup_middlewares(app=app, origins=origins, **kwargs)
+    setup_exception_handlers(
+        app=app, handlers=exception_handlers, **cast("Any", kwargs)
+    )
+    setup_middlewares(app=app, origins=origins, **cast("Any", kwargs))
     _register_utility_routes(
         app,
         settings,

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
@@ -12,10 +11,12 @@ import pytest_asyncio
 pytest.importorskip("sqlalchemy")
 pytest.importorskip("aiosqlite")
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.fastapi_mongo_base.sql.models import (
+from fastapi_mongo_base.sql.models import (
     BaseEntity,
     ImmutableMixin,
     OwnedEntity,
@@ -26,7 +27,10 @@ from src.fastapi_mongo_base.sql.models import (
     UserOwnedEntity,
     WorkspaceOwnedEntity,
 )
-from src.fastapi_mongo_base.utils import timezone
+from fastapi_mongo_base.utils import timezone
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
 
 # ── Concrete test subclasses ─────────────────────────────────────────────────
 
@@ -106,9 +110,7 @@ async def db_session() -> AsyncGenerator[
     async with engine.begin() as conn:
         await conn.run_sync(BaseEntity.metadata.create_all)
 
-    with patch(
-        "src.fastapi_mongo_base.sql.models.async_session", session_factory
-    ):
+    with patch("fastapi_mongo_base.sql.models.async_session", session_factory):
         yield session_factory
 
     async with engine.begin() as conn:
@@ -220,7 +222,7 @@ class TestDump:
     def test_converts_datetime_to_iso(self) -> None:
         """Verify dump converts datetime to ISO string."""
         entity = _TestEntity()
-        now = datetime(2024, 6, 15, 12, 30, 0)
+        now = datetime.fromisoformat("2024-06-15T12:30:00")
         entity.created_at = now
         result = entity.dump()
         assert result["created_at"] == now.isoformat()
@@ -260,7 +262,7 @@ class TestItemUrl:
 
     def test_uses_class_name_and_uid(self) -> None:
         """Verify item_url includes class name and uid."""
-        from src.fastapi_mongo_base.core.config import Settings
+        from fastapi_mongo_base.core.config import Settings
 
         entity = _TestEntity()
         entity.uid = "uid-123"
@@ -471,8 +473,8 @@ class TestGetQuery:
         from datetime import datetime
 
         qs = _TestEntity.get_query(
-            created_at_from=datetime(2024, 1, 1),
-            created_at_to=datetime(2024, 12, 31),
+            created_at_from=datetime.fromisoformat("2024-01-01"),
+            created_at_to=datetime.fromisoformat("2024-12-31"),
         )
         assert len(qs) == 3
 
@@ -540,12 +542,11 @@ class TestSubclassFieldSets:
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("db_session")
 class TestCreateItem:
     """Verify create_item works and returns a persisted entity."""
 
-    async def test_creates_and_persists(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_creates_and_persists(self) -> None:
         """Verify create_item persists and returns correct fields."""
         item = await _TestEntity.create_item({"name": "test", "value": 42})
         assert item.uid is not None
@@ -554,24 +555,18 @@ class TestCreateItem:
         assert item.created_at is not None
         assert item.is_deleted is False
 
-    async def test_generates_unique_uids(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_generates_unique_uids(self) -> None:
         """Verify create_item generates unique UIDs."""
         a = await _TestEntity.create_item({"name": "a"})
         b = await _TestEntity.create_item({"name": "b"})
         assert a.uid != b.uid
 
-    async def test_created_at_is_set(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_created_at_is_set(self) -> None:
         """Verify create_item sets created_at."""
         item = await _TestEntity.create_item({"name": "t"})
         assert isinstance(item.created_at, datetime)
 
-    async def test_with_user_id_field(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_with_user_id_field(self) -> None:
         """Verify create_item with user_id field."""
         item = await _TestUserEntity.create_item({
             "name": "u",
@@ -584,12 +579,11 @@ class TestCreateItem:
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("db_session")
 class TestGetItem:
     """Verify retrieval by UID."""
 
-    async def test_returns_existing(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_returns_existing(self) -> None:
         """Verify get_item returns existing item."""
         created = await _TestEntity.create_item({
             "name": "find-me",
@@ -600,16 +594,12 @@ class TestGetItem:
         assert fetched.uid == created.uid
         assert fetched.name == "find-me"
 
-    async def test_returns_none_for_missing(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_returns_none_for_missing(self) -> None:
         """Verify get_item returns None for missing UID."""
         fetched = await _TestEntity.get_item("nonexistent-uid")
         assert fetched is None
 
-    async def test_filters_by_user_id(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_filters_by_user_id(self) -> None:
         """Verify get_item filters by user_id."""
         await _TestUserEntity.create_item({"name": "visible", "user_id": "u1"})
         await _TestUserEntity.create_item({"name": "hidden", "user_id": "u2"})
@@ -618,21 +608,18 @@ class TestGetItem:
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("db_session")
 class TestGetByUid:
     """Verify get_by_uid shortcut."""
 
-    async def test_returns_existing(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_returns_existing(self) -> None:
         """Verify get_by_uid returns existing item."""
         created = await _TestEntity.create_item({"name": "byuid"})
         fetched = await _TestEntity.get_by_uid(created.uid)
         assert fetched is not None
         assert fetched.uid == created.uid
 
-    async def test_returns_none_for_missing(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_returns_none_for_missing(self) -> None:
         """Verify get_by_uid returns None for missing UID."""
         fetched = await _TestEntity.get_by_uid("missing")
         assert fetched is None
@@ -642,12 +629,11 @@ class TestGetByUid:
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("db_session")
 class TestUpdateItem:
     """Verify item updates."""
 
-    async def test_updates_allowed_fields(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_updates_allowed_fields(self) -> None:
         """Verify update_item updates allowed fields."""
         item = await _TestEntity.create_item({"name": "old", "value": 1})
         updated = await _TestEntity.update_item(
@@ -656,9 +642,7 @@ class TestUpdateItem:
         assert updated.name == "new"
         assert updated.value == 99
 
-    async def test_skips_excluded_fields(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_skips_excluded_fields(self) -> None:
         """Verify update_item skips excluded fields like uid."""
         item = await _TestEntity.create_item({"name": "orig", "value": 1})
         original_uid = item.uid
@@ -668,9 +652,7 @@ class TestUpdateItem:
         assert updated.uid == original_uid
         assert updated.name == "changed"
 
-    async def test_honours_update_field_set(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_honours_update_field_set(self) -> None:
         """Verify update_item respects update_field_set."""
         item = await _TestEntity.create_item({"name": "orig", "value": 1})
         with patch.object(
@@ -687,29 +669,24 @@ class TestUpdateItem:
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("db_session")
 class TestDeleteItem:
     """Verify soft-delete sets is_deleted to True."""
 
-    async def test_soft_deletes(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_soft_deletes(self) -> None:
         """Verify delete_item sets is_deleted to True."""
         item = await _TestEntity.create_item({"name": "to-delete"})
         deleted = await _TestEntity.delete_item(item)
         assert deleted.is_deleted is True
 
-    async def test_deleted_item_not_in_default_query(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_deleted_item_not_in_default_query(self) -> None:
         """Verify deleted item is excluded from default query."""
         item = await _TestEntity.create_item({"name": "gone"})
         await _TestEntity.delete_item(item)
         fetched = await _TestEntity.get_item(item.uid)
         assert fetched is None  # is_deleted=False excludes it
 
-    async def test_deleted_item_visible_with_is_deleted_true(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_deleted_item_visible_with_is_deleted_true(self) -> None:
         """Verify deleted item visible with is_deleted=True."""
         item = await _TestEntity.create_item({"name": "gone"})
         await _TestEntity.delete_item(item)
@@ -721,37 +698,30 @@ class TestDeleteItem:
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("db_session")
 class TestListItem:
     """Verify paginated listing."""
 
-    async def test_returns_empty_when_no_items(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_returns_empty_when_no_items(self) -> None:
         """Verify list_items returns empty when no items."""
         items = await _TestEntity.list_items()
         assert items == []
 
-    async def test_returns_all_items_within_limit(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_returns_all_items_within_limit(self) -> None:
         """Verify list_items returns all items within limit."""
         for i in range(5):
             await _TestEntity.create_item({"name": f"item-{i}", "value": i})
         items = await _TestEntity.list_items(limit=10)
         assert len(items) == 5
 
-    async def test_respects_offset(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_respects_offset(self) -> None:
         """Verify list_items respects offset parameter."""
         for i in range(5):
             await _TestEntity.create_item({"name": f"item-{i}", "value": i})
         items = await _TestEntity.list_items(offset=3, limit=10)
         assert len(items) == 2
 
-    async def test_orders_by_created_at_desc(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_orders_by_created_at_desc(self) -> None:
         """Verify list_items orders by created_at desc."""
         items = []
         for i in range(3):
@@ -766,37 +736,30 @@ class TestListItem:
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("db_session")
 class TestTotalCount:
     """Verify total_count."""
 
-    async def test_zero_when_empty(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_zero_when_empty(self) -> None:
         """Verify total_count returns 0 when empty."""
         count = await _TestEntity.total_count()
         assert count == 0
 
-    async def test_counts_all_items(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_counts_all_items(self) -> None:
         """Verify total_count counts all items."""
         for i in range(7):
             await _TestEntity.create_item({"name": f"n-{i}"})
         count = await _TestEntity.total_count()
         assert count == 7
 
-    async def test_excludes_soft_deleted(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_excludes_soft_deleted(self) -> None:
         """Verify total_count excludes soft-deleted items."""
         item = await _TestEntity.create_item({"name": "d"})
         await _TestEntity.delete_item(item)
         count = await _TestEntity.total_count()
         assert count == 0
 
-    async def test_includes_soft_deleted_when_requested(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_includes_soft_deleted_when_requested(self) -> None:
         """Verify total_count includes soft-deleted when requested."""
         item = await _TestEntity.create_item({"name": "d"})
         await _TestEntity.delete_item(item)
@@ -805,20 +768,17 @@ class TestTotalCount:
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("db_session")
 class TestListTotalCombined:
     """Verify the combined listing + count helper."""
 
-    async def test_returns_empty_and_zero(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_returns_empty_and_zero(self) -> None:
         """Verify list_total_combined returns empty and zero."""
         items, total = await _TestEntity.list_total_combined()
         assert items == []
         assert total == 0
 
-    async def test_returns_items_and_count(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_returns_items_and_count(self) -> None:
         """Verify list_total_combined returns items and count."""
         for i in range(4):
             await _TestEntity.create_item({"name": f"x-{i}"})
@@ -924,12 +884,11 @@ class TestImmutableMixinOrmEvent:
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("db_session")
 class TestDbFilterIntegration:
     """End-to-end tests for filtering via get_queryset / get_query."""
 
-    async def test_list_items_filters_by_extra_kwargs(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_list_items_filters_by_extra_kwargs(self) -> None:
         """Verify list_items filters by extra kwargs."""
         await _TestEntity.create_item({"name": "match", "value": 10})
         await _TestEntity.create_item({"name": "other", "value": 20})
@@ -938,9 +897,7 @@ class TestDbFilterIntegration:
         assert len(items) == 1
         assert items[0].name == "match"
 
-    async def test_list_items_range_filter(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_list_items_range_filter(self) -> None:
         """Verify list_items range filtering."""
         for v in [1, 5, 10]:
             await _TestEntity.create_item({"name": f"v-{v}", "value": v})
@@ -951,9 +908,7 @@ class TestDbFilterIntegration:
         values = {it.value for it in items}
         assert values == {5, 10}
 
-    async def test_list_items_in_filter(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_list_items_in_filter(self) -> None:
         """Verify list_items IN filtering."""
         for v in [1, 2, 3, 4]:
             await _TestEntity.create_item({"name": f"v-{v}", "value": v})
@@ -962,9 +917,7 @@ class TestDbFilterIntegration:
         values = {it.value for it in items}
         assert values == {1, 3}
 
-    async def test_total_count_respects_extra_filters(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_total_count_respects_extra_filters(self) -> None:
         """Verify total_count respects extra filters."""
         for v in [1, 2, 3]:
             await _TestEntity.create_item({"name": f"v-{v}", "value": v})
@@ -972,9 +925,7 @@ class TestDbFilterIntegration:
         count = await _TestEntity.total_count(value=2)
         assert count == 1
 
-    async def test_tenant_user_filtering(
-        self, db_session: async_sessionmaker[AsyncSession]
-    ) -> None:
+    async def test_tenant_user_filtering(self) -> None:
         """Verify tenant and user filtering on TenantUserEntity."""
         await _TestTenantUserEntity.create_item({
             "name": "visible",

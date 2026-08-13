@@ -5,11 +5,18 @@ from __future__ import annotations
 from sqlalchemy import JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from ..sql.models import ImmutableMixin, TenantScopedEntity
+from fastapi_mongo_base.sql.models import ImmutableMixin, TenantScopedEntity
 
 AUDIT_LOG_TABLE = "audit_logs"
 
-_sql_audit_activated: bool = False
+
+class _SqlAuditState:
+    """Mutable SQL audit activation flag (avoids ``global``)."""
+
+    activated: bool = False
+
+
+_sql_audit = _SqlAuditState()
 
 
 class AuditLog(TenantScopedEntity, ImmutableMixin):
@@ -71,19 +78,17 @@ class AuditLog(TenantScopedEntity, ImmutableMixin):
 
 def get_sql_audit_log_model() -> type | None:
     """Return the SQL AuditLog model when auditing is activated."""
-    if not _sql_audit_activated:
+    if not _sql_audit.activated:
         return None
     return AuditLog
 
 
 def activate_sql_audit_log() -> type:
     """Mark the SQL AuditLog model as active for emission/create_tables."""
-    global _sql_audit_activated
-    _sql_audit_activated = True
+    _sql_audit.activated = True
     return AuditLog
 
 
 def deactivate_sql_audit_log() -> None:
     """Mark the SQL AuditLog model inactive (tests / disabled settings)."""
-    global _sql_audit_activated
-    _sql_audit_activated = False
+    _sql_audit.activated = False

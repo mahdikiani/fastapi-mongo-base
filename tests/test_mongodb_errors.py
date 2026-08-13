@@ -14,11 +14,11 @@ from pymongo.errors import (
     WTimeoutError,
 )
 
-from src.fastapi_mongo_base.errors.handlers import (
+from fastapi_mongo_base.errors.handlers import (
     general_exception_handler,
     mongodb_exception_handler,
 )
-from src.fastapi_mongo_base.errors.mongodb import (
+from fastapi_mongo_base.errors.mongodb import (
     DocumentDuplicateKeyError,
     DocumentNotFoundError,
     MongoDBConnectionError,

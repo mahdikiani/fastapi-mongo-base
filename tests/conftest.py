@@ -13,8 +13,8 @@ import pytest
 import pytest_asyncio
 from beanie import init_beanie
 
-from src.fastapi_mongo_base import models as base_mongo_models
-from src.fastapi_mongo_base.utils import basic
+from fastapi_mongo_base import models as base_mongo_models
+from fastapi_mongo_base.utils import basic
 
 from .app.server import Settings
 from .app.server import app as fastapi_app
@@ -24,12 +24,18 @@ logger = logging.getLogger(__name__)
 
 def pytest_configure(config: pytest.Config) -> None:
     """Set up debugpy when DEBUGPY env var is enabled."""
-    if os.getenv("DEBUGPY", "False").lower() in ("true", "1", "yes"):
-        import debugpy  # ruff:ignore[debugger]
+    debugpy_enabled = os.getenv("DEBUGPY", "False").lower() in {
+        "true",
+        "1",
+        "yes",
+    }
+    logger.debug("pytest rootdir=%s", getattr(config, "rootpath", None))
+    if debugpy_enabled:
+        import debugpy
 
-        debugpy.listen(("127.0.0.1", 3020))  # ruff:ignore[debugger]
+        debugpy.listen(("127.0.0.1", 3020))
         logger.info("Waiting for debugpy client")
-        debugpy.wait_for_client()  # ruff:ignore[debugger]
+        debugpy.wait_for_client()
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -43,7 +49,7 @@ def mongo_client() -> Generator:
     """
     from mongomock_motor import AsyncMongoMockClient
 
-    yield AsyncMongoMockClient()
+    return AsyncMongoMockClient()
 
 
 # Async setup function to initialize the database with Beanie
@@ -68,11 +74,15 @@ async def init_db(mongo_client: object) -> None:
     orig_list_collection_names = database.delegate.list_collection_names
 
     def _patched_list_collection_names(
-        filter: dict | None = None,  # ruff:ignore[builtin-argument-shadowing]
-        session: object | None = None,
+        *args: object,
         **kwargs: object,
     ) -> list[str]:
-        return orig_list_collection_names(filter=filter, session=session)
+        forwarded: dict[str, object] = {}
+        if "filter" in kwargs:
+            forwarded["filter"] = kwargs["filter"]
+        if "session" in kwargs:
+            forwarded["session"] = kwargs["session"]
+        return orig_list_collection_names(*args, **forwarded)
 
     database.delegate.list_collection_names = _patched_list_collection_names
     await init_beanie(
@@ -116,9 +126,10 @@ async def client(
         AsyncClient.
 
     """
+    _ = db
     from unittest.mock import AsyncMock, patch
 
-    from src.fastapi_mongo_base.core import db as db_module
+    from fastapi_mongo_base.core import db as db_module
 
     def _patched_init_mongo_db(
         settings: object | None = None,

@@ -4,11 +4,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.fastapi_mongo_base.schemas import (
+from fastapi_mongo_base.schemas import (
     OwnedOverrideCreateMixin,
     OwnerOverrideCreateMixin,
 )
-from src.fastapi_mongo_base.utils.delegated_create import (
+from fastapi_mongo_base.utils.delegated_create import (
     authorize_create_on_behalf,
     dump_create_payload,
     get_owner_value,

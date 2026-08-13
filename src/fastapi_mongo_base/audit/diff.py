@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import json_advanced as json
 
 
@@ -24,11 +26,11 @@ _DEFAULT_EXCLUDE = frozenset({
 
 
 def compute_changes(
-    before: dict[str, object] | None,
-    after: dict[str, object] | None,
+    before: dict[str, Any] | None,
+    after: dict[str, Any] | None,
     *,
     exclude_fields: set[str] | frozenset[str] | None = None,
-) -> dict[str, dict[str, object]]:
+) -> dict[str, dict[str, Any]]:
     """
     Compute a sparse ``{field: {old, new}}`` diff between two snapshots.
 
@@ -48,7 +50,7 @@ def compute_changes(
     before = before or {}
     after = after or {}
     keys = (set(before) | set(after)) - excluded
-    changes: dict[str, dict[str, object]] = {}
+    changes: dict[str, dict[str, Any]] = {}
     for key in sorted(keys):
         old = serialize_value(before.get(key))
         new = serialize_value(after.get(key))

@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.fastapi_mongo_base.schemas import TenantSubjectEntitySchema
+from fastapi_mongo_base.schemas import TenantSubjectEntitySchema
 
 
 class _SubjectSchema(TenantSubjectEntitySchema):

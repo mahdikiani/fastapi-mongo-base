@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Any
 
 from pydantic import Field
 
-from ..schemas import TenantScopedEntitySchema
+from fastapi_mongo_base.schemas import TenantScopedEntitySchema
 
 
 class AuditAction(str, Enum):
@@ -58,15 +59,15 @@ class AuditLogSchema(TenantScopedEntitySchema):
         description="Resource owner_id ownership copy",
     )
 
-    changes: dict[str, dict[str, object]] | None = Field(
+    changes: dict[str, dict[str, Any]] | None = Field(
         default=None,
         description="Sparse field diff: {field: {old, new}}",
     )
-    snapshot_before: dict[str, object] | None = Field(
+    snapshot_before: dict[str, Any] | None = Field(
         default=None,
         description="Full resource snapshot before the mutation",
     )
-    snapshot_after: dict[str, object] | None = Field(
+    snapshot_after: dict[str, Any] | None = Field(
         default=None,
         description="Full resource snapshot after the mutation",
     )

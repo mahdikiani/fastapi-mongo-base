@@ -11,15 +11,15 @@ import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 
-from src.fastapi_mongo_base.core.app_factory import setup_middlewares
-from src.fastapi_mongo_base.logging.formatters import JsonFormatter
-from src.fastapi_mongo_base.middlewares.trace import TraceMiddleware
-from src.fastapi_mongo_base.utils import trace as trace_util
+from fastapi_mongo_base.core.app_factory import setup_middlewares
+from fastapi_mongo_base.logging.formatters import JsonFormatter
+from fastapi_mongo_base.middlewares.trace import TraceMiddleware
+from fastapi_mongo_base.utils import trace as trace_util
 
 
 def test_middlewares_package_exports_trace() -> None:
     """Public middleware package should export TraceMiddleware."""
-    from src.fastapi_mongo_base import middlewares
+    from fastapi_mongo_base import middlewares
 
     assert "TraceMiddleware" in middlewares.__all__
     assert middlewares.TraceMiddleware is TraceMiddleware

@@ -1,7 +1,7 @@
 """Shared helpers for delegated resource creation (create on behalf)."""
 
 from collections.abc import Awaitable, Mapping
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, cast, runtime_checkable
 
 from pydantic import BaseModel
 
@@ -62,18 +62,18 @@ def set_owner_value(data: object, owner_attr: str, owner_id: str) -> None:
     if isinstance(data, BaseModel):
         setattr(data, owner_attr, owner_id)
     elif isinstance(data, dict):
-        data[owner_attr] = owner_id
+        cast("dict[str, Any]", data)[owner_attr] = owner_id
     else:
         msg = "data must be a Pydantic model or dict"
         raise TypeError(msg)
 
 
-def dump_create_payload(data: object) -> dict[str, object]:
+def dump_create_payload(data: object) -> dict[str, Any]:
     """Serialize a create payload for authorization filters."""
     if isinstance(data, BaseModel):
         return data.model_dump()
     if isinstance(data, dict):
-        return dict(data)
+        return dict(cast("dict[str, Any]", data))
     msg = "data must be a Pydantic model or dict"
     raise TypeError(msg)
 

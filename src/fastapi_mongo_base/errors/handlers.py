@@ -3,6 +3,8 @@
 import json
 import logging
 import traceback
+from collections.abc import Sequence
+from typing import Any, cast
 
 import json_advanced
 from fastapi import Request
@@ -13,10 +15,11 @@ from fastapi.exceptions import (
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from ..i18n import (
+from fastapi_mongo_base.i18n import (
     VALIDATION_ERROR_MESSAGE,
     select_request_messages,
 )
+
 from .base import BaseHTTPException
 from .mongodb import (
     convert_pymongo_error,
@@ -31,7 +34,7 @@ from .responses import (
 
 logger = logging.getLogger(__name__)
 
-error_messages = {}
+error_messages: dict[str, object] = {}
 
 
 def base_http_exception_handler(
@@ -65,7 +68,7 @@ def _resolve_validation_message(request: Request) -> dict[str, str]:
     return select_request_messages(request, VALIDATION_ERROR_MESSAGE)
 
 
-def _format_validation_reasons(errors: list[dict]) -> list[dict]:
+def _format_validation_reasons(errors: Sequence[Any]) -> list[dict]:
     reasons_by_field: dict[str, dict] = {}
     for error in json.loads(json_advanced.dumps(errors)):
         loc = error.pop("loc", ())
@@ -78,7 +81,7 @@ def _format_validation_reasons(errors: list[dict]) -> list[dict]:
 
 def _validation_error_response(
     request: Request,
-    errors: list[dict],
+    errors: Sequence[Any],
     status_code: int,
 ) -> JSONResponse:
     content = ValidationErrorResponseModel(
@@ -163,7 +166,9 @@ def mongodb_exception_handler(
 
     """
     logger.error("MongoDB error on %s: %s", request.url, exc)
-    return base_http_exception_handler(request, convert_pymongo_error(exc))
+    return base_http_exception_handler(
+        request, convert_pymongo_error(cast("Any", exc))
+    )
 
 
 def general_exception_handler(
@@ -209,7 +214,7 @@ def general_exception_handler(
     return JSONResponse(status_code=500, content=content)
 
 
-EXCEPTION_HANDLERS = {
+EXCEPTION_HANDLERS: dict[type[Exception], Any] = {
     BaseHTTPException: base_http_exception_handler,
     ValidationError: pydantic_exception_handler,
     ResponseValidationError: pydantic_exception_handler,
@@ -230,6 +235,8 @@ try:
         EXCEPTION_HANDLERS as USSO_EXCEPTION_HANDLERS,
     )
 
-    EXCEPTION_HANDLERS.update(USSO_EXCEPTION_HANDLERS)
+    EXCEPTION_HANDLERS.update(
+        cast("dict[type[Exception], Any]", USSO_EXCEPTION_HANDLERS)
+    )
 except ImportError:
     pass

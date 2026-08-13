@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import ClassVar, cast
+from typing import Any, ClassVar, cast
 
 from beanie import (
     Document,
@@ -14,7 +14,6 @@ from beanie import (
     before_event,
 )
 from beanie.odm.queries.find import FindMany
-from pydantic import ConfigDict
 from pymongo import ASCENDING, IndexModel
 from typing_extensions import Self
 
@@ -83,7 +82,7 @@ class BaseEntity(BaseEntitySchema, Document):
         return hasattr(cls, name)
 
     @classmethod
-    def _build_extra_filters(cls, **kwargs: dict[str, object]) -> dict:
+    def _build_extra_filters(cls, **kwargs: object) -> dict:
         """
         Build MongoDB filter dictionary from keyword arguments.
 
@@ -97,7 +96,7 @@ class BaseEntity(BaseEntitySchema, Document):
             Dictionary of MongoDB filter conditions.
 
         """
-        extra_filters = {}
+        extra_filters: dict[str, Any] = {}
         for key, value in kwargs.items():
             if value is None:
                 continue
@@ -145,8 +144,7 @@ class BaseEntity(BaseEntitySchema, Document):
         **kwargs: object,
     ) -> dict:
         """Build a MongoDB query filter based on provided parameters."""
-        base_query = {}
-        base_query.update({"is_deleted": is_deleted})
+        base_query: dict[str, object] = {"is_deleted": is_deleted}
         if cls._has_field("tenant_id") and tenant_id:
             base_query.update({"tenant_id": tenant_id})
         if cls._has_field("user_id") and user_id:
@@ -158,7 +156,7 @@ class BaseEntity(BaseEntitySchema, Document):
         if uid:
             base_query.update({"uid": uid})
         # Extract extra filters from kwargs
-        extra_filters = cls._build_extra_filters(**kwargs)
+        extra_filters = cls._build_extra_filters(**cast("Any", kwargs))
         base_query.update(extra_filters)
         return base_query
 
@@ -203,10 +201,9 @@ class BaseEntity(BaseEntitySchema, Document):
             uid=uid,
             created_at_from=created_at_from,
             created_at_to=created_at_to,
-            **kwargs,
+            **cast("Any", kwargs),
         )
-        query = cls.find(base_query)
-        return query
+        return cls.find(base_query)
 
     @classmethod
     async def get_item(
@@ -218,6 +215,10 @@ class BaseEntity(BaseEntitySchema, Document):
         workspace_id: str | None = None,
         owner_id: str | None = None,
         is_deleted: bool = False,
+        ignore_user_id: bool = False,
+        ignore_owner_id: bool = False,
+        ignore_workspace_id: bool = False,
+        ignore_subject: bool = False,
         **kwargs: object,
     ) -> Self | None:
         """
@@ -230,6 +231,10 @@ class BaseEntity(BaseEntitySchema, Document):
             workspace_id: Optional workspace ID filter.
             owner_id: Optional owner ID filter.
             is_deleted: Filter by deletion status.
+            ignore_user_id: Accepted for subclass overrides; unused here.
+            ignore_owner_id: Accepted for subclass overrides; unused here.
+            ignore_workspace_id: Accepted for subclass overrides; unused here.
+            ignore_subject: Accepted for subclass overrides; unused here.
             **kwargs: Additional filter parameters.
 
         Returns:
@@ -239,6 +244,8 @@ class BaseEntity(BaseEntitySchema, Document):
             ValueError: If multiple items are found.
 
         """
+        del ignore_user_id, ignore_owner_id
+        del ignore_workspace_id, ignore_subject
         query = cls.get_query(
             user_id=user_id,
             tenant_id=tenant_id,
@@ -246,7 +253,7 @@ class BaseEntity(BaseEntitySchema, Document):
             owner_id=owner_id,
             is_deleted=is_deleted,
             uid=uid,
-            **kwargs,
+            **cast("Any", kwargs),
         )
         items = await query.to_list()
         if not items:
@@ -256,7 +263,9 @@ class BaseEntity(BaseEntitySchema, Document):
         return items[0]
 
     @classmethod
-    def adjust_pagination(cls, offset: int, limit: int) -> tuple[int, int]:
+    def adjust_pagination(
+        cls, offset: int | None, limit: int | None
+    ) -> tuple[int, int]:
         """
         Adjust and validate pagination parameters.
 
@@ -275,10 +284,12 @@ class BaseEntity(BaseEntitySchema, Document):
         if isinstance(limit, params.Query):
             limit = limit.default
 
-        offset = max(offset or 0, 0)
+        offset_value = max(offset or 0, 0)
         if limit is None:
-            limit = max(1, min(limit or 10, Settings.page_max_limit))
-        return offset, limit
+            limit_value = max(1, min(10, Settings.page_max_limit))
+        else:
+            limit_value = max(1, min(limit, Settings.page_max_limit))
+        return offset_value, limit_value
 
     @classmethod
     async def list_items(
@@ -316,14 +327,15 @@ class BaseEntity(BaseEntitySchema, Document):
             user_id=user_id,
             tenant_id=tenant_id,
             is_deleted=is_deleted,
-            **kwargs,
+            **cast("Any", kwargs),
         )
 
-        items_query = query.sort((sort_field, sort_direction)).skip(offset)
+        items_query = query.sort([
+            (sort_field, cast("Any", sort_direction))
+        ]).skip(offset)
         if limit:
             items_query = items_query.limit(limit)
-        items = await items_query.to_list()
-        return items
+        return await items_query.to_list()
 
     @classmethod
     async def total_count(
@@ -351,7 +363,7 @@ class BaseEntity(BaseEntitySchema, Document):
             user_id=user_id,
             tenant_id=tenant_id,
             is_deleted=is_deleted,
-            **kwargs,
+            **cast("Any", kwargs),
         )
         return await query.count()
 
@@ -390,13 +402,13 @@ class BaseEntity(BaseEntitySchema, Document):
                 offset=offset,
                 limit=limit,
                 is_deleted=is_deleted,
-                **kwargs,
+                **cast("Any", kwargs),
             ),
             cls.total_count(
                 user_id=user_id,
                 tenant_id=tenant_id,
                 is_deleted=is_deleted,
-                **kwargs,
+                **cast("Any", kwargs),
             ),
         )
 
@@ -420,8 +432,7 @@ class BaseEntity(BaseEntitySchema, Document):
             Entity instance if found, None otherwise.
 
         """
-        item = await cls.find_one({"uid": uid, "is_deleted": is_deleted})
-        return item
+        return await cls.find_one({"uid": uid, "is_deleted": is_deleted})
 
     @classmethod
     async def create_item(cls, data: dict) -> Self:
@@ -550,38 +561,24 @@ class UserOwnedEntity(UserOwnedEntitySchema, BaseEntity):
         uid: str,
         *,
         user_id: str | None = None,
+        tenant_id: str | None = None,
+        workspace_id: str | None = None,
+        owner_id: str | None = None,
+        is_deleted: bool = False,
         ignore_user_id: bool = False,
         **kwargs: object,
     ) -> Self | None:
-        """
-        Get an item by its UID and user ID.
-
-        Args:
-            uid (str): The unique identifier of the item
-            user_id (str | None, optional):
-                       The user ID to filter by.
-                       Defaults to None.
-            ignore_user_id (bool, optional):
-                       Whether to ignore the user_id filter. Defaults to False.
-            **kwargs: Additional keyword arguments to pass
-                      to the parent get_item method
-
-        Returns:
-            UserOwnedEntity: The found item
-
-        Raises:
-            ValueError: If user_id is required but not provided
-
-        """
+        """Get an item by UID, requiring ``user_id`` unless ignored."""
         if user_id is None and not ignore_user_id:
             raise ValueError("user_id is required")
-        return cast(
-            Self | None,
-            await super().get_item(
-                uid=uid,
-                user_id=user_id,
-                **kwargs,
-            ),
+        return await super().get_item(
+            uid=uid,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            workspace_id=workspace_id,
+            owner_id=owner_id,
+            is_deleted=is_deleted,
+            **cast("Any", kwargs),
         )
 
 
@@ -611,36 +608,25 @@ class OwnedEntity(OwnedEntitySchema, BaseEntity):
         cls,
         uid: str,
         *,
+        user_id: str | None = None,
+        tenant_id: str | None = None,
+        workspace_id: str | None = None,
         owner_id: str | None = None,
+        is_deleted: bool = False,
         ignore_owner_id: bool = False,
         **kwargs: object,
     ) -> Self | None:
-        """
-        Get an item by its UID and owner ID.
-
-        Args:
-            uid: Unique identifier of the item.
-            owner_id: Owner ID to filter by (required unless
-                      ignore_owner_id is True).
-            ignore_owner_id: Whether to ignore the owner_id filter.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Entity instance if found, None otherwise.
-
-        Raises:
-            ValueError: If owner_id is required but not provided.
-
-        """
+        """Get an item by UID, requiring ``owner_id`` unless ignored."""
         if owner_id is None and not ignore_owner_id:
             raise ValueError("owner_id is required")
-        return cast(
-            Self | None,
-            await super().get_item(
-                uid=uid,
-                owner_id=owner_id,
-                **kwargs,
-            ),
+        return await super().get_item(
+            uid=uid,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            workspace_id=workspace_id,
+            owner_id=owner_id,
+            is_deleted=is_deleted,
+            **cast("Any", kwargs),
         )
 
 
@@ -670,33 +656,24 @@ class TenantScopedEntity(TenantScopedEntitySchema, BaseEntity):
         cls,
         uid: str,
         *,
-        tenant_id: str,
+        user_id: str | None = None,
+        tenant_id: str | None = None,
+        workspace_id: str | None = None,
+        owner_id: str | None = None,
+        is_deleted: bool = False,
         **kwargs: object,
     ) -> Self | None:
-        """
-        Get an item by UID and tenant ID.
-
-        Args:
-            uid: Unique identifier of the item.
-            tenant_id: Tenant ID (required).
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Entity instance if found, None otherwise.
-
-        Raises:
-            ValueError: If tenant_id is not provided.
-
-        """
+        """Get an item by UID, requiring ``tenant_id``."""
         if tenant_id is None:
             raise ValueError("tenant_id is required")
-        return cast(
-            Self | None,
-            await super().get_item(
-                uid=uid,
-                tenant_id=tenant_id,
-                **kwargs,
-            ),
+        return await super().get_item(
+            uid=uid,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            workspace_id=workspace_id,
+            owner_id=owner_id,
+            is_deleted=is_deleted,
+            **cast("Any", kwargs),
         )
 
     async def get_tenant(self) -> Self:
@@ -740,40 +717,27 @@ class TenantUserEntity(TenantUserEntitySchema, BaseEntity):
         cls,
         uid: str,
         *,
-        tenant_id: str,
         user_id: str | None = None,
+        tenant_id: str | None = None,
+        workspace_id: str | None = None,
+        owner_id: str | None = None,
+        is_deleted: bool = False,
         ignore_user_id: bool = False,
         **kwargs: object,
     ) -> Self | None:
-        """
-        Get an item by UID, tenant ID, and optionally user ID.
-
-        Args:
-            uid: Unique identifier of the item.
-            tenant_id: Tenant ID (required).
-            user_id: Optional user ID filter.
-            ignore_user_id: Whether to ignore user_id requirement.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Entity instance if found, None otherwise.
-
-        Raises:
-            ValueError: If tenant_id or user_id is required but not provided.
-
-        """
+        """Get an item by UID, requiring tenant and user IDs unless ignored."""
         if tenant_id is None:
             raise ValueError("tenant_id is required")
         if user_id is None and not ignore_user_id:
             raise ValueError("user_id is required")
-        return cast(
-            Self | None,
-            await super().get_item(
-                uid=uid,
-                tenant_id=tenant_id,
-                user_id=user_id,
-                **kwargs,
-            ),
+        return await super().get_item(
+            uid=uid,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            workspace_id=workspace_id,
+            owner_id=owner_id,
+            is_deleted=is_deleted,
+            **cast("Any", kwargs),
         )
 
 
@@ -799,20 +763,25 @@ class WorkspaceOwnedEntity(WorkspaceOwnedEntitySchema, BaseEntity):
         cls,
         uid: str,
         *,
+        user_id: str | None = None,
+        tenant_id: str | None = None,
         workspace_id: str | None = None,
+        owner_id: str | None = None,
+        is_deleted: bool = False,
         ignore_workspace_id: bool = False,
         **kwargs: object,
     ) -> Self | None:
         """Get an item by UID and workspace ID."""
         if workspace_id is None and not ignore_workspace_id:
             raise ValueError("workspace_id is required")
-        return cast(
-            Self | None,
-            await super().get_item(
-                uid=uid,
-                workspace_id=workspace_id,
-                **kwargs,
-            ),
+        return await super().get_item(
+            uid=uid,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            workspace_id=workspace_id,
+            owner_id=owner_id,
+            is_deleted=is_deleted,
+            **cast("Any", kwargs),
         )
 
 
@@ -839,8 +808,11 @@ class TenantWorkspaceEntity(TenantWorkspaceEntitySchema, BaseEntity):
         cls,
         uid: str,
         *,
-        tenant_id: str,
+        user_id: str | None = None,
+        tenant_id: str | None = None,
         workspace_id: str | None = None,
+        owner_id: str | None = None,
+        is_deleted: bool = False,
         ignore_workspace_id: bool = False,
         **kwargs: object,
     ) -> Self | None:
@@ -849,14 +821,14 @@ class TenantWorkspaceEntity(TenantWorkspaceEntitySchema, BaseEntity):
             raise ValueError("tenant_id is required")
         if workspace_id is None and not ignore_workspace_id:
             raise ValueError("workspace_id is required")
-        return cast(
-            Self | None,
-            await super().get_item(
-                uid=uid,
-                tenant_id=tenant_id,
-                workspace_id=workspace_id,
-                **kwargs,
-            ),
+        return await super().get_item(
+            uid=uid,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            workspace_id=workspace_id,
+            owner_id=owner_id,
+            is_deleted=is_deleted,
+            **cast("Any", kwargs),
         )
 
 
@@ -889,9 +861,11 @@ class TenantSubjectEntity(TenantSubjectEntitySchema, BaseEntity):
         cls,
         uid: str,
         *,
-        tenant_id: str,
         user_id: str | None = None,
+        tenant_id: str | None = None,
         workspace_id: str | None = None,
+        owner_id: str | None = None,
+        is_deleted: bool = False,
         ignore_subject: bool = False,
         **kwargs: object,
     ) -> Self | None:
@@ -900,15 +874,14 @@ class TenantSubjectEntity(TenantSubjectEntitySchema, BaseEntity):
             raise ValueError("tenant_id is required")
         if not ignore_subject and user_id is None and workspace_id is None:
             raise ValueError("user_id or workspace_id is required")
-        return cast(
-            Self | None,
-            await super().get_item(
-                uid=uid,
-                tenant_id=tenant_id,
-                user_id=user_id,
-                workspace_id=workspace_id,
-                **kwargs,
-            ),
+        return await super().get_item(
+            uid=uid,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            workspace_id=workspace_id,
+            owner_id=owner_id,
+            is_deleted=is_deleted,
+            **cast("Any", kwargs),
         )
 
 
@@ -942,47 +915,32 @@ class TenantOwnedEntity(TenantOwnedEntitySchema, BaseEntity):
         cls,
         uid: str,
         *,
-        tenant_id: str,
-        owner_id: str,
+        user_id: str | None = None,
+        tenant_id: str | None = None,
+        workspace_id: str | None = None,
+        owner_id: str | None = None,
+        is_deleted: bool = False,
         ignore_owner_id: bool = False,
         **kwargs: object,
     ) -> Self | None:
-        """
-        Get an item by UID, tenant ID, and owner ID.
-
-        Args:
-            uid: Unique identifier of the item.
-            tenant_id: Tenant ID (required).
-            owner_id: Owner ID (required).
-            ignore_owner_id: Whether to ignore the owner_id filter.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Entity instance if found, None otherwise.
-
-        Raises:
-            ValueError: If tenant_id or owner_id is not provided.
-
-        """
+        """Get an item by UID, requiring tenant and owner IDs."""
         if tenant_id is None:
             raise ValueError("tenant_id is required")
         if owner_id is None and not ignore_owner_id:
             raise ValueError("owner_id is required")
-        return cast(
-            Self | None,
-            await super().get_item(
-                uid=uid,
-                tenant_id=tenant_id,
-                owner_id=owner_id,
-                **kwargs,
-            ),
+        return await super().get_item(
+            uid=uid,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            workspace_id=workspace_id,
+            owner_id=owner_id,
+            is_deleted=is_deleted,
+            **cast("Any", kwargs),
         )
 
 
 class ImmutableMixin(BaseEntity):
     """Mixin class for immutable entities that cannot be updated or deleted."""
-
-    model_config = ConfigDict(frozen=True)
 
     class Settings(BaseEntity.Settings):
         """Beanie document settings for immutable entities."""
@@ -1002,6 +960,7 @@ class ImmutableMixin(BaseEntity):
             ValueError: Always raised for immutable items.
 
         """
+        del item, data
         raise ValueError("Immutable items cannot be updated")
 
     @classmethod
@@ -1016,4 +975,5 @@ class ImmutableMixin(BaseEntity):
             ValueError: Always raised for immutable items.
 
         """
+        del item
         raise ValueError("Immutable items cannot be deleted")

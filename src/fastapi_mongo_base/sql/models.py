@@ -3,8 +3,9 @@
 import json
 import uuid
 from datetime import datetime
+from typing import Any, ClassVar, cast
 
-from typing_extensions import Never, Self
+from typing_extensions import Self
 
 try:
     from sqlalchemy import JSON, event, select
@@ -18,23 +19,37 @@ try:
 except ImportError as e:
     raise ImportError("SQLAlchemy is not installed") from e
 
-from ..core.config import Settings
-from ..utils import basic, timezone
+from fastapi_mongo_base.core.config import Settings
+from fastapi_mongo_base.utils import basic, timezone
+
 from .session import async_session
+
+
+def _session_factory() -> object:
+    """Return the configured session factory or raise."""
+    if async_session is None:
+        from fastapi_mongo_base.errors.sql import SQLConnectionError
+
+        raise SQLConnectionError(
+            "SQL async session is not initialized. "
+            "Configure DATABASE_URI and ensure init_sql() ran at startup."
+        )
+    return async_session
+
+
+def _sql_tablename(entity_cls: type) -> str:
+    """Generate a SQLAlchemy table name from the mapped class."""
+    return entity_cls.__name__.lower()
 
 
 @as_declarative()
 class BaseEntity:
     """Base SQLAlchemy entity class with common fields and methods."""
 
-    id: object
-    __name__: str
+    id: ClassVar[object]
+    __name__: ClassVar[str]
     __abstract__ = True
-
-    @declared_attr  # type: ignore
-    def __tablename__(self) -> str:
-        """Generate table name from class name."""
-        return self.__name__.lower()
+    __tablename__ = declared_attr.directive(_sql_tablename)
 
     uid: Mapped[str] = mapped_column(
         primary_key=True,
@@ -100,7 +115,7 @@ class BaseEntity:
         self,
         include_fields: list[str] | None = None,
         exclude_fields: list[str] | None = None,
-    ) -> dict[str, object]:
+    ) -> dict[str, Any]:
         """
         Dump the object into a dictionary.
 
@@ -141,27 +156,29 @@ class BaseEntity:
     def _range_filter(cls, field: object, key: str, value: object) -> object:
         if not basic.is_valid_range_value(value):
             return None
+        column = cast("Any", field)
         if key.endswith("_from"):
-            return field >= value
-        elif key.endswith("_to"):
-            return field <= value
+            return column >= value
+        if key.endswith("_to"):
+            return column <= value
         return None
 
     @classmethod
     def _in_nin_filter(cls, field: object, key: str, value: object) -> object:
         value_list = basic.parse_array_parameter(value)
+        column = cast("Any", field)
         if key.endswith("_in"):
-            return field.in_(value_list)
-        elif key.endswith("_nin"):
-            return ~field.in_(value_list)
+            return column.in_(value_list)
+        if key.endswith("_nin"):
+            return ~column.in_(value_list)
         return None
 
     @classmethod
     def _equality_filter(cls, field: object, value: object) -> object:
-        return field == value
+        return cast("Any", field) == value
 
     @classmethod
-    def _build_extra_filters(cls, **kwargs: dict[str, object]) -> list:
+    def _build_extra_filters(cls, **kwargs: object) -> list:
         """
         Build SQLAlchemy filter expressions from keyword arguments.
 
@@ -215,20 +232,20 @@ class BaseEntity:
         **kwargs: object,
     ) -> list[object]:
         """Build SQLAlchemy query filters based on provided parameters."""
-        base_query = []
+        base_query: list[object] = []
         base_query.append(cls.is_deleted == is_deleted)
         if hasattr(cls, "user_id") and user_id:
-            base_query.append(cls.user_id == user_id)  # type: ignore
+            base_query.append(cls.user_id == user_id)
         if hasattr(cls, "tenant_id") and tenant_id:
-            base_query.append(cls.tenant_id == tenant_id)  # type: ignore
+            base_query.append(cls.tenant_id == tenant_id)
         if hasattr(cls, "owner_id") and owner_id:
-            base_query.append(cls.owner_id == owner_id)  # type: ignore
+            base_query.append(cls.owner_id == owner_id)
         if hasattr(cls, "workspace_id") and workspace_id:
-            base_query.append(cls.workspace_id == workspace_id)  # type: ignore
+            base_query.append(cls.workspace_id == workspace_id)
         if uid:
             base_query.append(cls.uid == uid)
         # Extract extra filters from kwargs
-        extra_filters = cls._build_extra_filters(**kwargs)
+        extra_filters = cls._build_extra_filters(**cast("Any", kwargs))
         base_query.extend(extra_filters)
         return base_query
 
@@ -246,7 +263,7 @@ class BaseEntity:
         **kwargs: object,
     ) -> list:
         """Build query filters for database queries."""
-        base_query = cls.get_queryset(
+        return cls.get_queryset(
             user_id=user_id,
             tenant_id=tenant_id,
             owner_id=owner_id,
@@ -255,9 +272,8 @@ class BaseEntity:
             uid=uid,
             created_at_from=created_at_from,
             created_at_to=created_at_to,
-            **kwargs,
+            **cast("Any", kwargs),
         )
-        return base_query
 
     @classmethod
     async def get_item(
@@ -278,15 +294,14 @@ class BaseEntity:
             owner_id=owner_id,
             workspace_id=workspace_id,
             is_deleted=is_deleted,
-            **kwargs,
+            **cast("Any", kwargs),
         )
         base_query.append(cls.uid == uid)
 
-        async with async_session() as session:
+        async with cast("Any", _session_factory())() as session:
             query = select(cls).filter(*base_query)
             result = await session.execute(query)
-            item = result.scalar_one_or_none()
-        return item
+            return result.scalar_one_or_none()
 
     @classmethod
     async def list_items(
@@ -304,7 +319,7 @@ class BaseEntity:
             user_id=user_id,
             tenant_id=tenant_id,
             is_deleted=is_deleted,
-            **kwargs,
+            **cast("Any", kwargs),
         )
 
         items_query = (
@@ -315,10 +330,10 @@ class BaseEntity:
             .limit(limit)
         )
 
-        async with async_session() as session:
+        async with cast("Any", _session_factory())() as session:
             items_result = await session.execute(items_query)
             items = items_result.scalars().all()
-        return items
+        return list(items)
 
     @classmethod
     async def total_count(
@@ -334,7 +349,7 @@ class BaseEntity:
             user_id=user_id,
             tenant_id=tenant_id,
             is_deleted=is_deleted,
-            **kwargs,
+            **cast("Any", kwargs),
         )
 
         # Query for getting the total count of items
@@ -342,11 +357,11 @@ class BaseEntity:
             *base_query
         )  # .subquery()
 
-        async with async_session() as session:
+        async with cast("Any", _session_factory())() as session:
             total_result = await session.execute(total_count_query)
         total = total_result.scalar()
 
-        return total
+        return int(total or 0)
 
     @classmethod
     async def list_total_combined(
@@ -366,35 +381,34 @@ class BaseEntity:
             offset=offset,
             limit=limit,
             is_deleted=is_deleted,
-            **kwargs,
+            **cast("Any", kwargs),
         )
         total = await cls.total_count(
             user_id=user_id,
             tenant_id=tenant_id,
             is_deleted=is_deleted,
-            **kwargs,
+            **cast("Any", kwargs),
         )
         return items, total
 
     @classmethod
     async def get_by_uid(cls, uid: str) -> Self | None:
         """Get item by UID."""
-        async with async_session() as session:
+        async with cast("Any", _session_factory())() as session:
             query = select(cls).filter(cls.uid == uid)
             result = await session.execute(query)
-            item = result.scalar_one_or_none()
-        return item
+            return result.scalar_one_or_none()
 
     @classmethod
     async def create_item(cls, data: dict) -> Self:
         """Create a new item."""
         item = cls(**data)
-        async with async_session() as session:
+        async with cast("Any", _session_factory())() as session:
             session.add(item)
             await session.commit()
             await session.refresh(item)
-        from ..audit.emit import maybe_record_audit
-        from ..audit.schemas import AuditAction
+        from fastapi_mongo_base.audit.emit import maybe_record_audit
+        from fastapi_mongo_base.audit.schemas import AuditAction
 
         await maybe_record_audit(action=AuditAction.create, item=item)
         return item
@@ -402,9 +416,12 @@ class BaseEntity:
     @classmethod
     async def update_item(cls, item: Self, data: dict) -> Self:
         """Update an existing item."""
-        from ..audit.context import is_audit_enabled
-        from ..audit.emit import maybe_record_audit, snapshot_for_audit
-        from ..audit.schemas import AuditAction
+        from fastapi_mongo_base.audit.context import is_audit_enabled
+        from fastapi_mongo_base.audit.emit import (
+            maybe_record_audit,
+            snapshot_for_audit,
+        )
+        from fastapi_mongo_base.audit.schemas import AuditAction
 
         before = snapshot_for_audit(item) if is_audit_enabled() else None
         for key, value in data.items():
@@ -415,7 +432,7 @@ class BaseEntity:
 
             setattr(item, key, value)
 
-        async with async_session() as session:
+        async with cast("Any", _session_factory())() as session:
             session.add(item)
             await session.commit()
             await session.refresh(item)
@@ -429,13 +446,16 @@ class BaseEntity:
     @classmethod
     async def delete_item(cls, item: Self) -> Self:
         """Soft delete an item by setting is_deleted to True."""
-        from ..audit.context import is_audit_enabled
-        from ..audit.emit import maybe_record_audit, snapshot_for_audit
-        from ..audit.schemas import AuditAction
+        from fastapi_mongo_base.audit.context import is_audit_enabled
+        from fastapi_mongo_base.audit.emit import (
+            maybe_record_audit,
+            snapshot_for_audit,
+        )
+        from fastapi_mongo_base.audit.schemas import AuditAction
 
         before = snapshot_for_audit(item) if is_audit_enabled() else None
         item.is_deleted = True
-        async with async_session() as session:
+        async with cast("Any", _session_factory())() as session:
             session.add(item)
             await session.commit()
             await session.refresh(item)
@@ -641,23 +661,29 @@ class ImmutableMixin(BaseEntity):
 
     @staticmethod
     def prevent_update(
-        mapper: object, connection: object, target: object
+        _mapper: object, connection: object, target: object
     ) -> None:
         """Prevent updates to immutable items."""
-        if connection.in_transaction() and target.id is not None:
+        conn = cast("Any", connection)
+        tgt = cast("Any", target)
+        if conn.in_transaction() and tgt.id is not None:
             raise ValueError("Immutable items cannot be updated")
 
     @classmethod
-    def __declare_last__(cls) -> None:
+    def _register_before_update(cls) -> None:
         """Register event listener to prevent updates."""
         event.listen(cls, "before_update", cls.prevent_update)
 
+    __declare_last__ = _register_before_update
+
     @classmethod
-    async def update_item(cls, item: Self, data: dict) -> Never:
+    async def update_item(cls, item: BaseEntity, data: dict) -> Self:
         """Raise error as immutable items cannot be updated."""
+        del item, data
         raise ValueError("Immutable items cannot be updated")
 
     @classmethod
-    async def delete_item(cls, item: Self) -> Never:
+    async def delete_item(cls, item: BaseEntity) -> Self:
         """Raise error as immutable items cannot be deleted."""
+        del item
         raise ValueError("Immutable items cannot be deleted")

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pymongo.errors import ServerSelectionTimeoutError
 
-from src.fastapi_mongo_base.core.db import (
+from fastapi_mongo_base.core.db import (
     check_mongodb,
     check_redis,
     check_sql,
@@ -15,12 +15,12 @@ from src.fastapi_mongo_base.core.db import (
     init_redis,
     init_sql,
 )
-from src.fastapi_mongo_base.errors.mongodb import (
+from fastapi_mongo_base.errors.mongodb import (
     MongoDBConnectionError,
 )
-from src.fastapi_mongo_base.errors.redis import RedisConnectionError
-from src.fastapi_mongo_base.errors.sql import SQLConnectionError
-from src.fastapi_mongo_base.sql.session import get_db_session
+from fastapi_mongo_base.errors.redis import RedisConnectionError
+from fastapi_mongo_base.errors.sql import SQLConnectionError
+from fastapi_mongo_base.sql.session import get_db_session
 
 
 @dataclasses.dataclass
@@ -65,7 +65,7 @@ async def test_init_mongo_db_passes_timeout_options() -> None:
             "pymongo.AsyncMongoClient", return_value=mock_client
         ) as mock_ctor,
         patch(
-            "src.fastapi_mongo_base.db.mongo.init_beanie",
+            "fastapi_mongo_base.db.mongo.init_beanie",
             new_callable=AsyncMock,
         ),
     ):
@@ -139,15 +139,15 @@ def test_init_redis_raises_on_connection_failure() -> None:
     with (
         patch("redis.asyncio.client.Redis") as async_ctor,
         patch("redis.Redis") as sync_ctor,
-        pytest.raises(
-            RedisConnectionError, match="Failed to connect to Redis"
-        ),
     ):
         mock_sync = MagicMock()
         mock_sync.ping.side_effect = RedisError("down")
         sync_ctor.from_url.return_value = mock_sync
         async_ctor.from_url.return_value = MagicMock()
-        init_redis(settings)
+        with pytest.raises(
+            RedisConnectionError, match="Failed to connect to Redis"
+        ):
+            init_redis(settings)
 
 
 @dataclasses.dataclass
@@ -166,7 +166,7 @@ async def test_init_sql_connects_with_sqlite() -> None:
         assert engine is not None
         assert session_factory is not None
 
-        from src.fastapi_mongo_base.sql.session import async_session
+        from fastapi_mongo_base.sql.session import async_session
 
         assert async_session is session_factory
         assert await check_sql(session_factory) == "up"
@@ -207,7 +207,7 @@ async def test_init_sql_can_create_tables() -> None:
     pytest.importorskip("aiosqlite")
     from sqlalchemy.orm import Mapped, mapped_column
 
-    from src.fastapi_mongo_base.sql.models import BaseEntity
+    from fastapi_mongo_base.sql.models import BaseEntity
 
     class _SqlTestRecord(BaseEntity):
         __tablename__ = "sql_test_records"

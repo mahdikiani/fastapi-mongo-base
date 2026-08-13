@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 
 import pytest
 
-from src.fastapi_mongo_base.utils.usso.principals import (
+from fastapi_mongo_base.utils.usso.principals import (
     is_service_auth,
     is_service_request,
     is_service_user,

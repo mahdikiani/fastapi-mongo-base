@@ -9,7 +9,7 @@ tz = pytz.timezone(os.getenv("TIMEZONE", "UTC"))
 utc = pytz.timezone("UTC")
 
 
-def iso_tz(dt: datetime, timezone: pytz.timezone = tz) -> str:
+def iso_tz(dt: datetime, timezone: pytz.BaseTzInfo = tz) -> str:
     """
     Convert a datetime object to a ISO string with the given timezone.
 
@@ -30,7 +30,7 @@ def iso_tz(dt: datetime, timezone: pytz.timezone = tz) -> str:
     return dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
-def ensure_aware(dt: datetime, timezone: pytz.timezone = tz) -> datetime:
+def ensure_aware(dt: datetime, timezone: pytz.BaseTzInfo = tz) -> datetime:
     """
     Ensure a datetime object is aware.
 

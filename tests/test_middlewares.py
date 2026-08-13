@@ -4,12 +4,12 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.fastapi_mongo_base.middlewares import TimerMiddleware
+from fastapi_mongo_base.middlewares import TimerMiddleware
 
 
 def test_middlewares_package_exports_timer() -> None:
     """Public middleware package should export TimerMiddleware."""
-    from src.fastapi_mongo_base import middlewares
+    from fastapi_mongo_base import middlewares
 
     assert middlewares.__all__ == [
         "TimerMiddleware",
@@ -23,10 +23,10 @@ def test_prometheus_middleware_reexports_monitoring_class() -> None:
     """Prometheus shim should point to monitoring middleware implementation."""
     pytest.importorskip("prometheus_client")
 
-    from src.fastapi_mongo_base.middlewares.prometheus import (
+    from fastapi_mongo_base.middlewares.prometheus import (
         PrometheusMiddleware,
     )
-    from src.fastapi_mongo_base.monitoring.middleware import (
+    from fastapi_mongo_base.monitoring.middleware import (
         PrometheusMiddleware as MonitoringPrometheusMiddleware,
     )
 

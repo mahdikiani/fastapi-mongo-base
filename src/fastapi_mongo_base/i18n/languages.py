@@ -1,6 +1,6 @@
 """Supported content languages with display metadata."""
 
-from enum import StrEnum
+from enum import Enum
 
 LANGUAGE_INFO: dict[str, dict[str, str]] = {
     "English": {"fa": "انگلیسی", "en": "English", "abbreviation": "en"},
@@ -34,7 +34,7 @@ LANGUAGE_INFO: dict[str, dict[str, str]] = {
 _LANGUAGE_BY_CODE: dict[str, "Language"] = {}
 
 
-class Language(StrEnum):
+class Language(str, Enum):
     """Catalog of supported content languages."""
 
     English = "English"
@@ -63,7 +63,7 @@ class Language(StrEnum):
     @classmethod
     def _ensure_code_index(cls) -> dict[str, "Language"]:
         if not _LANGUAGE_BY_CODE:
-            _LANGUAGE_BY_CODE.update({item.code: item for item in cls})
+            _LANGUAGE_BY_CODE.update({item.code: item for item in list(cls)})
         return _LANGUAGE_BY_CODE
 
     @classmethod
@@ -85,7 +85,7 @@ class Language(StrEnum):
     @classmethod
     def codes(cls) -> tuple[str, ...]:
         """Return all supported locale codes in enum definition order."""
-        return tuple(item.code for item in cls)
+        return tuple(item.code for item in list(cls))
 
     @property
     def info(self) -> dict[str, str]:
@@ -119,4 +119,4 @@ class Language(StrEnum):
     @classmethod
     def get_choices(cls) -> list[dict[str, str]]:
         """Return all languages as API-friendly dictionaries."""
-        return [item.get_dict() for item in cls]
+        return [item.get_dict() for item in list(cls)]

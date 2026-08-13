@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytz
 
-from ..utils import timezone as tz_util
+from fastapi_mongo_base.utils import timezone as tz_util
+
 from .context import request_timezone
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from fastapi import Request
 
 TIMEZONE_HEADER = "x-timezone"
@@ -95,6 +97,6 @@ def localize_filter_datetime(
     source_tz: pytz.BaseTzInfo | None = None,
 ) -> datetime:
     """Convert a naive or aware filter datetime to UTC for storage queries."""
-    active_tz = source_tz or request_timezone.get() or tz_util.tz
+    active_tz: Any = source_tz or request_timezone.get() or tz_util.tz
     aware = active_tz.localize(dt) if dt.tzinfo is None else dt
     return aware.astimezone(tz_util.utc)

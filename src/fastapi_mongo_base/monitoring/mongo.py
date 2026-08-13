@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 from threading import Lock
+from typing import Any
 
 from pymongo import monitoring
 
-try:
+_UNSET: Any = None
+
+
+def _load_prometheus_metrics() -> tuple[Any, Any, Any, Any, Any, Any]:
+    """Create Prometheus metrics for MongoDB pool events."""
     from prometheus_client import Counter, Gauge
 
     pool_connections = Gauge(
@@ -14,43 +19,57 @@ try:
         "Current MongoDB pool connections",
         ["database", "state"],
     )
-
     connections_created_total = Counter(
         "mongodb_pool_connections_created_total",
         "Total MongoDB connections created",
         ["database"],
     )
-
     connections_ready_total = Counter(
         "mongodb_pool_connections_ready_total",
         "Total MongoDB connections ready for checkout",
         ["database"],
     )
-
     connections_closed_total = Counter(
         "mongodb_pool_connections_closed_total",
         "Total MongoDB connections closed",
         ["database"],
     )
-
     checkouts_started_total = Counter(
         "mongodb_pool_checkouts_started_total",
         "Total MongoDB connection checkout attempts",
         ["database"],
     )
-
     checkouts_failed_total = Counter(
         "mongodb_pool_checkouts_failed_total",
         "Total MongoDB connection checkout failures",
         ["database", "reason"],
     )
+    return (
+        pool_connections,
+        connections_created_total,
+        connections_ready_total,
+        connections_closed_total,
+        checkouts_started_total,
+        checkouts_failed_total,
+    )
+
+
+try:
+    (
+        pool_connections,
+        connections_created_total,
+        connections_ready_total,
+        connections_closed_total,
+        checkouts_started_total,
+        checkouts_failed_total,
+    ) = _load_prometheus_metrics()
 except ImportError:
-    pool_connections = None
-    connections_created_total = None
-    connections_ready_total = None
-    connections_closed_total = None
-    checkouts_started_total = None
-    checkouts_failed_total = None
+    pool_connections = _UNSET
+    connections_created_total = _UNSET
+    connections_ready_total = _UNSET
+    connections_closed_total = _UNSET
+    checkouts_started_total = _UNSET
+    checkouts_failed_total = _UNSET
 
 
 class DatabasePoolMonitor(monitoring.ConnectionPoolListener):

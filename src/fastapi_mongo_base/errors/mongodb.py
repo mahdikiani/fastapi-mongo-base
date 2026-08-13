@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from .base import BaseHTTPException
 from .status import (
@@ -34,7 +34,7 @@ class MongoDBError(BaseHTTPException):
             error_code=self.error_code,
             detail=detail or self.message_en,
             message=message,
-            **kwargs,
+            **cast("Any", kwargs),
         )
 
 
@@ -155,13 +155,14 @@ def convert_pymongo_error(exc: PyMongoError) -> MongoDBError:
     )
 
     detail = str(exc)
+    duplicate_key_code = 11000
 
     if isinstance(exc, DuplicateKeyError):
         return DocumentDuplicateKeyError(detail=detail)
 
     if (
         isinstance(exc, OperationFailure)
-        and getattr(exc, "code", None) == 11000
+        and getattr(exc, "code", None) == duplicate_key_code
     ):
         return DocumentDuplicateKeyError(detail=detail)
 

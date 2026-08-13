@@ -3,8 +3,8 @@
 import pytest
 from fastapi import HTTPException
 
-from src.fastapi_mongo_base.errors.base import BaseHTTPException
-from src.fastapi_mongo_base.errors.resource import (
+from fastapi_mongo_base.errors.base import BaseHTTPException
+from fastapi_mongo_base.errors.resource import (
     AlreadyExistsError,
     ConflictError,
     GoneError,
@@ -19,7 +19,7 @@ from src.fastapi_mongo_base.errors.resource import (
     ResourceNotFoundError,
     ResourcePaymentRequiredError,
 )
-from src.fastapi_mongo_base.errors.status import ForbiddenError, ServerError
+from fastapi_mongo_base.errors.status import ForbiddenError, ServerError
 
 try:
     from usso.exceptions import USSOException as _USSOException

@@ -1,9 +1,9 @@
 """Tests for backward-compatible exception re-export modules."""
 
-import src.fastapi_mongo_base.core.exceptions as core_exceptions
-import src.fastapi_mongo_base.errors.exceptions as errors_exceptions
-from src.fastapi_mongo_base.errors.base import BaseHTTPException
-from src.fastapi_mongo_base.errors.handlers import EXCEPTION_HANDLERS
+import fastapi_mongo_base.core.exceptions as core_exceptions
+import fastapi_mongo_base.errors.exceptions as errors_exceptions
+from fastapi_mongo_base.errors.base import BaseHTTPException
+from fastapi_mongo_base.errors.handlers import EXCEPTION_HANDLERS
 
 
 def test_core_exceptions_reexports_handlers() -> None:

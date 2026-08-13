@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 import json_advanced as json
 
-from ..utils.trace import get_trace_id
+from fastapi_mongo_base.utils.trace import get_trace_id
 
 
 class JsonFormatter(logging.Formatter):
@@ -21,7 +22,7 @@ class JsonFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         """Serialise *record* to a JSON string."""
-        data: dict[str, object] = {
+        data: dict[str, Any] = {
             "timestamp": self.formatTime(record, self.datefmt),
             "level": record.levelname,
             "logger": record.name,

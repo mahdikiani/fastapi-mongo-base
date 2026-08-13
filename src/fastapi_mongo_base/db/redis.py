@@ -5,13 +5,22 @@ from __future__ import annotations
 import inspect
 import logging
 import os
+from typing import Any, cast
 
-from ..core.config import Settings
-from ..errors.redis import RedisConnectionError
+from fastapi_mongo_base.core.config import Settings
+from fastapi_mongo_base.errors.redis import RedisConnectionError
 
-_redis_sync_client: object | None = None
-_redis_async_client: object | None = None
 logger = logging.getLogger(__name__)
+
+
+class _RedisRuntime:
+    """Mutable Redis client handles (avoids ``global``)."""
+
+    sync_client: object | None = None
+    async_client: object | None = None
+
+
+_redis = _RedisRuntime()
 
 
 def _redis_fatal_exceptions() -> tuple[type[BaseException], ...]:
@@ -37,7 +46,7 @@ class _SyncRedisGuard:
     """Proxy that force-exits on fatal Redis errors for sync calls."""
 
     def __init__(self, client: object) -> None:
-        self._client = client
+        self._client: Any = client
         self._fatal = _redis_fatal_exceptions()
 
     def __getattr__(self, name: str) -> object:
@@ -47,7 +56,7 @@ class _SyncRedisGuard:
 
         def guarded(*args: object, **kwargs: object) -> object:
             try:
-                return attr(*args, **kwargs)
+                return attr(*args, **cast("Any", kwargs))
             except self._fatal as e:
                 _force_exit(e, name)
                 raise  # pragma: no cover - unreachable after os._exit
@@ -65,7 +74,7 @@ class _AsyncRedisGuard:
     """Proxy that force-exits on fatal Redis errors for async calls."""
 
     def __init__(self, client: object) -> None:
-        self._client = client
+        self._client: Any = client
         self._fatal = _redis_fatal_exceptions()
 
     def __getattr__(self, name: str) -> object:
@@ -75,7 +84,7 @@ class _AsyncRedisGuard:
 
         async def guarded(*args: object, **kwargs: object) -> object:
             try:
-                result = attr(*args, **kwargs)
+                result = attr(*args, **cast("Any", kwargs))
                 if inspect.isawaitable(result):
                     result = await result
             except self._fatal as e:
@@ -93,8 +102,8 @@ class _AsyncRedisGuard:
 
 
 def get_redis_sync_client() -> object | None:
-    """Return the initialized sync Redis client, if object."""
-    return _redis_sync_client
+    """Return the initialized sync Redis client, if any."""
+    return _redis.sync_client
 
 
 def get_redis_async_client() -> object:
@@ -105,12 +114,12 @@ def get_redis_async_client() -> object:
         RedisConnectionError: When Redis is not configured or initialized.
 
     """
-    if _redis_async_client is None:
+    if _redis.async_client is None:
         raise RedisConnectionError(
             "Redis async client is not initialized. "
             "Configure REDIS_URI and ensure init_redis() ran at startup."
         )
-    return _redis_async_client
+    return _redis.async_client
 
 
 def init_redis(
@@ -130,15 +139,14 @@ def init_redis(
         RedisConnectionError: If Redis is configured but connection fails.
 
     """
-    global _redis_sync_client, _redis_async_client
+    resolved: Settings = (
+        settings if settings is not None else cast("Settings", Settings())
+    )
 
-    if settings is None:
-        settings = Settings()
-
-    redis_uri = getattr(settings, "redis_uri", None)
+    redis_uri = getattr(resolved, "redis_uri", None)
     if not redis_uri:
-        _redis_sync_client = None
-        _redis_async_client = None
+        _redis.sync_client = None
+        _redis.async_client = None
         return None, None
 
     try:
@@ -167,9 +175,9 @@ def init_redis(
         logger.exception("Redis connection error at %s", redis_uri)
         raise RedisConnectionError("Failed to connect to Redis") from e
 
-    _redis_sync_client = _SyncRedisGuard(redis_sync)
-    _redis_async_client = _AsyncRedisGuard(redis_async)
-    return _redis_sync_client, _redis_async_client
+    _redis.sync_client = _SyncRedisGuard(redis_sync)
+    _redis.async_client = _AsyncRedisGuard(redis_async)
+    return _redis.sync_client, _redis.async_client
 
 
 async def check_redis(client: object | None) -> str:
@@ -186,7 +194,12 @@ async def check_redis(client: object | None) -> str:
     if client is None:
         return "down"
     try:
-        await client.ping()
+        ping = getattr(client, "ping", None)
+        if ping is None:
+            return "down"
+        result = ping()
+        if inspect.isawaitable(result):
+            await result
     except Exception:
         logger.exception("Redis readiness check failed")
         return "down"
@@ -206,13 +219,11 @@ async def close_redis(
         async_client: Optional async Redis client override.
 
     """
-    global _redis_sync_client, _redis_async_client
-
     sync_client = (
-        sync_client if sync_client is not None else _redis_sync_client
+        sync_client if sync_client is not None else _redis.sync_client
     )
     async_client = (
-        async_client if async_client is not None else _redis_async_client
+        async_client if async_client is not None else _redis.async_client
     )
 
     if async_client is not None:
@@ -231,5 +242,5 @@ async def close_redis(
         if callable(close):
             close()
 
-    _redis_sync_client = None
-    _redis_async_client = None
+    _redis.sync_client = None
+    _redis.async_client = None

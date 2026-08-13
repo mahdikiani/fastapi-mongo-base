@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from beanie import Document
@@ -24,11 +24,11 @@ def _get_collection(model: type[Document]) -> object:
 
 async def aggregate_to_list(
     model: type[Document],
-    pipeline: list[dict[str, object]],
+    pipeline: list[dict[str, Any]],
     *,
     length: int | None = None,
     **kwargs: object,
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     """
     Run an aggregation pipeline and return documents as a list.
 
@@ -37,8 +37,8 @@ async def aggregate_to_list(
     supports both drivers. Collection access works with Beanie 2
     (``get_pymongo_collection``) and Beanie 1 (``get_motor_collection``).
     """
-    collection = _get_collection(model)
-    cursor = collection.aggregate(pipeline, **kwargs)
+    collection = cast("Any", _get_collection(model))
+    cursor = collection.aggregate(pipeline, **cast("Any", kwargs))
     if inspect.isawaitable(cursor):
         cursor = await cursor
     result = cursor.to_list(length=length)

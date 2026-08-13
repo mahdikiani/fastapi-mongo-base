@@ -3,15 +3,13 @@
 import asyncio
 import inspect
 import logging
-from collections.abc import Coroutine
 from datetime import datetime
-from enum import StrEnum
-from typing import Literal, Union
+from enum import Enum
+from typing import Any, Literal, Union, cast
 
 import json_advanced as json
 from pydantic import BaseModel, Field, field_serializer, field_validator
 from singleton import Singleton
-from typing_extensions import Self
 
 from .i18n.timezone import serialize_response_datetime
 from .schemas import BaseEntitySchema
@@ -20,7 +18,7 @@ from .utils import basic, timezone
 logger = logging.getLogger(__name__)
 
 
-class TaskStatusEnum(StrEnum):
+class TaskStatusEnum(str, Enum):
     """Enumeration of task status values."""
 
     none = "null"
@@ -33,7 +31,7 @@ class TaskStatusEnum(StrEnum):
     error = "error"
 
     @classmethod
-    def finishes(cls) -> list[Self]:
+    def finishes(cls) -> list["TaskStatusEnum"]:
         """
         Get list of statuses that indicate task completion.
 
@@ -116,7 +114,7 @@ class TaskReference(BaseModel):
 
     async def get_task_item(self) -> BaseEntitySchema | None:
         """Retrieve the referenced task item."""
-        task_classes = {
+        task_classes: dict[str, type] = {
             subclass.__name__: subclass
             for subclass in basic.get_all_subclasses(TaskMixin)
             if issubclass(subclass, BaseEntitySchema)
@@ -126,7 +124,9 @@ class TaskReference(BaseModel):
         if not task_class:
             raise ValueError(f"Task type {self.task_type} is not supported.")
 
-        task_item = await task_class.find_one(task_class.uid == self.task_id)
+        task_item = await cast("Any", task_class).find_one(
+            cast("Any", task_class).uid == self.task_id
+        )
         if not task_item:
             raise ValueError(
                 f"No task found with id {self.task_id} of type "
@@ -144,9 +144,16 @@ class TaskReferenceList(BaseModel):
     )
     mode: Literal["serial", "parallel"] = "serial"
 
-    async def get_task_item(self) -> list[BaseEntitySchema]:
+    async def get_task_item(self) -> list[object]:
         """Retrieve all referenced task items."""
-        return [await task.get_task_item() for task in self.tasks]
+        items: list[object] = []
+        for task in self.tasks:
+            item = await task.get_task_item()
+            if isinstance(item, list):
+                items.extend(item)
+            elif item is not None:
+                items.append(item)
+        return items
 
     async def list_processing(self) -> None:
         """
@@ -154,15 +161,14 @@ class TaskReferenceList(BaseModel):
 
         Mode can be 'serial' or 'parallel'.
         """
-        task_items = [await task.get_task_item() for task in self.tasks]
+        task_items = await self.get_task_item()
         match self.mode:
             case "serial":
                 for task_item in task_items:
-                    await task_item.start_processing()  # type: ignore
+                    await cast("Any", task_item).start_processing()
             case "parallel":
                 await asyncio.gather(*[
-                    task.start_processing()  # type: ignore
-                    for task in task_items
+                    cast("Any", task).start_processing() for task in task_items
                 ])
 
 
@@ -219,10 +225,11 @@ class TaskMixin(TaskCreateFieldsMixin):
     @property
     def item_webhook_url(self) -> str:
         """Webhook URL for this task item."""
-        return f"{self.item_url}/webhook"  # type: ignore
+        item_url = getattr(self, "item_url", "")
+        return f"{item_url}/webhook"
 
     @property
-    def task_duration(self) -> int:
+    def task_duration(self) -> object:
         """Calculate task duration in seconds."""
         if self.task_start_at:
             if self.task_end_at:
@@ -235,14 +242,14 @@ class TaskMixin(TaskCreateFieldsMixin):
     def validate_task_status(
         cls,
         value: object,
-    ) -> Self:
+    ) -> object:
         """Validate and convert task status value."""
         if isinstance(value, str):
             return TaskStatusEnum(value)
         return value
 
     @field_serializer("task_status")
-    def serialize_task_status(self, value: object) -> str:
+    def serialize_task_status(self, value: object) -> object:
         """Serialize task status to string."""
         if isinstance(value, TaskStatusEnum):
             return value.value
@@ -261,7 +268,7 @@ class TaskMixin(TaskCreateFieldsMixin):
     @classmethod
     def signals(cls) -> list[basic.FunctionOrCoroutine]:
         """Get list of signal handlers for this task class."""
-        registry = SignalRegistry()
+        registry = cast("SignalRegistry", SignalRegistry())
         if cls.__name__ not in registry.signal_map:
             registry.signal_map[cls.__name__] = []
         return registry.signal_map[cls.__name__]
@@ -273,52 +280,60 @@ class TaskMixin(TaskCreateFieldsMixin):
 
     @classmethod
     async def emit_signals(
-        cls, task_instance: Self, *, sync: bool = False, **kwargs: object
+        cls, task_instance: object, *, sync: bool = False, **kwargs: object
     ) -> None:
         """Emit all registered signals for the task instance."""
+        task = cast("Any", task_instance)
 
         async def webhook_call(
-            *args: object, **kwargs: object
-        ) -> dict[str, object]:
+            *_args: object, **kwargs: object
+        ) -> dict[str, object] | None:
             import httpx
 
+            response: httpx.Response | None = None
             try:
-                response = await httpx.AsyncClient().post(*args, **kwargs)
+                response = await httpx.AsyncClient().post(
+                    **cast("Any", kwargs),
+                )
                 response.raise_for_status()
-                return response.json()
+                return cast("dict[str, object]", response.json())
             except httpx.HTTPStatusError as e:
-                await task_instance.save_report(
+                status = response.status_code if response is not None else "?"
+                text = response.text if response is not None else ""
+                await task.save_report(
                     "\n".join([
                         "An error occurred in webhook_call:",
                         f"{type(e)}: {e}",
-                        f"{response.status_code}",
-                        f"{response.text}",
+                        f"{status}",
+                        f"{text}",
                     ]),
                     emit=False,
                     log_type="webhook_error",
                 )
-                await task_instance.save()  # type: ignore
+                await task.save()
                 logger.exception("An error occurred in webhook_call")
+                return None
             except Exception as e:
-                await task_instance.save_report(
+                await task.save_report(
                     f"An error occurred in webhook_call: {type(e)}: {e}",
                     emit=False,
                     log_type="webhook_error",
                 )
-                await task_instance.save()  # type: ignore
+                await task.save()
                 logger.exception("An error occurred in webhook_call")
+                return None
 
-        signals: list[Coroutine[object, object, None]] = []
-        meta_data = getattr(task_instance, "meta_data", {}) or {}
-        task_dict = task_instance.model_dump(
-            exclude=task_instance.webhook_exclude_fields,
-            include=task_instance.webhook_include_fields,
+        signals: list[object] = []
+        meta_data = getattr(task, "meta_data", {}) or {}
+        task_dict = task.model_dump(
+            exclude=task.webhook_exclude_fields,
+            include=task.webhook_include_fields,
         )
-        task_dict.update({"task_type": task_instance.__class__.__name__})
+        task_dict.update({"task_type": task.__class__.__name__})
         task_dict.update(kwargs)
 
         for webhook_url in [
-            task_instance.webhook_url,
+            task.webhook_url,
             meta_data.get("webhook"),
             meta_data.get("webhook_url"),
         ]:
@@ -329,22 +344,19 @@ class TaskMixin(TaskCreateFieldsMixin):
                     url=webhook_url,
                     headers={
                         "Content-Type": "application/json",
-                        **(task_instance.webhook_custom_headers or {}),
+                        **(task.webhook_custom_headers or {}),
                     },
                     data=json.dumps(task_dict),
                 )
             )
 
-        signals += [
-            (
-                signal(task_instance)
-                if inspect.iscoroutinefunction(signal)
-                else asyncio.to_thread(signal, task_instance)
-            )
-            for signal in cls.signals()
-        ]
+        for signal in cls.signals():
+            if inspect.iscoroutinefunction(signal):
+                signals.append(signal(task))
+            else:
+                signals.append(asyncio.to_thread(signal, task))
 
-        await basic.gather_sync(signals, sync=sync)
+        await basic.gather_sync(cast("list[Any]", signals), sync=sync)
 
     async def save_status(
         self, status: TaskStatusEnum, **kwargs: object
@@ -354,10 +366,12 @@ class TaskMixin(TaskCreateFieldsMixin):
         await self.add_log(
             TaskLogRecord(
                 task_status=self.task_status,
-                message=f"Status changed to {status}",
-                log_type=kwargs.get("log_type", "status_update"),
+                message=f"Status changed to {status.value}",
+                log_type=cast(
+                    "str | None", kwargs.get("log_type", "status_update")
+                ),
             ),
-            **kwargs,
+            **cast("Any", kwargs),
         )
 
     async def add_reference(self, task_id: str, **kwargs: object) -> None:
@@ -371,9 +385,11 @@ class TaskMixin(TaskCreateFieldsMixin):
             TaskLogRecord(
                 task_status=self.task_status,
                 message=f"Added reference to task {task_id}",
-                log_type=kwargs.get("log_type", "add_reference"),
+                log_type=cast(
+                    "str | None", kwargs.get("log_type", "add_reference")
+                ),
             ),
-            **kwargs,
+            **cast("Any", kwargs),
         )
 
     async def save_report(self, report: str, **kwargs: object) -> None:
@@ -383,20 +399,24 @@ class TaskMixin(TaskCreateFieldsMixin):
             TaskLogRecord(
                 task_status=self.task_status,
                 message=report,
-                log_type=kwargs.get("log_type", "report"),
+                log_type=cast("str | None", kwargs.get("log_type", "report")),
             ),
-            **kwargs,
+            **cast("Any", kwargs),
         )
 
     async def add_log(
-        self, log_record: TaskLogRecord, *, emit: bool = True, **kwargs: object
+        self,
+        log_record: TaskLogRecord,
+        *,
+        emit: bool = True,
+        **_kwargs: object,
     ) -> None:
         """Add a log record to the task."""
         self.task_logs.append(log_record)
         if emit:
             await self.save_and_emit()
 
-    async def start_processing(self, **kwargs: object) -> None:
+    async def start_processing(self, **_kwargs: object) -> None:
         """Start processing task references."""
         if self.task_references is None:
             raise NotImplementedError(
@@ -419,7 +439,7 @@ class TaskMixin(TaskCreateFieldsMixin):
         import json
 
         queue_name = f"{self.__class__.__name__.lower()}_queue"
-        await redis_client.lpush(
+        await cast("Any", redis_client).lpush(
             queue_name,
             json.dumps(kwargs | self.model_dump(include={"uid"}, mode="json")),
         )
@@ -427,13 +447,14 @@ class TaskMixin(TaskCreateFieldsMixin):
     @basic.try_except_wrapper
     async def save_and_emit(self, **kwargs: object) -> None:
         """Save task and emit signals."""
+        me = cast("Any", self)
         if kwargs.get("sync"):
-            await self.save()  # type: ignore
-            await self.emit_signals(self, **kwargs)
+            await me.save()
+            await self.emit_signals(self, **cast("Any", kwargs))
         else:
             await asyncio.gather(
-                self.save(),  # type: ignore
-                self.emit_signals(self, **kwargs),
+                me.save(),
+                self.emit_signals(self, **cast("Any", kwargs)),
             )
 
     async def update_and_emit(self, **kwargs: object) -> None:
@@ -445,11 +466,11 @@ class TaskMixin(TaskCreateFieldsMixin):
                 task_report, etc.).
 
         """
-        if kwargs.get("task_status") in [
+        if kwargs.get("task_status") in {
             TaskStatusEnum.done,
             TaskStatusEnum.error,
             TaskStatusEnum.completed,
-        ]:
+        }:
             kwargs["task_progress"] = kwargs.get("task_progress", 100)
         for key, value in kwargs.items():
             if hasattr(self, key):
@@ -458,8 +479,11 @@ class TaskMixin(TaskCreateFieldsMixin):
             await self.add_log(
                 TaskLogRecord(
                     task_status=self.task_status,
-                    message=kwargs["task_report"],
-                    log_type=kwargs.get("log_type", "status_update"),
+                    message=str(kwargs["task_report"]),
+                    log_type=cast(
+                        "str | None",
+                        kwargs.get("log_type", "status_update"),
+                    ),
                 ),
                 emit=False,
             )

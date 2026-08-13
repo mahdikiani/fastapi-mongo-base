@@ -1,6 +1,6 @@
 """Backward compatibility shim. Prefer fastapi_mongo_base.db."""
 
-from ..db import (
+from fastapi_mongo_base.db import (
     check_mongodb,
     check_redis,
     check_sql,

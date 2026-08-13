@@ -5,13 +5,15 @@ from __future__ import annotations
 import time
 from collections.abc import Awaitable, Callable, Iterable
 from http import HTTPStatus
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from prometheus_client import Counter, Gauge, Histogram
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.types import ASGIApp
+
+if TYPE_CHECKING:
+    from starlette.types import ASGIApp
 
 RequestEndpoint = Callable[[Request], Awaitable[Response]]
 

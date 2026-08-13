@@ -1,7 +1,7 @@
 """Pydantic schemas for entities and responses."""
 
 from datetime import datetime
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 import uuid6
 from pydantic import (
@@ -267,7 +267,7 @@ class PaginatedResponse(BaseModel, Generic[TSchema]):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_total(cls, values: dict[str, object]) -> dict[str, object]:
+    def validate_total(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Validate the total value."""
         if values.get("total") is None:
             values["total"] = len(values.get("items", []))

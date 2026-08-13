@@ -7,7 +7,7 @@ from bson import Binary
 from bson.decimal128 import Decimal128
 
 
-def decimal_amount(value: object) -> Decimal:
+def decimal_amount(value: object) -> Decimal | None:
     """
     Convert value to Decimal, handling BSON Decimal128.
 
@@ -24,7 +24,7 @@ def decimal_amount(value: object) -> Decimal:
         return Decimal(value.to_decimal())
     if isinstance(value, (int, float, str)):
         return Decimal(str(value))
-    return Decimal(value)
+    return Decimal(str(value))
 
 
 def get_bson_value(value: object) -> object:

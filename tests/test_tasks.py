@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.fastapi_mongo_base.schemas import BaseEntitySchema
-from src.fastapi_mongo_base.tasks import (
+from fastapi_mongo_base.schemas import BaseEntitySchema
+from fastapi_mongo_base.tasks import (
     SignalRegistry,
     TaskCreateFieldsMixin,
     TaskLogRecord,
@@ -18,7 +18,7 @@ from src.fastapi_mongo_base.tasks import (
     TaskReferenceList,
     TaskStatusEnum,
 )
-from src.fastapi_mongo_base.utils import timezone
+from fastapi_mongo_base.utils import timezone
 
 # ── Helper classes ──────────────────────────────────────────────
 
@@ -462,7 +462,9 @@ class TestTaskMixin:
         dumped = task.model_dump(mode="json")
         assert dumped["task_status"] == "paused"
 
-    # ── signals / add_signal ──
+
+class TestTaskMixinSignals:
+    """Tests for TaskMixin signal registry and emit_signals."""
 
     def test_signals_returns_list(self) -> None:
         """Test signals returns list."""
@@ -472,7 +474,7 @@ class TestTaskMixin:
     def test_add_signal_appends_handler(self) -> None:
         """Test add_signal appends handler."""
 
-        async def handler(instance: object) -> None:
+        async def handler(_instance: object) -> None:
             pass
 
         _SimpleTask.add_signal(handler)
@@ -500,7 +502,7 @@ class TestTaskMixin:
 
         handler_called = False
 
-        def signal_handler(instance: object) -> None:
+        def signal_handler(_instance: object) -> None:
             nonlocal handler_called
             handler_called = True
 
@@ -563,7 +565,7 @@ class TestTaskMixin:
 
         handler_called = False
 
-        def signal_handler(instance: object) -> None:
+        def signal_handler(_instance: object) -> None:
             nonlocal handler_called
             handler_called = True
 
@@ -586,6 +588,10 @@ class TestTaskMixin:
         _SimpleTask.signals().remove(signal_handler)
 
     # ── save_status ──
+
+
+class TestTaskMixinLifecycle:
+    """Tests for TaskMixin persistence and processing helpers."""
 
     @pytest.mark.asyncio
     async def test_save_status(self) -> None:

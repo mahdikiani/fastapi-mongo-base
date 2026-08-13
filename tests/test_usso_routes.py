@@ -21,12 +21,12 @@ import contextlib
 
 from usso.user import UserData
 
-from src.fastapi_mongo_base.errors.status import (
+from fastapi_mongo_base.errors.status import (
     ForbiddenError,
     NotFoundError,
     UnauthorizedError,
 )
-from src.fastapi_mongo_base.utils.usso_routes import (
+from fastapi_mongo_base.utils.usso_routes import (
     AbstractOwnedUSSORouter,
     AbstractTenantUSSORouter,
 )
@@ -41,7 +41,7 @@ _requires_real_usso = pytest.mark.skipif(
 )
 
 
-_AUTH = "src.fastapi_mongo_base.utils.usso_routes.authorization"
+_AUTH = "fastapi_mongo_base.utils.usso_routes.authorization"
 
 
 class _ItemSchema(BaseModel):
@@ -68,7 +68,7 @@ class _OwnedRouter(AbstractOwnedUSSORouter):
     workspace_only = False
 
 
-@pytest.fixture()
+@pytest.fixture
 def tenant_router() -> _TenantRouter:
     """Fixture for tenant router."""
     router = object.__new__(_TenantRouter)
@@ -77,7 +77,7 @@ def tenant_router() -> _TenantRouter:
     return router
 
 
-@pytest.fixture()
+@pytest.fixture
 def owned_router() -> _OwnedRouter:
     """Fixture for owned router."""
     router = object.__new__(_OwnedRouter)

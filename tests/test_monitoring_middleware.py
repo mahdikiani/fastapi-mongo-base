@@ -16,7 +16,7 @@ if importlib.util.find_spec("prometheus_client") is None:
 from starlette.requests import Request
 from starlette.responses import Response
 
-from src.fastapi_mongo_base.monitoring.middleware import PrometheusMiddleware
+from fastapi_mongo_base.monitoring.middleware import PrometheusMiddleware
 
 SCOPE_TEMPLATE: dict[str, object] = {
     "type": "http",
@@ -39,34 +39,34 @@ class TestInit:
 
     def test_getattr_prometheus_middleware(self) -> None:
         """``__getattr__`` returns the ``PrometheusMiddleware`` class."""
-        from src.fastapi_mongo_base import monitoring
+        from fastapi_mongo_base import monitoring
 
         assert monitoring.PrometheusMiddleware is PrometheusMiddleware
 
     def test_getattr_database_pool_monitor(self) -> None:
         """``__getattr__`` returns the ``DatabasePoolMonitor`` class."""
-        from src.fastapi_mongo_base import monitoring
-        from src.fastapi_mongo_base.monitoring.mongo import DatabasePoolMonitor
+        from fastapi_mongo_base import monitoring
+        from fastapi_mongo_base.monitoring.mongo import DatabasePoolMonitor
 
         assert monitoring.DatabasePoolMonitor is DatabasePoolMonitor
 
     def test_getattr_setup_sentry(self) -> None:
         """``__getattr__`` returns the ``setup_sentry`` function."""
-        from src.fastapi_mongo_base import monitoring
-        from src.fastapi_mongo_base.monitoring.sentry import setup_sentry
+        from fastapi_mongo_base import monitoring
+        from fastapi_mongo_base.monitoring.sentry import setup_sentry
 
         assert monitoring.setup_sentry is setup_sentry
 
     def test_getattr_unknown_raises(self) -> None:
         """``__getattr__`` raises ``AttributeError`` for unknown names."""
-        from src.fastapi_mongo_base import monitoring
+        from fastapi_mongo_base import monitoring
 
         with pytest.raises(AttributeError, match="has no attribute"):
             _ = monitoring.NonExistentName
 
     def test_all_exports(self) -> None:
         """``__all__`` lists all public names."""
-        from src.fastapi_mongo_base import monitoring
+        from fastapi_mongo_base import monitoring
 
         assert monitoring.__all__ == [
             "DatabasePoolMonitor",
@@ -94,7 +94,7 @@ def _make_scope(
     return scope
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_metrics(
     monkeypatch: pytest.MonkeyPatch,
 ) -> tuple[MagicMock, MagicMock, MagicMock]:

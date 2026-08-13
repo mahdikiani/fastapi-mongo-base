@@ -6,7 +6,7 @@ from starlette.middleware.base import (
     RequestResponseEndpoint,
 )
 
-from ..utils.trace import (
+from fastapi_mongo_base.utils.trace import (
     TRACE_ID_HEADER,
     request_trace_id,
     resolve_trace_id,

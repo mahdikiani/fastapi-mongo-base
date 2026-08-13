@@ -2,7 +2,7 @@
 
 from fastapi.exceptions import HTTPException
 
-from ..i18n import localized
+from fastapi_mongo_base.i18n import localized
 
 
 class BaseHTTPException(HTTPException):
@@ -22,6 +22,7 @@ class BaseHTTPException(HTTPException):
     error_code: str = "unknown_error"
     message_en: str = "An unknown error occurred"
     message_fa: str | None = "یک خطای ناشناخته رخ داده است"
+    data: dict[str, object]
 
     def __init__(
         self,

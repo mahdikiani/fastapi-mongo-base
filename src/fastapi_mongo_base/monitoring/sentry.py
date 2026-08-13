@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING, Any
 
-from ..core.config import Settings
+if TYPE_CHECKING:
+    from fastapi_mongo_base.core.config import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +40,7 @@ def setup_sentry(settings: Settings) -> bool:
         )
         return False
 
-    init_kwargs: dict[str, object] = {
+    init_kwargs: dict[str, Any] = {
         "dsn": dsn,
         "integrations": [
             StarletteIntegration(transaction_style="endpoint"),

@@ -1,7 +1,7 @@
 """Backward-compatible re-exports for exception handlers."""
 
-from ..errors.base import BaseHTTPException
-from ..errors.handlers import (
+from fastapi_mongo_base.errors.base import BaseHTTPException
+from fastapi_mongo_base.errors.handlers import (
     EXCEPTION_HANDLERS,
     base_http_exception_handler,
     error_messages,

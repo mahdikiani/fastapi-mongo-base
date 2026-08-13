@@ -1,22 +1,23 @@
 """Authenticated router using USSO for FastAPI MongoDB base package."""
 
 import os
-from collections.abc import Callable
+from typing import Any, cast
 
 from fastapi import Request
 from pydantic import BaseModel
 
-from ..core import config
-from ..errors.status import (
+from fastapi_mongo_base.core import config
+from fastapi_mongo_base.errors.status import (
     BadRequestError,
     ForbiddenError,
     NotFoundError,
     UnauthorizedError,
 )
-from ..i18n.timezone import apply_user_timezone
-from ..models import BaseEntity
-from ..routes import AbstractBaseRouter
-from ..schemas import PaginatedResponse
+from fastapi_mongo_base.i18n.timezone import apply_user_timezone
+from fastapi_mongo_base.models import BaseEntity
+from fastapi_mongo_base.routes import AbstractBaseRouter
+from fastapi_mongo_base.schemas import PaginatedResponse
+
 from .usso.principals import is_service_user
 
 try:
@@ -38,7 +39,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
       (default: get_owner_id).
     """
 
-    def _resolve_owner_id(self, user: UserData) -> str:
+    def _resolve_owner_id(self, user: UserData) -> str | None:
         """Resolve owner id. Override in subclasses for custom validation."""
         return self.get_owner_id(user)
 
@@ -58,12 +59,13 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
     # Override in subclasses: "user_id" or "owner_id"
     owner_attr: str = "user_id"
 
-    get_owner_id: Callable[[type["AbstractUSSORouterBase"], UserData], str] = (
-        lambda self, u: getattr(u, "uid", u.user_id)
-    )
-    get_owner_id_for_create: (
-        Callable[[type["AbstractUSSORouterBase"], UserData], str] | None
-    ) = None  # same as get_owner_id
+    def get_owner_id(self, user: UserData) -> str | None:
+        """Return the owner id used for authorization and list filters."""
+        return getattr(user, "uid", None) or user.user_id
+
+    def get_owner_id_for_create(self, user: UserData) -> str | None:
+        """Return owner id to set on new items (defaults to get_owner_id)."""
+        return self.get_owner_id(user)
 
     def _owner_id_for_create(self, user: UserData) -> str:
         """
@@ -76,9 +78,13 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             The owner id to set on new items.
 
         """
-        if self.get_owner_id_for_create is not None:
-            return self.get_owner_id_for_create(user)
-        return self._resolve_owner_id(user)
+        owner_id = self.get_owner_id_for_create(user)
+        if owner_id is None:
+            raise BadRequestError(
+                error_code="owner_required",
+                detail="Owner id is required to create this resource",
+            )
+        return owner_id
 
     @property
     def resource_path(self) -> str:
@@ -97,7 +103,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
         resource = self.resource or self.model.__name__.lower() or ""
         return f"{namespace}/{service}/{resource}".lstrip("/")
 
-    async def get_user(self, request: Request, **kwargs: object) -> UserData:
+    async def get_user(self, request: Request, **_kwargs: object) -> UserData:
         """Resolve authenticated user from request."""
         usso_base_url = os.getenv("USSO_BASE_URL") or "https://usso.uln.me"
         usso = USSOAuthentication(
@@ -189,7 +195,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
         matched_scopes: list[dict] = authorization.get_scope_filters(
             action="read",
             resource=self.resource_path,
-            user_scopes=user.scopes if user else [],
+            user_scopes=list(user.scopes or []) if user else [],
         )
         if self.self_access and hasattr(self.model, self.owner_attr):
             matched_scopes.append({
@@ -209,6 +215,8 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
     async def get_item(
         self,
         uid: str,
+        *,
+        user_id: str | None = None,
         tenant_id: str | None = None,
         is_deleted: bool = False,
         **kwargs: object,
@@ -217,14 +225,15 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
         ignore_attr = f"ignore_{self.owner_attr}"
         owner_value = kwargs.pop(self.owner_attr, None)
         ignore_val = kwargs.pop(ignore_attr, True)
-        item_kw = {self.owner_attr: owner_value, ignore_attr: ignore_val}
-        item = await self.model.get_item(
-            uid=uid,
-            tenant_id=tenant_id,
-            is_deleted=is_deleted,
-            **item_kw,
-            **kwargs,
-        )
+        item_kw: dict[str, object] = {
+            "user_id": user_id,
+            "tenant_id": tenant_id,
+            "is_deleted": is_deleted,
+            self.owner_attr: owner_value,
+            ignore_attr: ignore_val,
+        }
+        item_kw.update(kwargs)
+        item = await self.model.get_item(uid=uid, **cast("Any", item_kw))
         if item is None:
             raise NotFoundError()
         return item
@@ -266,7 +275,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
             offset=offset,
             limit=limit,
             tenant_id=user.tenant_id,
-            **(kwargs | filters),
+            **cast("Any", kwargs | filters),
         )
         items_in_schema = [
             self.list_item_schema.model_validate(item) for item in items
@@ -296,8 +305,9 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
 
         """
         user = await self.get_user(request)
+        item_kwargs: dict[str, Any] = {self.owner_attr: None}
         item = await self.get_item(
-            uid=uid, tenant_id=user.tenant_id, **{self.owner_attr: None}
+            uid=uid, tenant_id=user.tenant_id, **cast("Any", item_kwargs)
         )
         await self.authorize(
             action="read",
@@ -325,7 +335,7 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
         if isinstance(data, BaseModel):
             data = data.model_dump()
         await self.authorize(action="create", user=user, filter_data=data)
-        from ..audit.context import audit_actor_scope
+        from fastapi_mongo_base.audit.context import audit_actor_scope
 
         with audit_actor_scope(user):
             return await self.model.create_item({
@@ -356,15 +366,16 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
         user = await self.get_user(request)
         if isinstance(data, BaseModel):
             data = data.model_dump(exclude_unset=True)
+        item_kwargs: dict[str, Any] = {self.owner_attr: None}
         item = await self.get_item(
-            uid=uid, tenant_id=user.tenant_id, **{self.owner_attr: None}
+            uid=uid, tenant_id=user.tenant_id, **cast("Any", item_kwargs)
         )
         await self.authorize(
             action="update",
             user=user,
             filter_data=item.model_dump(),
         )
-        from ..audit.context import audit_actor_scope
+        from fastapi_mongo_base.audit.context import audit_actor_scope
 
         with audit_actor_scope(user):
             return await self.model.update_item(item, data)
@@ -386,15 +397,16 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
 
         """
         user = await self.get_user(request)
+        item_kwargs: dict[str, Any] = {self.owner_attr: None}
         item = await self.get_item(
-            uid=uid, tenant_id=user.tenant_id, **{self.owner_attr: None}
+            uid=uid, tenant_id=user.tenant_id, **cast("Any", item_kwargs)
         )
         await self.authorize(
             action="delete",
             user=user,
             filter_data=item.model_dump(),
         )
-        from ..audit.context import audit_actor_scope
+        from fastapi_mongo_base.audit.context import audit_actor_scope
 
         with audit_actor_scope(user):
             return await self.model.delete_item(item)
@@ -415,9 +427,10 @@ class AbstractUSSORouterBase(AbstractBaseRouter):
         """
         user = await self.get_user(request)
         owner_id = self._resolve_owner_id(user)
+        list_kwargs: dict[str, Any] = {self.owner_attr: owner_id}
         resp = await self._list_items(
             request=request,
-            **{self.owner_attr: owner_id},
+            **cast("Any", list_kwargs),
         )
         if resp.total == 0 and self.create_mine_if_not_found:
             resp.items = [
@@ -446,12 +459,10 @@ class AbstractTenantUSSORouter(AbstractUSSORouterBase):
     """
 
     owner_attr: str = "user_id"
-    get_owner_id: Callable[
-        [type["AbstractTenantUSSORouter"], UserData], str
-    ] = lambda self, u: getattr(u, "uid", u.user_id)
-    get_owner_id_for_create: Callable[
-        [type["AbstractTenantUSSORouter"], UserData], str
-    ] = lambda self, u: u.user_id
+
+    def get_owner_id_for_create(self, user: UserData) -> str | None:
+        """Use JWT user_id (not uid) when creating tenant-scoped items."""
+        return user.user_id
 
 
 class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
@@ -472,10 +483,6 @@ class AbstractOwnedUSSORouter(AbstractUSSORouterBase):
 
     owner_attr: str = "owner_id"
     workspace_only: bool = False
-
-    get_owner_id_for_create: (
-        Callable[[type["AbstractOwnedUSSORouter"], UserData], str] | None
-    ) = None  # same as get_owner_id
 
     def get_owner_id(self, user: UserData) -> str | None:
         """

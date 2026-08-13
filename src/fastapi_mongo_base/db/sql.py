@@ -2,30 +2,39 @@
 
 from __future__ import annotations
 
+import importlib.util
 import logging
+from typing import Any, cast
 
-from ..core.config import Settings
-from ..errors.sql import SQLConnectionError
+from fastapi_mongo_base.core.config import Settings
+from fastapi_mongo_base.errors.sql import SQLConnectionError
 
 logger = logging.getLogger(__name__)
 
-_sql_engine: object | None = None
-_sql_session_factory: object | None = None
+
+class _SqlRuntime:
+    """Mutable SQL engine/session handles (avoids ``global``)."""
+
+    engine: object | None = None
+    session_factory: object | None = None
+
+
+_sql = _SqlRuntime()
 
 
 def get_sql_session_factory() -> object | None:
     """Return the initialized async SQLAlchemy session factory, if any."""
-    return _sql_session_factory
+    return _sql.session_factory
 
 
 def get_sql_engine() -> object | None:
     """Return the initialized async SQLAlchemy engine, if any."""
-    return _sql_engine
+    return _sql.engine
 
 
-def _build_engine_kwargs(settings: Settings) -> dict[str, object]:
+def _build_engine_kwargs(settings: Settings) -> dict[str, Any]:
     """Build optional SQLAlchemy engine kwargs from settings."""
-    kwargs: dict[str, object] = {
+    kwargs: dict[str, Any] = {
         "echo": getattr(settings, "database_echo", False),
     }
 
@@ -45,6 +54,32 @@ def _build_engine_kwargs(settings: Settings) -> dict[str, object]:
     return kwargs
 
 
+async def _connect_sql(
+    database_uri: str,
+    settings: Settings,
+) -> tuple[Any, Any]:
+    """Create the async engine, session factory, and verify connectivity."""
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import (
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
+
+    engine = create_async_engine(
+        database_uri,
+        **_build_engine_kwargs(settings),
+    )
+    session_factory = async_sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+    async with engine.connect() as connection:
+        await connection.execute(text("SELECT 1"))
+    return engine, session_factory
+
+
 async def create_sql_tables(
     engine: object,
     metadata: object | None = None,
@@ -62,27 +97,28 @@ async def create_sql_tables(
 
     """
     if metadata is None:
-        from ..sql.models import BaseEntity
+        from fastapi_mongo_base.sql.models import BaseEntity
 
-        metadata = BaseEntity.metadata
+        metadata = cast("Any", BaseEntity).metadata
+
+    meta = cast("Any", metadata)
+    engine_any = cast("Any", engine)
 
     if include_audit_log:
-        from ..audit.sql import activate_sql_audit_log
+        from fastapi_mongo_base.audit.sql import activate_sql_audit_log
 
         activate_sql_audit_log()
 
     def _create_all(connection: object) -> None:
         if include_audit_log:
-            metadata.create_all(connection)
+            meta.create_all(connection)
             return
         tables = [
-            table
-            for table in metadata.sorted_tables
-            if table.name != "audit_logs"
+            table for table in meta.sorted_tables if table.name != "audit_logs"
         ]
-        metadata.create_all(connection, tables=tables)
+        meta.create_all(connection, tables=tables)
 
-    async with engine.begin() as connection:
+    async with engine_any.begin() as connection:
         await connection.run_sync(_create_all)
 
 
@@ -110,33 +146,28 @@ async def init_sql(
         SQLConnectionError: If SQL is configured but connection fails.
 
     """
-    global _sql_engine, _sql_session_factory
+    resolved: Settings = (
+        settings if settings is not None else cast("Settings", Settings())
+    )
 
-    if settings is None:
-        settings = Settings()
-
-    database_uri = getattr(settings, "database_uri", None)
+    database_uri = getattr(resolved, "database_uri", None)
     if not database_uri:
-        _sql_engine = None
-        _sql_session_factory = None
+        _sql.engine = None
+        _sql.session_factory = None
         return None, None
 
-    try:
-        from sqlalchemy import text
-        from sqlalchemy.ext.asyncio import (
-            AsyncSession,
-            async_sessionmaker,
-            create_async_engine,
-        )
-    except ImportError as e:
+    if importlib.util.find_spec("sqlalchemy") is None:
         raise ImportError(
             "SQL is configured but SQLAlchemy is not installed. "
             "Install with: pip install 'fastapi-mongo-base[sql]'"
-        ) from e
+        )
 
-    audit_enabled = bool(getattr(settings, "audit_log_enabled", False))
-    from ..audit.context import set_audit_enabled
-    from ..audit.sql import activate_sql_audit_log, deactivate_sql_audit_log
+    audit_enabled = bool(getattr(resolved, "audit_log_enabled", False))
+    from fastapi_mongo_base.audit.context import set_audit_enabled
+    from fastapi_mongo_base.audit.sql import (
+        activate_sql_audit_log,
+        deactivate_sql_audit_log,
+    )
 
     if audit_enabled:
         activate_sql_audit_log()
@@ -145,34 +176,26 @@ async def init_sql(
     set_audit_enabled(audit_enabled)
 
     try:
-        engine = create_async_engine(
-            database_uri,
-            **_build_engine_kwargs(settings),
-        )
-        session_factory = async_sessionmaker(
-            engine,
-            class_=AsyncSession,
-            expire_on_commit=False,
-        )
-        async with engine.connect() as connection:
-            await connection.execute(text("SELECT 1"))
+        engine, session_factory = await _connect_sql(database_uri, resolved)
         if create_tables:
             await create_sql_tables(
                 engine,
                 metadata=metadata,
                 include_audit_log=audit_enabled,
             )
+    except ImportError:
+        raise
     except Exception as e:
         logger.exception("SQL connection error at %s", database_uri)
         raise SQLConnectionError("Failed to connect to SQL database") from e
 
-    from ..sql import models as sql_models
-    from ..sql import session as sql_session_module
+    from fastapi_mongo_base.sql import models as sql_models
+    from fastapi_mongo_base.sql import session as sql_session_module
 
     sql_session_module.async_session = session_factory
     sql_models.async_session = session_factory
-    _sql_engine = engine
-    _sql_session_factory = session_factory
+    _sql.engine = engine
+    _sql.session_factory = session_factory
     return engine, session_factory
 
 
@@ -192,7 +215,7 @@ async def check_sql(session_factory: object | None) -> str:
     try:
         from sqlalchemy import text
 
-        async with session_factory() as session:
+        async with cast("Any", session_factory)() as session:
             await session.execute(text("SELECT 1"))
     except Exception:
         logger.exception("SQL readiness check failed")
@@ -209,9 +232,7 @@ async def close_sql(engine: object | None = None) -> None:
         engine: Optional engine override.
 
     """
-    global _sql_engine, _sql_session_factory
-
-    engine = engine if engine is not None else _sql_engine
+    engine = engine if engine is not None else _sql.engine
     if engine is not None:
         dispose = getattr(engine, "dispose", None)
         if callable(dispose):
@@ -219,10 +240,10 @@ async def close_sql(engine: object | None = None) -> None:
             if hasattr(result, "__await__"):
                 await result
 
-    from ..sql import models as sql_models
-    from ..sql import session as sql_session_module
+    from fastapi_mongo_base.sql import models as sql_models
+    from fastapi_mongo_base.sql import session as sql_session_module
 
     sql_session_module.async_session = None
     sql_models.async_session = None
-    _sql_engine = None
-    _sql_session_factory = None
+    _sql.engine = None
+    _sql.session_factory = None

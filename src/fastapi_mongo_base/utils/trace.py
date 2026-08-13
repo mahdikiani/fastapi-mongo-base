@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 from contextvars import ContextVar
+from typing import Any, cast
 
 import httpx
 import uuid6
@@ -77,11 +79,9 @@ def inject_trace_header(request: httpx.Request) -> None:
     request.headers[TRACE_ID_HEADER] = trace_id
 
 
-async def ainject_trace_header(  # ruff:ignore[unused-async]
-    request: httpx.Request,
-) -> None:
+async def ainject_trace_header(request: httpx.Request) -> None:
     """Async variant of :func:`inject_trace_header` for ``AsyncClient``."""
-    inject_trace_header(request)
+    await asyncio.to_thread(inject_trace_header, request)
 
 
 def merge_trace_event_hooks(
@@ -118,7 +118,7 @@ def install_trace(
 
     """
     is_async = isinstance(client, httpx.AsyncClient)
-    hook: object = ainject_trace_header if is_async else inject_trace_header
+    hook: Any = ainject_trace_header if is_async else inject_trace_header
     request_hooks = client.event_hooks.setdefault("request", [])
     if hook not in request_hooks:
         request_hooks.insert(0, hook)
@@ -128,20 +128,28 @@ def install_trace(
 def create_client(**kwargs: object) -> httpx.Client:
     """Create a sync httpx ``Client`` that propagates ``X-Trace-ID``."""
     hooks = kwargs.get("event_hooks")
-    kwargs["event_hooks"] = merge_trace_event_hooks(
-        hooks if isinstance(hooks, dict) else None,
+    event_hooks = (
+        cast("dict[str, list[object]]", hooks)
+        if isinstance(hooks, dict)
+        else None
     )
-    return httpx.Client(**kwargs)
+    kwargs["event_hooks"] = merge_trace_event_hooks(event_hooks)
+    return httpx.Client(**cast("dict[str, Any]", kwargs))
 
 
 def create_async_client(**kwargs: object) -> httpx.AsyncClient:
     """Create an ``AsyncClient`` that propagates ``X-Trace-ID``."""
     hooks = kwargs.get("event_hooks")
+    event_hooks = (
+        cast("dict[str, list[object]]", hooks)
+        if isinstance(hooks, dict)
+        else None
+    )
     kwargs["event_hooks"] = merge_trace_event_hooks(
-        hooks if isinstance(hooks, dict) else None,
+        event_hooks,
         is_async=True,
     )
-    return httpx.AsyncClient(**kwargs)
+    return httpx.AsyncClient(**cast("dict[str, Any]", kwargs))
 
 
 class TracedAsyncClient(httpx.AsyncClient):
@@ -150,8 +158,13 @@ class TracedAsyncClient(httpx.AsyncClient):
     def __init__(self, *args: object, **kwargs: object) -> None:
         """Initialize with trace injection wired into event hooks."""
         hooks = kwargs.get("event_hooks")
+        event_hooks = (
+            cast("dict[str, list[object]]", hooks)
+            if isinstance(hooks, dict)
+            else None
+        )
         kwargs["event_hooks"] = merge_trace_event_hooks(
-            hooks if isinstance(hooks, dict) else None,
+            event_hooks,
             is_async=True,
         )
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **cast("dict[str, Any]", kwargs))

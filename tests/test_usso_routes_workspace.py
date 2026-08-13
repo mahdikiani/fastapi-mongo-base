@@ -12,8 +12,8 @@ except ImportError:
 
 from usso.user import UserData
 
-from src.fastapi_mongo_base.errors.base import BaseHTTPException
-from src.fastapi_mongo_base.utils.usso_routes import AbstractOwnedUSSORouter
+from fastapi_mongo_base.errors.base import BaseHTTPException
+from fastapi_mongo_base.utils.usso_routes import AbstractOwnedUSSORouter
 
 
 class _DummySchema(BaseModel):
@@ -29,11 +29,10 @@ class _WorkspaceRouter(AbstractOwnedUSSORouter):
     workspace_only = True
 
 
-@pytest.fixture()
+@pytest.fixture
 def router() -> _WorkspaceRouter:
     """Fixture for the workspace router."""
-    instance = object.__new__(_WorkspaceRouter)
-    return instance
+    return object.__new__(_WorkspaceRouter)
 
 
 def test_resolve_owner_id_uses_workspace_id(router: _WorkspaceRouter) -> None:

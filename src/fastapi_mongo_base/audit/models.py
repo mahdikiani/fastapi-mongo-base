@@ -7,7 +7,8 @@ from typing import ClassVar
 from pymongo import ASCENDING, IndexModel
 from typing_extensions import Never, Self
 
-from ..models import TenantScopedEntity
+from fastapi_mongo_base.models import TenantScopedEntity
+
 from .schemas import AuditLogSchema
 
 AUDIT_LOG_COLLECTION = "audit_logs"
@@ -55,11 +56,13 @@ class AuditLog(AuditLogSchema, TenantScopedEntity):
     @classmethod
     async def update_item(cls, item: Self, data: dict) -> Never:
         """Prevent updates to audit log rows."""
+        del item, data
         raise ValueError("Audit log items cannot be updated")
 
     @classmethod
     async def delete_item(cls, item: Self) -> Never:
         """Prevent deletes of audit log rows."""
+        del item
         raise ValueError("Audit log items cannot be deleted")
 
 

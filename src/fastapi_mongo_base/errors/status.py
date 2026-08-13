@@ -1,5 +1,7 @@
 """HTTP status-code API error exceptions."""
 
+from typing import Any, cast
+
 from .base import BaseHTTPException
 
 
@@ -12,77 +14,74 @@ class BadRequestError(BaseHTTPException):
     message_fa = "درخواست نامعتبر"
 
 
+class UnauthorizedError(BaseHTTPException):
+    """Raised when a request is unauthorized."""
+
+    status_code = 401
+    error_code = "unauthorized"
+    message_en = "Unauthorized"
+    message_fa = "لطفا وارد حساب کاربری خود شوید."
+
+    def __init__(
+        self,
+        error_code: str | None = None,
+        detail: str | None = None,
+        message: dict | None = None,
+        **kwargs: object,
+    ) -> None:
+        """Initialize with package HTTP error fields (USSO-compatible)."""
+        BaseHTTPException.__init__(
+            self,
+            status_code=self.status_code,
+            error_code=error_code or self.error_code,
+            detail=detail,
+            message=message,
+            **cast("Any", kwargs),
+        )
+
+
+class ForbiddenError(BaseHTTPException):
+    """Raised when a request is forbidden."""
+
+    status_code = 403
+    error_code = "permission_denied"
+    message_en = "Permission denied"
+    message_fa = "دسترسی غیر مجاز"
+
+    def __init__(
+        self,
+        error_code: str | None = None,
+        detail: str | None = None,
+        message: dict | None = None,
+        **kwargs: object,
+    ) -> None:
+        """Initialize with package HTTP error fields (USSO-compatible)."""
+        BaseHTTPException.__init__(
+            self,
+            status_code=self.status_code,
+            error_code=error_code or self.error_code,
+            detail=detail,
+            message=message,
+            **cast("Any", kwargs),
+        )
+
+
+def _attach_usso_base(
+    error_cls: type[BaseHTTPException], usso_cls: type
+) -> None:
+    """Add USSO exception to MRO so ``except USSOException`` still matches."""
+    if usso_cls not in error_cls.__mro__:
+        error_cls.__bases__ = (BaseHTTPException, usso_cls)
+
+
 try:
     from usso.exceptions import PermissionDenied as _USSOPermissionDenied
     from usso.exceptions import USSOException as _USSOException
-
-    class UnauthorizedError(BaseHTTPException, _USSOException):
-        """Raised when a request is unauthorized (when USSO is installed)."""
-
-        status_code = 401
-        error_code = "unauthorized"
-        message_en = "Unauthorized"
-        message_fa = "لطفا وارد حساب کاربری خود شوید."
-
-        def __init__(
-            self,
-            error_code: str | None = None,
-            detail: str | None = None,
-            message: dict | None = None,
-            **kwargs: object,
-        ) -> None:
-            """Initialize with package HTTP error fields (USSO-compatible)."""
-            BaseHTTPException.__init__(
-                self,
-                status_code=self.status_code,
-                error_code=error_code or self.error_code,
-                detail=detail,
-                message=message,
-                **kwargs,
-            )
-
-    class ForbiddenError(BaseHTTPException, _USSOPermissionDenied):
-        """Raised when a request is forbidden (when USSO is installed)."""
-
-        status_code = 403
-        error_code = "permission_denied"
-        message_en = "Permission denied"
-        message_fa = "دسترسی غیر مجاز"
-
-        def __init__(
-            self,
-            error_code: str | None = None,
-            detail: str | None = None,
-            message: dict | None = None,
-            **kwargs: object,
-        ) -> None:
-            """Initialize with package HTTP error fields (USSO-compatible)."""
-            BaseHTTPException.__init__(
-                self,
-                status_code=self.status_code,
-                error_code=error_code or self.error_code,
-                detail=detail,
-                message=message,
-                **kwargs,
-            )
-
 except ImportError:
-
-    class UnauthorizedError(BaseHTTPException):
-        """Raised when a request is unauthorized."""
-
-        status_code = 401
-        error_code = "unauthorized"
-        message_en = "Unauthorized"
-        message_fa = "لطفا وارد حساب کاربری خود شوید."
-
-    class ForbiddenError(BaseHTTPException):
-        """Raised when a request is forbidden."""
-
-        status_code = 403
-        error_code = "permission_denied"
-        message_en = "Permission denied"
-        message_fa = "دسترسی غیر مجاز"
+    pass
+else:
+    _attach_usso_base(UnauthorizedError, _USSOException)
+    _attach_usso_base(ForbiddenError, _USSOPermissionDenied)
 
 
 class PaymentRequiredError(BaseHTTPException):

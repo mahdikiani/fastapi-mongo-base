@@ -8,7 +8,7 @@ from decimal import Decimal
 from bson import Binary
 from bson.decimal128 import Decimal128
 
-from src.fastapi_mongo_base.utils import bsontools
+from fastapi_mongo_base.utils import bsontools
 
 
 def test_decimal_amount_from_decimal128() -> None:

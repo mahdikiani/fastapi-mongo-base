@@ -3,13 +3,13 @@
 import pytest
 from fastapi import Request
 
-from src.fastapi_mongo_base.i18n import (
+from fastapi_mongo_base.i18n import (
     localized,
     parse_accept_language,
     select_localized_messages,
     select_request_messages,
 )
-from src.fastapi_mongo_base.i18n.languages import Language
+from fastapi_mongo_base.i18n.languages import Language
 
 
 def test_language_metadata_and_code_lookup() -> None:

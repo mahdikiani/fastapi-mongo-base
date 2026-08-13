@@ -4,13 +4,13 @@ import dataclasses
 import json
 import logging.config
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, cast
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from singleton import Singleton
 
-from ..logging.formatters import JsonFormatter
+from fastapi_mongo_base.logging.formatters import JsonFormatter
 
 
 class ProjectSettings(BaseSettings):
@@ -117,22 +117,25 @@ class ProjectSettings(BaseSettings):
     )
 
     @classmethod
-    def get_coverage_dir(cls) -> str:
+    def get_coverage_dir(cls) -> Path:
         """
         Get the directory path for coverage reports.
 
         Returns:
-            Path string to coverage directory.
+            Path to coverage directory.
 
         """
-        return getattr(cls, "base_dir", Path(".")) / "htmlcov"
+        base_dir = getattr(cls, "base_dir", Path())
+        if not isinstance(base_dir, Path):
+            base_dir = Path(str(base_dir))
+        return base_dir / "htmlcov"
 
     @classmethod
     def get_log_config(
         cls,
         console_level: str = "INFO",
         log_format: str | None = None,
-        **kwargs: object,
+        **_kwargs: object,
     ) -> dict[str, object]:
         """
         Get logging configuration dictionary.
@@ -144,7 +147,7 @@ class ProjectSettings(BaseSettings):
                 the human-readable bracketed format.  When *None* the value is
                 read from the ``log_format`` attribute on the class (which is
                 itself populated from the ``LOG_FORMAT`` environment variable).
-            **kwargs: Additional keyword arguments (reserved for subclasses).
+            **_kwargs: Additional keyword arguments (reserved for subclasses).
 
         Returns:
             Dictionary with logging configuration.
@@ -156,7 +159,10 @@ class ProjectSettings(BaseSettings):
             formatter_config: dict[str, object] = {"()": JsonFormatter}
         else:
             formatter_config = {
-                "format": "[{levelname} : {filename}:{lineno} : {asctime} -> {funcName:10}] {message}",  # ruff:ignore[line-too-long]
+                "format": (
+                    "[{levelname} : {filename}:{lineno} : {asctime} -> "
+                    "{funcName:10}] {message}"
+                ),
                 "style": "{",
             }
 
@@ -184,7 +190,8 @@ class ProjectSettings(BaseSettings):
         """Configure Python logging with settings from get_log_config."""
         log_format = project_settings.log_format
         log_config = cls.get_log_config(log_format=log_format)
-        if log_config["handlers"].get("file"):
+        handlers = log_config["handlers"]
+        if isinstance(handlers, dict) and handlers.get("file"):
             (cls.get_coverage_dir() / "logs").mkdir(
                 parents=True, exist_ok=True
             )
@@ -198,7 +205,6 @@ project_settings = ProjectSettings()
 class Settings(metaclass=Singleton):
     """Server config settings."""
 
-    # base_dir: Path = Path(__file__).resolve().parent.parent  # ruff:ignore[commented-out-code]
     domain: str = project_settings.domain
     root_url: str = project_settings.root_url
     project_name: str = project_settings.project_name
@@ -251,12 +257,12 @@ class Settings(metaclass=Singleton):
     audit_log_enabled: bool = project_settings.audit_log_enabled
 
     @classmethod
-    def get_coverage_dir(cls) -> str:
+    def get_coverage_dir(cls) -> Path:
         """
         Get the directory path for coverage reports.
 
         Returns:
-            Path string to coverage directory.
+            Path to coverage directory.
 
         """
         return project_settings.get_coverage_dir()
@@ -287,7 +293,7 @@ class Settings(metaclass=Singleton):
         return project_settings.get_log_config(
             console_level=console_level,
             log_format=log_format,
-            **kwargs,
+            **cast("Any", kwargs),
         )
 
     @classmethod
@@ -295,8 +301,10 @@ class Settings(metaclass=Singleton):
         """Configure Python logging with settings from get_log_config."""
         log_format = getattr(cls, "log_format", "json")
         log_config = cls.get_log_config(log_format=log_format)
-        if log_config["handlers"].get("file"):
-            (getattr(cls, "base_dir", Path(".")) / "logs").mkdir(
-                parents=True, exist_ok=True
-            )
+        handlers = log_config["handlers"]
+        if isinstance(handlers, dict) and handlers.get("file"):
+            base_dir = getattr(cls, "base_dir", Path())
+            if not isinstance(base_dir, Path):
+                base_dir = Path(str(base_dir))
+            (base_dir / "logs").mkdir(parents=True, exist_ok=True)
         logging.config.dictConfig(log_config)
