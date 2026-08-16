@@ -1,6 +1,7 @@
 """MongoDB entity models with Beanie ODM."""
 
 import logging
+import re
 from datetime import datetime
 from typing import Any, ClassVar, cast
 
@@ -82,12 +83,26 @@ class BaseEntity(BaseEntitySchema, Document):
         return hasattr(cls, name)
 
     @classmethod
+    def _regex_filter(cls, key: str, value: object) -> dict[str, str]:
+        """
+        Build a MongoDB regex filter for ``_like``, ``_ilike``, or ``_regex``.
+
+        ``_ilike`` is case-insensitive; ``_like`` and ``_regex`` are not.
+        """
+        regex_filter: dict[str, str] = {
+            "$regex": re.escape(str(value).strip()),
+        }
+        if key.endswith("_ilike"):
+            regex_filter["$options"] = "i"
+        return regex_filter
+
+    @classmethod
     def _build_extra_filters(cls, **kwargs: object) -> dict:
         """
         Build MongoDB filter dictionary from keyword arguments.
 
         Supports range queries (_from, _to), list queries (_in, _nin),
-        and regex queries (_like).
+        and regex queries (_like, _ilike, _regex).
 
         Args:
             **kwargs: Filter parameters with special suffixes.
@@ -125,8 +140,10 @@ class BaseEntity(BaseEntitySchema, Document):
                 value_list = basic.parse_array_parameter(value)
                 operator = "$in" if key.endswith("_in") else "$nin"
                 extra_filters.update({base_field: {operator: value_list}})
-            elif key.endswith("_like"):
-                extra_filters.update({base_field: {"$regex": value}})
+            elif key.endswith(("_like", "_ilike", "_regex")):
+                extra_filters.update({
+                    base_field: cls._regex_filter(key, value)
+                })
             else:
                 extra_filters.update({key: value})
         return extra_filters
