@@ -154,26 +154,25 @@ class ProjectSettings(BaseSettings):
 
         """
         resolved_format = log_format or getattr(cls, "log_format", "json")
-
-        if resolved_format == "json":
-            formatter_config: dict[str, object] = {"()": JsonFormatter}
-        else:
-            formatter_config = {
-                "format": (
-                    "[{levelname} : {filename}:{lineno} : {asctime} -> "
-                    "{funcName:10}] {message}"
-                ),
-                "style": "{",
-            }
+        formatter_name = "json" if resolved_format == "json" else "text"
 
         return {
             "version": 1,
-            "formatters": {"standard": formatter_config},
+            "formatters": {
+                "json": {"()": JsonFormatter},
+                "text": {
+                    "format": (
+                        "[{levelname} : {filename}:{lineno} : {asctime} -> "
+                        "{funcName:10}] {message}"
+                    ),
+                    "style": "{",
+                },
+            },
             "handlers": {
                 "console": {
                     "class": "logging.StreamHandler",
                     "level": console_level,
-                    "formatter": "standard",
+                    "formatter": formatter_name,
                 }
             },
             "loggers": {

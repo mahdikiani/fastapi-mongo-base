@@ -75,7 +75,12 @@ def test_schema_methods_and_paginated() -> None:
 def test_config_log_format_cors_and_coverage_path(tmp_path: Path) -> None:
     """Cover text log format, cors parsing, and coverage path coercion."""
     cfg = ProjectSettings.get_log_config(log_format="text")
-    assert "format" in cfg["formatters"]["standard"]
+    assert "json" in cfg["formatters"]
+    assert "format" in cfg["formatters"]["text"]
+    assert cfg["handlers"]["console"]["formatter"] == "text"
+
+    json_cfg = ProjectSettings.get_log_config(log_format="json")
+    assert json_cfg["handlers"]["console"]["formatter"] == "json"
 
     assert (
         ProjectSettings.get_coverage_dir.__func__(
