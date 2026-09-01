@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import re
 from typing import Any, cast
 
 from beanie import init_beanie
@@ -16,6 +17,45 @@ from fastapi_mongo_base.utils import basic
 logger = logging.getLogger(__name__)
 
 _registered_pool_monitors: set[str] = set()
+_URI_PASSWORD_RE = re.compile(r"(://[^:/?#]+:)([^@]+)(@)")
+_PASSWORD_PREFIX_LEN = 3
+_PASSWORD_SUFFIX_LEN = 2
+
+
+def mask_uri_password(uri: str) -> str:
+    """
+    Redact a connection URI password for safe logging.
+
+    Keeps the first three and last two password characters and replaces
+    the rest with asterisks. Short passwords that cannot hide any middle
+    characters are fully replaced with asterisks.
+
+    Args:
+        uri: Connection URI that may include userinfo credentials.
+
+    Returns:
+        The same URI with a partially masked password, or the original
+        string when no password is present.
+
+    """
+    return _URI_PASSWORD_RE.sub(_mask_uri_password_match, uri, count=1)
+
+
+def _mask_uri_password_match(match: re.Match[str]) -> str:
+    """Replace the captured URI password with a masked value."""
+    return f"{match.group(1)}{_mask_secret(match.group(2))}{match.group(3)}"
+
+
+def _mask_secret(secret: str) -> str:
+    """Mask a secret, keeping a short prefix and suffix visible."""
+    if len(secret) <= _PASSWORD_PREFIX_LEN + _PASSWORD_SUFFIX_LEN:
+        return "*" * len(secret)
+    hidden = len(secret) - _PASSWORD_PREFIX_LEN - _PASSWORD_SUFFIX_LEN
+    return (
+        f"{secret[:_PASSWORD_PREFIX_LEN]}"
+        f"{'*' * hidden}"
+        f"{secret[-_PASSWORD_SUFFIX_LEN:]}"
+    )
 
 
 def discover_beanie_document_models() -> list[type]:
@@ -143,12 +183,16 @@ async def init_mongo_db(
         )
     except ServerSelectionTimeoutError as e:
         logger.exception(
-            "MongoDB connection timeout at %s", resolved.mongo_uri
+            "MongoDB connection timeout at %s",
+            mask_uri_password(str(resolved.mongo_uri)),
         )
         raise MongoDBConnectionError("Failed to connect to MongoDB") from e
 
     except PyMongoError as e:
-        logger.exception("MongoDB error at %s", resolved.mongo_uri)
+        logger.exception(
+            "MongoDB error at %s",
+            mask_uri_password(str(resolved.mongo_uri)),
+        )
         raise MongoDBConnectionError("Failed to connect to MongoDB") from e
 
     except Exception as e:

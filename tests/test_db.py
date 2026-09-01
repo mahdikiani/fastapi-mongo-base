@@ -4,7 +4,7 @@ import dataclasses
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from pymongo.errors import ServerSelectionTimeoutError
+from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 
 from fastapi_mongo_base.core.db import (
     check_mongodb,
@@ -15,6 +15,7 @@ from fastapi_mongo_base.core.db import (
     init_redis,
     init_sql,
 )
+from fastapi_mongo_base.db.mongo import mask_uri_password
 from fastapi_mongo_base.errors.mongodb import (
     MongoDBConnectionError,
 )
@@ -31,6 +32,34 @@ class _TestMongoSettings:
     mongo_connect_timeout_ms: int = 1000
 
 
+@pytest.mark.parametrize(
+    ("uri", "expected"),
+    [
+        ("mongodb://localhost:27017", "mongodb://localhost:27017"),
+        ("mongodb://admin@localhost:27017", "mongodb://admin@localhost:27017"),
+        (
+            "mongodb://admin:supersecret@localhost:27017",
+            "mongodb://admin:sup******et@localhost:27017",
+        ),
+        (
+            "mongodb+srv://admin:abcdef@cluster.mongodb.net/db?retryWrites=true",
+            "mongodb+srv://admin:abc*ef@cluster.mongodb.net/db?retryWrites=true",
+        ),
+        (
+            "mongodb://u:short@host1:27017,host2:27017/db",
+            "mongodb://u:*****@host1:27017,host2:27017/db",
+        ),
+        (
+            "mongodb://u:p%40ssword@localhost:27017",
+            "mongodb://u:p%4*****rd@localhost:27017",
+        ),
+    ],
+)
+def test_mask_uri_password(uri: str, expected: str) -> None:
+    """URI passwords keep 3 prefix and 2 suffix chars, masking the rest."""
+    assert mask_uri_password(uri) == expected
+
+
 @pytest.mark.asyncio
 async def test_init_mongo_db_raises_on_connection_failure() -> None:
     """Startup must fail fast when MongoDB is unreachable."""
@@ -38,14 +67,47 @@ async def test_init_mongo_db_raises_on_connection_failure() -> None:
     mock_client.server_info = AsyncMock(
         side_effect=ServerSelectionTimeoutError("timed out"),
     )
+    settings = _TestMongoSettings(
+        mongo_uri="mongodb://admin:supersecret@unreachable:27017",
+    )
 
     with (
+        patch("fastapi_mongo_base.db.mongo.logger") as mock_logger,
         patch("pymongo.AsyncMongoClient", return_value=mock_client),
         pytest.raises(
             MongoDBConnectionError, match="Failed to connect to MongoDB"
         ),
     ):
-        await init_mongo_db(_TestMongoSettings())
+        await init_mongo_db(settings)
+
+    mock_logger.exception.assert_called_once()
+    logged_uri = mock_logger.exception.call_args.args[1]
+    assert logged_uri == "mongodb://admin:sup******et@unreachable:27017"
+
+
+@pytest.mark.asyncio
+async def test_init_mongo_db_logs_masked_password_on_pymongo_error() -> None:
+    """PyMongo errors must log the URI with a masked password."""
+    mock_client = MagicMock()
+    mock_client.server_info = AsyncMock(
+        side_effect=PyMongoError("auth failed"),
+    )
+    settings = _TestMongoSettings(
+        mongo_uri="mongodb://admin:supersecret@unreachable:27017",
+    )
+
+    with (
+        patch("fastapi_mongo_base.db.mongo.logger") as mock_logger,
+        patch("pymongo.AsyncMongoClient", return_value=mock_client),
+        pytest.raises(
+            MongoDBConnectionError, match="Failed to connect to MongoDB"
+        ),
+    ):
+        await init_mongo_db(settings)
+
+    mock_logger.exception.assert_called_once()
+    logged_uri = mock_logger.exception.call_args.args[1]
+    assert logged_uri == "mongodb://admin:sup******et@unreachable:27017"
 
 
 @pytest.mark.asyncio
