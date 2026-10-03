@@ -36,6 +36,33 @@ logger = logging.getLogger(__name__)
 
 error_messages: dict[str, object] = {}
 
+_SENSITIVE_HEADERS = frozenset({
+    "authorization",
+    "proxy-authorization",
+    "cookie",
+    "set-cookie",
+    "x-api-key",
+    "api-key",
+})
+_SENSITIVE_HEADER_MARKERS = (
+    "token",
+    "secret",
+    "password",
+    "api-key",
+    "apikey",
+)
+
+
+def _redacted_headers(request: Request) -> dict[str, str]:
+    """Return request headers with credential values replaced for logging."""
+    return {
+        name: "[REDACTED]"
+        if name.lower() in _SENSITIVE_HEADERS
+        or any(marker in name.lower() for marker in _SENSITIVE_HEADER_MARKERS)
+        else value
+        for name, value in request.headers.items()
+    }
+
 
 def base_http_exception_handler(
     request: Request, exc: BaseHTTPException
@@ -145,7 +172,7 @@ async def request_validation_exception_handler(
         exc,
         body_preview,
         exc.errors(),
-        dict(request.headers),
+        _redacted_headers(request),
     )
 
     return _validation_error_response(request, exc.errors(), 422)
