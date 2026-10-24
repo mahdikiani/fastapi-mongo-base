@@ -16,6 +16,8 @@ print(settings.mongo_uri)
 - `MONGO_URI`: MongoDB connection string (e.g., `mongodb://localhost:27017/db`)
 - `APP_ENV`: Application environment (e.g., `development`, `production`)
 - `BASE_PATH`: API base path (e.g., `/api/v1`)
+- `SHUTDOWN_TIMEOUT`: Max seconds to drain in-flight HTTP requests on SIGTERM (default `20`)
+- `BACKGROUND_SHUTDOWN_TIMEOUT`: Max seconds to wait for the worker and `spawn()`ed tasks before cancelling them (default `10`)
 
 ## Example .env
 

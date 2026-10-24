@@ -206,6 +206,7 @@ import asyncio
 import logging
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from fastapi_mongo_base.utils.scheduler import run_apscheduler
 from server.config import Settings
 
 logging.getLogger("apscheduler").setLevel(logging.WARNING)
@@ -215,21 +216,16 @@ async def log_something():
     logging.info("something")
 
 
-async def worker():
+async def worker(stop: asyncio.Event):
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         log_something, "interval", seconds=Settings.worker_update_time
     )
-
-    scheduler.start()
-
-    try:
-        await asyncio.Event().wait()
-    except (KeyboardInterrupt, SystemExit):
-        pass
-    finally:
-        scheduler.shutdown()
+    # Runs until shutdown; jobs that are running then are allowed to finish.
+    await run_apscheduler(scheduler, stop)
 ```
+
+Pass it as `create_app(..., worker=worker)` and start the app with `fastapi_mongo_base.core.lifecycle.serve()` for graceful shutdown (requires the `scheduler` extra: `pip install "fastapi-mongo-base[scheduler]"`). See the usage docs for details.
 
 ## 📋 Requirements
 

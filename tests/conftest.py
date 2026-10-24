@@ -38,6 +38,24 @@ def pytest_configure(config: pytest.Config) -> None:
         debugpy.wait_for_client()
 
 
+@pytest.fixture(autouse=True)
+def reset_lifecycle() -> Generator[None]:
+    """
+    Reset process-wide shutdown state after each test.
+
+    A test that runs a lifespan shutdown would otherwise leave readiness
+    reporting 503 for every later test.
+
+    Yields:
+        None.
+
+    """
+    from fastapi_mongo_base.core.lifecycle import lifecycle
+
+    yield
+    lifecycle.reset()
+
+
 @pytest_asyncio.fixture(scope="session")
 def mongo_client() -> Generator:
     """

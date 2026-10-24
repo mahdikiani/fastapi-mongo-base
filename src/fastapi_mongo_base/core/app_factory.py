@@ -21,7 +21,7 @@ from fastapi_mongo_base.errors.responses import (
 )
 from fastapi_mongo_base.monitoring.sentry import setup_sentry
 
-from . import config, db
+from . import config, db, lifecycle
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +78,19 @@ async def readiness(request: fastapi.Request) -> JSONResponse:
         request: FastAPI request object.
 
     Returns:
-        JSON response with dependency checks and HTTP 503 when degraded.
+        JSON response with dependency checks; HTTP 503 when degraded or
+        when graceful shutdown has started.
 
     """
+    if lifecycle.is_shutting_down():
+        payload_down: dict[str, Any] = {"status": "shutting_down"}
+        if request.app.version:
+            payload_down["version"] = request.app.version
+        return JSONResponse(
+            status_code=fastapi.status.HTTP_503_SERVICE_UNAVAILABLE,
+            content=payload_down,
+        )
+
     datasources = getattr(request.app.state, "datasources", {})
     mongo_client = getattr(request.app.state, "mongo_client", None)
     redis_client = getattr(request.app.state, "redis_async_client", None)
@@ -162,22 +172,64 @@ async def _shutdown_datasources(app: fastapi.FastAPI) -> None:
         await db.close_sql(app.state.sql_engine)
 
 
+def _start_worker(
+    worker: Callable[..., object],
+) -> tuple[asyncio.Task[Any] | None, bool]:
+    """
+    Start the app worker as a registered background task.
+
+    Returns:
+        The worker task (None if the worker is not a coroutine) and whether
+        it received the stop event (graceful) or must be cancelled (legacy).
+
+    """
+    graceful = lifecycle.worker_accepts_stop_event(worker)
+    result = worker(lifecycle.get_stop_event()) if graceful else worker()
+    if not inspect.iscoroutine(result):
+        return None, graceful
+    return lifecycle.spawn(result, name="app-worker"), graceful
+
+
+async def _run_shutdown_function(function: Callable[[], object]) -> None:
+    try:
+        result = function()
+        if inspect.isawaitable(result):
+            await result
+    except Exception:
+        logger.exception("Shutdown function %r failed", function)
+
+
+async def _run_shutdown_functions(functions: list) -> None:
+    for function in reversed(functions):
+        await _run_shutdown_function(function)
+
+
 @asynccontextmanager
 async def lifespan(
     *,
     app: fastapi.FastAPI,
-    worker: Callable[[], object] | None = None,
+    worker: Callable[..., object] | None = None,
     init_functions: list | None = None,
     settings: config.Settings | None = None,
+    shutdown_functions: list | None = None,
 ) -> AsyncGenerator[None]:
     """
     Initialize application services and manage application lifecycle.
 
+    Shutdown order: set the stop event, wait for the worker and background
+    tasks started with :func:`~fastapi_mongo_base.core.lifecycle.spawn`
+    (up to ``BACKGROUND_SHUTDOWN_TIMEOUT``), run ``shutdown_functions`` in
+    reverse order, then close datasources.
+
     Args:
         app: FastAPI application instance.
-        worker: Optional worker coroutine to run in background.
+        worker: Optional worker coroutine function to run in background. If
+            it takes a parameter, it receives the stop event and is awaited
+            on shutdown; a zero-argument worker is cancelled immediately.
         init_functions: Optional list of initialization functions to run.
         settings: Optional settings instance.
+        shutdown_functions: Optional sync or async callables run on
+            shutdown, in reverse order, before datasources close.
 
     Yields:
         None: Control is yielded to the application runtime.
@@ -190,10 +242,10 @@ async def lifespan(
 
     await _startup_datasources(app, settings)
 
+    worker_task, graceful_worker = None, False
     if worker:
-        worker_result = worker()
-        if inspect.iscoroutine(worker_result):
-            app.state.worker = asyncio.create_task(worker_result)
+        worker_task, graceful_worker = _start_worker(worker)
+    app.state.worker = worker_task
 
     for function in init_functions:
         if inspect.iscoroutinefunction(function):
@@ -205,10 +257,21 @@ async def lifespan(
     try:
         yield
     finally:
-        if worker:
-            app.state.worker.cancel()
-        await _shutdown_datasources(app)
-        logger.info("Shutdown complete")
+        try:
+            lifecycle.lifecycle.begin_shutdown()
+            if worker_task is not None and not graceful_worker:
+                await lifecycle.cancel_and_wait([worker_task])
+            await lifecycle.lifecycle.drain(
+                getattr(
+                    settings,
+                    "background_shutdown_timeout",
+                    config.project_settings.background_shutdown_timeout,
+                )
+            )
+            await _run_shutdown_functions(shutdown_functions or [])
+        finally:
+            await _shutdown_datasources(app)
+            logger.info("Shutdown complete")
 
 
 def setup_exception_handlers(
@@ -279,8 +342,9 @@ def get_app_kwargs(
     description: str | None = None,
     version: str = "0.1.0",
     lifespan_func: Callable[[fastapi.FastAPI], object] | None = None,
-    worker: Callable[[], object] | None = None,
+    worker: Callable[..., object] | None = None,
     init_functions: list | None = None,
+    shutdown_functions: list | None = None,
     contact: dict[str, str] | None = None,
     license_info: dict[str, str] | None = None,
     **_kwargs: object,
@@ -294,8 +358,10 @@ def get_app_kwargs(
         description: Optional application description.
         version: Application version string.
         lifespan_func: Optional lifespan function.
-        worker: Optional worker coroutine.
+        worker: Optional worker coroutine function; see ``lifespan``.
         init_functions: Optional list of initialization functions.
+        shutdown_functions: Optional list of functions run on shutdown,
+            in reverse order, before datasources close.
         contact: Optional contact information dictionary.
         license_info: Optional license information dictionary.
         **_kwargs: Additional keyword arguments.
@@ -337,6 +403,7 @@ def get_app_kwargs(
                 worker=worker,
                 init_functions=init_functions,
                 settings=settings,
+                shutdown_functions=shutdown_functions,
             )
 
         lifespan_func = lf
@@ -366,8 +433,9 @@ def create_app(
     serve_coverage: bool = False,
     origins: list | None = None,
     lifespan_func: Callable[[fastapi.FastAPI], object] | None = None,
-    worker: Callable[[], object] | None = None,
+    worker: Callable[..., object] | None = None,
     init_functions: list | None = None,
+    shutdown_functions: list | None = None,
     contact: dict[str, str] | None = None,
     license_info: dict[str, str] | None = None,
     exception_handlers: dict | None = None,
@@ -388,8 +456,10 @@ def create_app(
         serve_coverage: Whether to serve coverage reports.
         origins: Optional list of allowed CORS origins.
         lifespan_func: Optional lifespan function.
-        worker: Optional worker coroutine.
+        worker: Optional worker coroutine function; see ``lifespan``.
         init_functions: Optional list of initialization functions.
+        shutdown_functions: Optional list of functions run on shutdown,
+            in reverse order, before datasources close.
         contact: Optional contact information dictionary.
         license_info: Optional license information dictionary.
         exception_handlers: Optional exception handlers dictionary.
@@ -413,6 +483,7 @@ def create_app(
         lifespan_func=lifespan_func,
         worker=worker,
         init_functions=init_functions,
+        shutdown_functions=shutdown_functions,
         contact=contact,
         license_info=license_info,
     )
