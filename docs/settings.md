@@ -18,6 +18,7 @@ print(settings.mongo_uri)
 - `BASE_PATH`: API base path (e.g., `/api/v1`)
 - `SHUTDOWN_TIMEOUT`: Max seconds to drain in-flight HTTP requests on SIGTERM (default `20`)
 - `BACKGROUND_SHUTDOWN_TIMEOUT`: Max seconds to wait for the worker and `spawn()`ed tasks before cancelling them (default `10`)
+- `SHUTDOWN_FORCE_EXIT_AFTER`: Seconds after SIGTERM before a watchdog dumps all thread stacks and exits with code 1 (default: the budget above + 5, i.e. 35s for `serve()`, 15s for `run_worker_process()`; `0` disables)
 
 ## Example .env
 

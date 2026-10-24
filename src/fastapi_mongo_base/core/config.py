@@ -125,6 +125,11 @@ class ProjectSettings(BaseSettings):
         ge=0,
         validation_alias="BACKGROUND_SHUTDOWN_TIMEOUT",
     )
+    shutdown_force_exit_after: float | None = Field(
+        default=None,
+        ge=0,
+        validation_alias="SHUTDOWN_FORCE_EXIT_AFTER",
+    )
 
     @classmethod
     def get_coverage_dir(cls) -> Path:
@@ -273,6 +278,9 @@ class Settings(metaclass=Singleton):
     shutdown_timeout: int = project_settings.shutdown_timeout
     background_shutdown_timeout: float = (
         project_settings.background_shutdown_timeout
+    )
+    shutdown_force_exit_after: float | None = (
+        project_settings.shutdown_force_exit_after
     )
 
     @classmethod

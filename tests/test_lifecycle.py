@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import os
 import signal
@@ -414,10 +415,35 @@ def test_build_server_uses_shutdown_timeout_setting() -> None:
 
 
 def test_serve_runs_graceful_server() -> None:
-    """serve() builds a GracefulServer and runs it."""
-    with patch.object(lifecycle.GracefulServer, "run") as run:
-        lifecycle.serve("main:app", port=9001)
+    """serve() runs a GracefulServer under a watchdog with the full budget."""
+    with (
+        patch.object(lifecycle.GracefulServer, "run") as run,
+        patch.object(lifecycle, "shutdown_watchdog") as watchdog,
+    ):
+        lifecycle.serve("main:app", port=9001, shutdown_timeout=4)
     run.assert_called_once_with()
+    watchdog.assert_called_once_with(
+        4
+        + project_settings.background_shutdown_timeout
+        + lifecycle.CANCEL_TIMEOUT
+        + lifecycle.FORCE_EXIT_MARGIN
+    )
+
+
+def test_serve_explicit_force_exit_after() -> None:
+    """An explicit force_exit_after is passed straight to the watchdog."""
+    with (
+        patch.object(lifecycle.GracefulServer, "run"),
+        patch.object(lifecycle, "shutdown_watchdog") as watchdog,
+    ):
+        lifecycle.serve("main:app", force_exit_after=0)
+    watchdog.assert_called_once_with(0)
+
+
+def test_force_exit_after_setting_overrides_budget() -> None:
+    """SHUTDOWN_FORCE_EXIT_AFTER replaces the computed budget."""
+    with patch.object(project_settings, "shutdown_force_exit_after", 7.5):
+        assert lifecycle._force_exit_after(100) == pytest.approx(7.5)
 
 
 async def test_handle_exit_starts_shutdown() -> None:
@@ -584,10 +610,10 @@ async def test_run_worker_handles_sigterm() -> None:
         await stop.wait()
         committed.append("batch")
 
+    before = signal.getsignal(signal.SIGTERM)
     await lifecycle.run_worker(main, timeout=1)
     assert committed == ["batch"]
-    loop = asyncio.get_running_loop()
-    assert loop.remove_signal_handler(signal.SIGTERM) is False
+    assert signal.getsignal(signal.SIGTERM) is before
 
 
 async def test_run_worker_cancels_stuck_main() -> None:
@@ -634,3 +660,200 @@ def test_config_logger_keeps_library_loggers_enabled() -> None:
     Settings.config_logger()
     assert logging.getLogger(lifecycle.__name__).disabled is False
     assert logging.getLogger(app_factory.__name__).disabled is False
+
+
+# --- stuck workers ---
+
+
+async def _sleep_ignoring_cancel() -> None:
+    """Sleep, swallowing one cancellation (misbehaving worker code)."""
+    with contextlib.suppress(asyncio.CancelledError):
+        await asyncio.sleep(10)
+
+
+async def _stubborn(release: asyncio.Event) -> None:
+    """
+    Run until released, ignoring every cancellation.
+
+    Args:
+        release: Event that finally lets the coroutine return.
+
+    """
+    while not release.is_set():
+        await _sleep_ignoring_cancel()
+
+
+async def _release_stubborn(release: asyncio.Event, names: set[str]) -> None:
+    """
+    Let stubborn test tasks finish so the event loop can close.
+
+    Args:
+        release: Event the stubborn tasks wait for.
+        names: Task names to wake up.
+
+    """
+    release.set()
+    leftovers = [t for t in asyncio.all_tasks() if t.get_name() in names]
+    for task in leftovers:
+        task.cancel()
+    if leftovers:
+        await asyncio.wait(leftovers, timeout=2)
+
+
+async def test_cancel_and_wait_abandons_task_ignoring_cancel(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A task that swallows CancelledError is logged and abandoned."""
+    release = asyncio.Event()
+    task = asyncio.create_task(_stubborn(release), name="stubborn-consumer")
+    try:
+        await asyncio.sleep(0)
+        started = time.monotonic()
+        left = await lifecycle.cancel_and_wait([task], timeout=0.05)
+        assert time.monotonic() - started < 2
+        assert left == {task}
+        assert "stubborn-consumer ignored cancellation" in caplog.text
+        assert "in _stubborn" in caplog.text
+    finally:
+        await _release_stubborn(release, {"stubborn-consumer"})
+
+
+async def test_run_worker_returns_when_worker_ignores_cancel(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """run_worker does not hang on a worker that swallows cancellation."""
+    release = asyncio.Event()
+
+    async def main(_stop: asyncio.Event) -> None:
+        process_lifecycle.begin_shutdown()
+        await _stubborn(release)
+
+    try:
+        with patch.object(lifecycle, "CANCEL_TIMEOUT", 0.05):
+            runner = asyncio.create_task(
+                lifecycle.run_worker(main, timeout=0.05, signals=())
+            )
+            done, _ = await asyncio.wait({runner}, timeout=5)
+        assert runner in done
+        assert "Worker ignored cancellation" in caplog.text
+    finally:
+        await _release_stubborn(release, {"worker"})
+
+
+def test_watchdog_fires_after_budget(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The watchdog exits with code 1 once shutdown overruns."""
+    exits: list[int] = []
+    watchdog = lifecycle.ShutdownWatchdog(
+        0.05, poll_interval=0.01, exit_func=exits.append
+    )
+    watchdog.start()
+    watchdog.start()
+    time.sleep(0.05)
+    assert exits == []
+    process_lifecycle.shutting_down = True
+    deadline = time.monotonic() + 5
+    while not exits and time.monotonic() < deadline:
+        time.sleep(0.01)
+    watchdog.stop()
+    assert exits == [1]
+    assert watchdog.fired is True
+    assert "forcing exit" in caplog.text
+
+
+def test_watchdog_stopped_before_shutdown_does_not_fire() -> None:
+    """A clean exit disarms the watchdog before shutdown starts."""
+    exits: list[int] = []
+    watchdog = lifecycle.ShutdownWatchdog(
+        0.01, poll_interval=0.01, exit_func=exits.append
+    )
+    watchdog.start()
+    watchdog.stop()
+    process_lifecycle.shutting_down = True
+    time.sleep(0.05)
+    assert exits == []
+
+
+def test_watchdog_stopped_during_budget_does_not_fire() -> None:
+    """Finishing shutdown within the budget disarms the watchdog."""
+    exits: list[int] = []
+    process_lifecycle.shutting_down = True
+    with lifecycle.shutdown_watchdog(5) as watchdog:
+        watchdog.poll_interval = 0.01
+        time.sleep(0.05)
+    assert exits == []
+    assert watchdog.fired is False
+
+
+def test_watchdog_disabled_with_zero() -> None:
+    """A non-positive budget never starts a thread."""
+    watchdog = lifecycle.ShutdownWatchdog(0)
+    watchdog.start()
+    assert watchdog._thread is None
+    watchdog.stop()
+
+
+def test_run_worker_process_arms_watchdog() -> None:
+    """run_worker_process wraps the loop in a watchdog with its budget."""
+
+    async def main(_stop: asyncio.Event) -> None:
+        await asyncio.sleep(0)
+
+    with patch.object(lifecycle, "shutdown_watchdog") as watchdog:
+        lifecycle.run_worker_process(main, timeout=2)
+    watchdog.assert_called_once_with(
+        2 + lifecycle.CANCEL_TIMEOUT + lifecycle.FORCE_EXIT_MARGIN
+    )
+
+
+BLOCKING_WORKER = """
+import time
+
+from fastapi_mongo_base.core.lifecycle import run_worker_process
+
+
+async def main(stop):
+    print("READY", flush=True)
+    while True:
+        time.sleep(0.1)  # sync code blocking the event loop
+
+
+if __name__ == "__main__":
+    run_worker_process(main, timeout=0.2, force_exit_after=1)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+async def test_blocked_worker_process_is_force_exited(tmp_path: Path) -> None:
+    """
+    End to end: a worker blocking the loop still exits after SIGTERM.
+
+    Args:
+        tmp_path: Temporary directory for the worker module.
+
+    """
+    (tmp_path / "blocking_worker.py").write_text(BLOCKING_WORKER)
+    env = {**os.environ, "PYTHONPATH": str(SRC_DIR)}
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        str(tmp_path / "blocking_worker.py"),
+        cwd=tmp_path,
+        env=env,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+    )
+    try:
+        assert proc.stdout is not None
+        line = await asyncio.wait_for(proc.stdout.readline(), 15)
+        assert b"READY" in line
+        proc.send_signal(signal.SIGTERM)
+        output_bytes, _ = await asyncio.wait_for(proc.communicate(), 10)
+    finally:
+        if proc.returncode is None:
+            proc.kill()
+            await proc.wait()
+    output = output_bytes.decode()
+    assert proc.returncode == 1, output
+    assert "forcing exit" in output
+    assert "blocking_worker.py" in output
