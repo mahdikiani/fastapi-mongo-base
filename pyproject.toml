@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastapi-mongo-base"
-version = "1.9.0"
+version = "1.9.1"
 description = "A simple boilerplate application, including models and schemas and abstract router, for FastAPI with MongoDB"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -171,3 +171,10 @@ exclude = ["tests", "htmlcov", "dist", "build"]
 [tool.ty.src]
 include = ["src"]
 exclude = ["tests"]
+
+[tool.ty.rules]
+# ty >= 0.0.86 reports Beanie's documented nested-settings pattern
+# (`class Settings(BaseEntity.Settings)` in each Document subclass) as an
+# invalid override. Subclassing a nested class is valid Python; restructuring
+# it breaks mypy and Beanie's Settings lookup. Approved exception.
+invalid-attribute-override = "ignore"

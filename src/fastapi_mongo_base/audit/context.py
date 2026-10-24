@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Generator
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,7 +99,7 @@ def audit_actor_scope(
     user: object | None = None,
     *,
     user_id: str | None = None,
-) -> Iterator[None]:
+) -> Generator[None, None, None]:
     """
     Bind audit actor for the duration of a mutating router call.
 
