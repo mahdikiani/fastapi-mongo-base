@@ -115,6 +115,21 @@ class ProjectSettings(BaseSettings):
         default=False,
         validation_alias="AUDIT_LOG_ENABLED",
     )
+    shutdown_timeout: int = Field(
+        default=20,
+        ge=0,
+        validation_alias="SHUTDOWN_TIMEOUT",
+    )
+    background_shutdown_timeout: float = Field(
+        default=10,
+        ge=0,
+        validation_alias="BACKGROUND_SHUTDOWN_TIMEOUT",
+    )
+    shutdown_force_exit_after: float | None = Field(
+        default=None,
+        ge=0,
+        validation_alias="SHUTDOWN_FORCE_EXIT_AFTER",
+    )
 
     @classmethod
     def get_coverage_dir(cls) -> Path:
@@ -178,6 +193,12 @@ class ProjectSettings(BaseSettings):
             "loggers": {
                 "": {
                     "handlers": ["console"],
+                    "level": "INFO",
+                    "propagate": True,
+                },
+                # Named so dictConfig does not disable the library's own
+                # module loggers (created at import, before this runs).
+                "fastapi_mongo_base": {
                     "level": "INFO",
                     "propagate": True,
                 },
@@ -254,6 +275,13 @@ class Settings(metaclass=Singleton):
     database_pool_recycle: int | None = project_settings.database_pool_recycle
     log_format: str = project_settings.log_format
     audit_log_enabled: bool = project_settings.audit_log_enabled
+    shutdown_timeout: int = project_settings.shutdown_timeout
+    background_shutdown_timeout: float = (
+        project_settings.background_shutdown_timeout
+    )
+    shutdown_force_exit_after: float | None = (
+        project_settings.shutdown_force_exit_after
+    )
 
     @classmethod
     def get_coverage_dir(cls) -> Path:

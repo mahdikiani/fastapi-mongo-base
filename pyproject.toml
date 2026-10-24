@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastapi-mongo-base"
-version = "1.8.13"
+version = "1.9.0"
 description = "A simple boilerplate application, including models and schemas and abstract router, for FastAPI with MongoDB"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -59,11 +59,13 @@ test = [
     "mypy>=1.18.0",
     "usso>=0.31.9",
     "sentry-sdk[fastapi]>=2.0.0",
+    "apscheduler>=3.10,<4",
 ]
 monitoring = ["prometheus-client>=0.25.0"]
 prometheus = ["prometheus-client>=0.25.0"]
 redis = ["redis>=5.0.0"]
 sentry = ["sentry-sdk[fastapi]>=2.0.0"]
+scheduler = ["apscheduler>=3.10,<4"]
 
 [project.urls]
 "Homepage" = "https://github.com/mahdikiani/fastapi-mongo-base-app"
